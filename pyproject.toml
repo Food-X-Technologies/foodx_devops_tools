@@ -1,0 +1,56 @@
+[build-system]
+requires = ["flit_core >=2,<3"]
+build-backend = "flit_core.buildapi"
+
+
+[tool.flit.metadata]
+module = "foodx_devops_tools"
+author = "FoodX Technologies"
+author-email = "support@foodxtech.com"
+home-page = "https://github.com/Food-X-Technologies/foodx_devops_tools"
+description-file = "README.rst"
+
+
+[tool.flit.metadata.requires-extra]
+dev = [
+    "build_harness == 0.1.1",
+    "pre_commit == 2.7.1",
+]
+doc = [
+    "sphinx == 3.2.1",
+    "sphinx_rtd_theme == 0.5.0",
+]
+test = [
+    "pytest == 6.1.1",
+    "pytest-cov == 2.10.1",
+    "pytest-mock == 2.0.0",
+]
+
+
+[tool.black]
+# Don't forget to sync this with isort, .flake8
+line-length = 80
+
+
+[tool.isort]
+profile = "black"
+# Don't forget to sync this with black, .flake8
+line_length = 80
+
+
+[tool.coverage.run]
+source = ["foodx_devops_tools"]
+branch = true
+
+
+[tool.coverage.report]
+show_missing = true
+precision = 0
+exclude_lines = [
+    "except ImportError",
+    "raise NotImplementedError",
+    "pass",
+    "ABCmeta",
+    "abstractmethod",
+    "warnings.warn",
+]
