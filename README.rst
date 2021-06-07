@@ -17,3 +17,12 @@ environment is recommended.
 .. code-block::
 
    python3 -m venv .venv; .venv/bin/pip install foodx_devops_tools
+
+
+Developers
+----------
+
+The first time you clone this project use the following command to set up the virtual environment for the project.
+
+.. code-block::
+   python3 -m venv .venv; .venv/bin/pip install build_harness; .venv/bin/build-harness install
