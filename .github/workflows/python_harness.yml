@@ -1,0 +1,318 @@
+name: Python build harness
+on:
+  - push
+
+env:
+  FLIT_ROOT_INSTALL: 1
+
+  PYPI_API_USER: __token__
+
+  VENV_BIN: .venv/bin
+  CALL_TARGET: ${VENV_BIN}/build-harness
+
+
+jobs:
+  formatting-check:
+    env:
+      TARGET: formatting --check
+    runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+      matrix:
+        # Only need to check formatting on one version.
+        python-version: [3.9]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: |
+          python3 -m venv .venv
+          ${{ env.VENV_BIN }}/pip install build_harness
+          ${{ env.VENV_BIN }}/build-harness install
+          ${{ env.VENV_BIN }}/flit install -s
+      - run: ${{ env.CALL_TARGET }} ${TARGET}
+
+
+  flake8-check:
+    env:
+      TARGET: static-analysis --analysis flake8
+    runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+      # It can be useful to do flake8 checks across Python version because you get code checks across versions.
+      matrix:
+        python-version: [3.8, 3.9]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: |
+          python3 -m venv .venv
+          ${{ env.VENV_BIN }}/pip install build_harness
+          ${{ env.VENV_BIN }}/build-harness install
+          ${{ env.VENV_BIN }}/flit install -s
+      - run: ${{ env.CALL_TARGET }} ${TARGET}
+
+
+  mypy-check:
+    env:
+      TARGET: static-analysis --analysis mypy
+    runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+      # It can be useful to do mypy checks across Python version because you get code checks across versions.
+      matrix:
+        python-version: [3.8, 3.9]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: |
+          python3 -m venv .venv
+          ${{ env.VENV_BIN }}/pip install build_harness
+          ${{ env.VENV_BIN }}/build-harness install
+          ${{ env.VENV_BIN }}/flit install -s
+      - run: ${{ env.CALL_TARGET }} ${TARGET}
+
+
+  pydocstyle-check:
+    env:
+      TARGET: static-analysis --analysis pydocstyle
+    runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+      matrix:
+        # Only need to check docstrings on one version.
+        python-version: [3.9]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: |
+          python3 -m venv .venv
+          ${{ env.VENV_BIN }}/pip install build_harness
+          ${{ env.VENV_BIN }}/build-harness install
+          ${{ env.VENV_BIN }}/flit install -s
+      - run: ${{ env.CALL_TARGET }} ${TARGET}
+
+
+  unit-tests:
+    env:
+      TARGET: unit-test
+    runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [3.8, 3.9]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: |
+          python3 -m venv .venv
+          ${{ env.VENV_BIN }}/pip install build_harness
+          ${{ env.VENV_BIN }}/build-harness install
+          ${{ env.VENV_BIN }}/flit install -s
+      - run: ${{ env.CALL_TARGET }} ${TARGET}
+
+
+# !!! acceptance tests deactivated while there are no feature files present in repo.
+#  acceptance-tests:
+#    env:
+#      TARGET: acceptance tests --junitxml
+#    needs: install-dependencies
+#    runs-on: ubuntu-20.04
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        python-version: [3.8, 3.9]
+#    steps:
+#      - uses: actions/checkout@v2
+#      - name: Set up Python ${{ matrix.python-version }}
+#        uses: actions/setup-python@v2
+#        with:
+#          python-version: ${{ matrix.python-version }}
+#      - run: |
+#          python3 -m venv .venv
+#          ${{ env.VENV_BIN }}/pip install build_harness
+#          ${{ env.VENV_BIN }}/build-harness install
+#          ${{ env.VENV_BIN }}/flit install -s
+#      - run: ${{ env.CALL_TARGET }} ${TARGET}
+
+
+  unit-tests-coverage:
+    env:
+      # Don't forget to update the coverage threshold in .pre-commit-config.yaml
+      TARGET: unit-test --check 90
+    runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [3.8, 3.9]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: |
+          python3 -m venv .venv
+          ${{ env.VENV_BIN }}/pip install build_harness
+          ${{ env.VENV_BIN }}/build-harness install
+          ${{ env.VENV_BIN }}/flit install -s
+      - run: ${{ env.CALL_TARGET }} ${TARGET}
+
+
+  install-check:
+    env:
+      TARGET: install
+    runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [3.8, 3.9]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: |
+          python3 -m venv .venv
+          ${{ env.VENV_BIN }}/pip install build_harness
+          ${{ env.VENV_BIN }}/build-harness install
+          ${{ env.VENV_BIN }}/flit install -s
+      - run: ${{ env.CALL_TARGET }} ${TARGET}
+
+
+  build-packages:
+    runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+      matrix:
+        # Only need to build package using a single run.
+        python-version: [3.9]
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          # need all tags and branch info for release-flow utility.
+          # https://github.com/actions/checkout#fetch-all-history-for-all-tags-and-branches
+          fetch-depth: 0
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: |
+          python3 -m venv .venv
+          ${{ env.VENV_BIN }}/pip install build_harness
+          ${{ env.VENV_BIN }}/build-harness install
+          ${{ env.VENV_BIN }}/flit install -s
+      - run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          export THIS_VERSION=$(${{ env.VENV_BIN }}/release-flow --default-branch main)
+          echo ${THIS_VERSION}
+          ${{ env.CALL_TARGET }} package --release-id ${THIS_VERSION}
+      - uses: actions/upload-artifact@v2
+        with:
+          name: distribution-package-artifacts
+          path: dist
+
+  publish-release-packages:
+    concurrency: publish
+    env:
+      TARGET: publish --user $PYPI_API_USER --password $PYPI_API_TOKEN
+    # Lack of regular expression parsing limits what conditions are possible here.
+    # Want to scope in on valid semantic versions https://semver.org including "alpha", "beta" pre-releases.
+    if: ${{ startsWith('refs/tags/', github.ref) && !contains('+dryrun', github.ref) }}
+    needs:
+      - build-packages
+    runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [3.9]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: |
+          python3 -m venv .venv
+          ${{ env.VENV_BIN }}/pip install build_harness
+          ${{ env.VENV_BIN }}/build-harness install
+          ${{ env.VENV_BIN }}/flit install -s
+      - uses: actions/download-artifact@v2
+        with:
+          name: distribution-package-artifacts
+          path: dist
+      - run: ${{ env.CALL_TARGET }} ${TARGET}
+
+
+  publish-release-dryrun:
+    concurrency: publish
+    env:
+      TARGET: publish --user $PYPI_API_USER --password $PYPI_API_TOKEN --dryrun
+    if: ${{ startsWith('refs/tags/', github.ref) && contains('+dryrun', github.ref) }}
+    needs:
+      - build-packages
+    runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [3.9]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: |
+          python3 -m venv .venv
+          ${{ env.VENV_BIN }}/pip install build_harness
+          ${{ env.VENV_BIN }}/build-harness install
+          ${{ env.VENV_BIN }}/flit install -s
+      - uses: actions/download-artifact@v2
+        with:
+          name: distribution-package-artifacts
+          path: dist
+      - run: ${{ env.CALL_TARGET }} ${TARGET}
+
+
+  publish-nonrelease-packages:
+    concurrency: publish
+    if: ${{ !startsWith('refs/tags/', github.ref) }}
+    needs:
+      - build-packages
+    runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [3.9]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: |
+          python3 -m venv .venv
+          ${{ env.VENV_BIN }}/pip install build_harness
+          ${{ env.VENV_BIN }}/build-harness install
+          ${{ env.VENV_BIN }}/flit install -s
+      - uses: actions/download-artifact@v2
+        with:
+          name: distribution-package-artifacts
+          path: dist
+      - run: ls dist/

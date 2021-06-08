@@ -1,5 +1,5 @@
 foodx_devops_tools
-=============
+==================
 
 Foodx DevOps pipeline utilities.
 
@@ -25,4 +25,5 @@ Developers
 The first time you clone this project use the following command to set up the virtual environment for the project.
 
 .. code-block::
+
    python3 -m venv .venv; .venv/bin/pip install build_harness; .venv/bin/build-harness install
