@@ -1,5 +1,5 @@
 [build-system]
-requires = ["flit_core >=2,<3"]
+requires = ["flit_core >=2,<4"]
 build-backend = "flit_core.buildapi"
 
 
@@ -9,6 +9,9 @@ author = "FoodX Technologies"
 author-email = "support@foodxtech.com"
 home-page = "https://github.com/Food-X-Technologies/foodx_devops_tools"
 description-file = "README.rst"
+classifiers = ["License :: OSI Approved :: MIT License"]
+
+requires-python = ">=3.8"
 
 
 [tool.flit.metadata.requires-extra]
