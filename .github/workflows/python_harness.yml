@@ -231,7 +231,7 @@ jobs:
   publish-release-packages:
     concurrency: publish
     env:
-      TARGET: publish --user $PYPI_API_USER --password $PYPI_API_TOKEN
+      TARGET: publish --user $PYPI_API_USER --password ${{ secrets.PYPI_API_TOKEN }}
     # Lack of regular expression parsing limits what conditions are possible here.
     # Want to scope in on valid semantic versions https://semver.org including "alpha", "beta" pre-releases.
     if: ${{ startsWith('refs/tags/', github.ref) && !contains('+dryrun', github.ref) }}
@@ -263,7 +263,7 @@ jobs:
   publish-release-dryrun:
     concurrency: publish
     env:
-      TARGET: publish --user $PYPI_API_USER --password $PYPI_API_TOKEN --dryrun
+      TARGET: publish --user $PYPI_API_USER --password ${{ secrets.PYPI_API_TOKEN }} --dryrun
     if: ${{ startsWith('refs/tags/', github.ref) && contains('+dryrun', github.ref) }}
     needs:
       - build-packages
