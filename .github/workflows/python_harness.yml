@@ -234,7 +234,7 @@ jobs:
       TARGET: publish --user $PYPI_API_USER --password ${{ secrets.PYPI_API_TOKEN }}
     # Lack of regular expression parsing limits what conditions are possible here.
     # Want to scope in on valid semantic versions https://semver.org including "alpha", "beta" pre-releases.
-    if: ${{ startsWith('refs/tags/', github.ref) && !contains('+dryrun', github.ref) }}
+    if: ${{ startsWith(github.ref, 'refs/tags/') && !contains(github.ref, '+dryrun') }}
     needs:
       - build-packages
     runs-on: ubuntu-20.04
@@ -257,14 +257,16 @@ jobs:
         with:
           name: distribution-package-artifacts
           path: dist
-      - run: ${{ env.CALL_TARGET }} ${TARGET}
+      - run: |
+          echo "github.ref: ${{ github.ref }}"
+          ${{ env.CALL_TARGET }} ${TARGET}
 
 
   publish-release-dryrun:
     concurrency: publish
     env:
       TARGET: publish --user $PYPI_API_USER --password ${{ secrets.PYPI_API_TOKEN }} --dryrun
-    if: ${{ startsWith('refs/tags/', github.ref) && contains('+dryrun', github.ref) }}
+    if: ${{ startsWith(github.ref, 'refs/tags/') && contains(github.ref, '+dryrun') }}
     needs:
       - build-packages
     runs-on: ubuntu-20.04
@@ -287,12 +289,14 @@ jobs:
         with:
           name: distribution-package-artifacts
           path: dist
-      - run: ${{ env.CALL_TARGET }} ${TARGET}
+      - run: |
+          echo "github.ref: ${{ github.ref }}"
+          ${{ env.CALL_TARGET }} ${TARGET}
 
 
   publish-nonrelease-packages:
     concurrency: publish
-    if: ${{ !startsWith('refs/tags/', github.ref) }}
+    if: ${{ !startsWith(github.ref, 'refs/tags/') }}
     needs:
       - build-packages
     runs-on: ubuntu-20.04
@@ -315,4 +319,7 @@ jobs:
         with:
           name: distribution-package-artifacts
           path: dist
-      - run: ls dist/
+      - run: |
+          # debug logging
+          echo "github.ref: ${{ github.ref }}"
+          ls dist/
