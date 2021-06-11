@@ -1,4 +1,3 @@
-#
 #  Copyright (c) 2020 Russell Smiley
 #
 #  This file is part of build_harness.
