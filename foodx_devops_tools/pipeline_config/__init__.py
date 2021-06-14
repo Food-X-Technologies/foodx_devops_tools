@@ -12,6 +12,11 @@ from .clients import (  # noqa: F401
     ClientsDefinitionError,
     load_clients,
 )
+from .pipeline import (  # noqa: F401
+    PipelineConfiguration,
+    PipelineConfigurationError,
+    PipelineConfigurationPaths,
+)
 from .release_states import (  # noqa: F401
     ReleaseStatesDefinition,
     ReleaseStatesDefinitionError,
