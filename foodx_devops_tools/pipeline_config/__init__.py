@@ -5,7 +5,7 @@
 # You should have received a copy of the MIT License along with
 # foodx_devops_tools. If not, see <https://opensource.org/licenses/MIT>.
 
-"""File I/O for pipeline confiuration metadata."""
+"""File I/O for pipeline configuration metadata."""
 
 from .clients import (  # noqa: F401
     ClientsDefinition,
