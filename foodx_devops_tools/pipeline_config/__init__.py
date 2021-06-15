@@ -27,6 +27,11 @@ from .release_states import (  # noqa: F401
     ReleaseStatesDefinitionError,
     load_release_states,
 )
+from .subscriptions import (  # noqa: F401
+    SubscriptionsDefinition,
+    SubscriptionsDefinitionError,
+    load_subscriptions,
+)
 from .systems import (  # noqa: F401
     SystemsDefinition,
     SystemsDefinitionError,

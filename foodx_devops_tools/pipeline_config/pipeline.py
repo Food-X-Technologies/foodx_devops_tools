@@ -20,6 +20,8 @@ from .deployments import ValueType as DeploymentsData
 from .deployments import load_deployments
 from .release_states import ValueType as ReleaseStatesData
 from .release_states import load_release_states
+from .subscriptions import ValueType as SubscriptionsData
+from .subscriptions import load_subscriptions
 from .systems import ValueType as SystemsData
 from .systems import load_systems
 
@@ -43,6 +45,7 @@ class PipelineConfigurationPaths:
     clients: pathlib.Path
     release_states: pathlib.Path
     deployments: pathlib.Path
+    subscriptions: pathlib.Path
     systems: pathlib.Path
 
 
@@ -55,6 +58,7 @@ class PipelineConfiguration(pydantic.BaseModel):
     clients: ClientsData
     release_states: ReleaseStatesData
     deployments: DeploymentsData
+    subscriptions: SubscriptionsData
     systems: SystemsData
 
     @classmethod
@@ -71,11 +75,13 @@ class PipelineConfiguration(pydantic.BaseModel):
         client_config = load_clients(paths.clients)
         release_state_config = load_release_states(paths.release_states)
         deployment_config = load_deployments(paths.deployments)
+        subscription_config = load_subscriptions(paths.subscriptions)
         system_config = load_systems(paths.systems)
         kwargs = {
             "clients": client_config.clients,
             "release_states": release_state_config.release_states,
             "deployments": deployment_config.deployments,
+            "subscriptions": subscription_config.subscriptions,
             "systems": system_config.systems,
         }
         cls._validate_subscriptions(kwargs)

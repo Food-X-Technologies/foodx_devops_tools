@@ -20,6 +20,9 @@ from foodx_devops_tools.pipeline_config.deployments import DeploymentsDefinition
 from foodx_devops_tools.pipeline_config.release_states import (
     ReleaseStatesDefinition,
 )
+from foodx_devops_tools.pipeline_config.subscriptions import (
+    SubscriptionsDefinition,
+)
 from foodx_devops_tools.pipeline_config.systems import SystemsDefinition
 
 MOCK_RESULTS = {
@@ -35,6 +38,16 @@ MOCK_RESULTS = {
                     "ado_service_connection": "some-name",
                 },
             }
+        }
+    ),
+    "subscriptions": SubscriptionsDefinition.parse_obj(
+        {
+            "subscriptions": {
+                "subname": {
+                    "ado_service_connection": "some-name",
+                    "id": "abc123",
+                },
+            },
         }
     ),
     "systems": SystemsDefinition.parse_obj({"systems": ["s1", "s2"]}),
@@ -57,6 +70,10 @@ def mock_loads(mocker):
             return_value=mock_data["deployments"],
         )
         mocker.patch(
+            "foodx_devops_tools.pipeline_config.pipeline.load_subscriptions",
+            return_value=mock_data["subscriptions"],
+        )
+        mocker.patch(
             "foodx_devops_tools.pipeline_config.pipeline.load_systems",
             return_value=mock_data["systems"],
         )
@@ -64,32 +81,35 @@ def mock_loads(mocker):
     return _apply
 
 
+MOCK_PATHS = PipelineConfigurationPaths(
+    clients=pathlib.Path("client/path"),
+    release_states=pathlib.Path("release_state/path"),
+    deployments=pathlib.Path("deployment/path"),
+    subscriptions=pathlib.Path("subscription/path"),
+    systems=pathlib.Path("system/path"),
+)
+
+
 class TestPipelineConfiguration:
     def test_default(self, mock_loads):
-        mock_paths = PipelineConfigurationPaths(
-            clients=pathlib.Path("client/path"),
-            release_states=pathlib.Path("release_state/path"),
-            deployments=pathlib.Path("deployment/path"),
-            systems=pathlib.Path("system/path"),
-        )
         mock_loads(MOCK_RESULTS)
 
-        under_test = PipelineConfiguration.from_files(mock_paths)
+        under_test = PipelineConfiguration.from_files(MOCK_PATHS)
 
         assert len(under_test.clients) == 2
         assert under_test.clients[0] == "c1"
         assert len(under_test.release_states) == 2
         assert under_test.release_states[0] == "r1"
+        assert len(under_test.subscriptions) == 1
+        assert (
+            under_test.subscriptions["subname"].ado_service_connection
+            == "some-name"
+        )
+        assert under_test.subscriptions["subname"].id == "abc123"
         assert len(under_test.systems) == 2
         assert under_test.systems[0] == "s1"
 
     def test_bad_deployment_name_raises(self, mock_loads):
-        mock_paths = PipelineConfigurationPaths(
-            clients=pathlib.Path("client/path"),
-            release_states=pathlib.Path("release_state/path"),
-            deployments=pathlib.Path("deployment/path"),
-            systems=pathlib.Path("system/path"),
-        )
         mock_results = copy.deepcopy(MOCK_RESULTS)
         mock_results["deployments"] = DeploymentsDefinition.parse_obj(
             {
@@ -106,15 +126,9 @@ class TestPipelineConfiguration:
         with pytest.raises(
             PipelineConfigurationError, match=r"Bad deployment tuple"
         ):
-            PipelineConfiguration.from_files(mock_paths)
+            PipelineConfiguration.from_files(MOCK_PATHS)
 
     def test_bad_deployment_clients_raises(self, mock_loads):
-        mock_paths = PipelineConfigurationPaths(
-            clients=pathlib.Path("client/path"),
-            release_states=pathlib.Path("release_state/path"),
-            deployments=pathlib.Path("deployment/path"),
-            systems=pathlib.Path("system/path"),
-        )
         mock_results = copy.deepcopy(MOCK_RESULTS)
         mock_results["clients"] = ClientsDefinition.parse_obj(
             {
@@ -126,15 +140,9 @@ class TestPipelineConfiguration:
         with pytest.raises(
             PipelineConfigurationError, match=r"Bad client in deployment tuple"
         ):
-            PipelineConfiguration.from_files(mock_paths)
+            PipelineConfiguration.from_files(MOCK_PATHS)
 
     def test_bad_subscription_release_states_raises(self, mock_loads):
-        mock_paths = PipelineConfigurationPaths(
-            clients=pathlib.Path("client/path"),
-            release_states=pathlib.Path("release_state/path"),
-            deployments=pathlib.Path("deployment/path"),
-            systems=pathlib.Path("system/path"),
-        )
         mock_results = copy.deepcopy(MOCK_RESULTS)
         mock_results["release_states"] = ReleaseStatesDefinition.parse_obj(
             {
@@ -147,15 +155,9 @@ class TestPipelineConfiguration:
             PipelineConfigurationError,
             match=r"Bad release state in deployment tuple",
         ):
-            PipelineConfiguration.from_files(mock_paths)
+            PipelineConfiguration.from_files(MOCK_PATHS)
 
     def test_bad_deployment_systems_raises(self, mock_loads):
-        mock_paths = PipelineConfigurationPaths(
-            clients=pathlib.Path("client/path"),
-            release_states=pathlib.Path("release_state/path"),
-            deployments=pathlib.Path("deployment/path"),
-            systems=pathlib.Path("system/path"),
-        )
         mock_results = copy.deepcopy(MOCK_RESULTS)
         mock_results["systems"] = SystemsDefinition.parse_obj(
             {
@@ -167,4 +169,4 @@ class TestPipelineConfiguration:
         with pytest.raises(
             PipelineConfigurationError, match=r"Bad system in deployment tuple"
         ):
-            PipelineConfiguration.from_files(mock_paths)
+            PipelineConfiguration.from_files(MOCK_PATHS)
