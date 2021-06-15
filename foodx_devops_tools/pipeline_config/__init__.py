@@ -12,6 +12,11 @@ from .clients import (  # noqa: F401
     ClientsDefinitionError,
     load_clients,
 )
+from .deployments import (  # noqa: F401
+    DeploymentsDefinition,
+    DeploymentsDefinitionError,
+    load_deployments,
+)
 from .pipeline import (  # noqa: F401
     PipelineConfiguration,
     PipelineConfigurationError,
@@ -21,11 +26,6 @@ from .release_states import (  # noqa: F401
     ReleaseStatesDefinition,
     ReleaseStatesDefinitionError,
     load_release_states,
-)
-from .subscriptions import (  # noqa: F401
-    SubscriptionsDefinition,
-    SubscriptionsDefinitionError,
-    load_subscriptions,
 )
 from .systems import (  # noqa: F401
     SystemsDefinition,
