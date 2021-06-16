@@ -21,10 +21,23 @@ class ClientsDefinitionError(Exception):
     """Problem loading client definitions."""
 
 
+ReleaseStatesValueType = typing.List[str]
+PseudonymsValueType = typing.Optional[typing.List[str]]
+
+
+class SingularClientDefinition(pydantic.BaseModel):
+    """A single client definition."""
+
+    depends_on: typing.Optional[typing.Dict[str, typing.Optional[str]]]
+    pseudonyms: PseudonymsValueType
+    release_states: ReleaseStatesValueType
+    system: str
+
+
 T = typing.TypeVar("T", bound="ClientsDefinition")
 
 
-ValueType = typing.List[str]
+ValueType = typing.Dict[str, SingularClientDefinition]
 
 
 class ClientsDefinition(pydantic.BaseModel):
@@ -33,14 +46,39 @@ class ClientsDefinition(pydantic.BaseModel):
     clients: ValueType
 
     @pydantic.validator(ENTITY_NAME)
-    def check_clients(cls: pydantic.BaseModel, value: ValueType) -> ValueType:
+    def check_clients(
+        cls: pydantic.BaseModel, clients_candidate: ValueType
+    ) -> ValueType:
         """Validate ``clients`` field."""
-        if not value:
+        if not clients_candidate:
             raise ValueError("Empty client names prohibited")
-        if len(set(value)) != len(value):
+        if len(set(clients_candidate)) != len(clients_candidate):
             raise ValueError("Duplicate client names prohibited")
 
-        return value
+        for name, client_value in clients_candidate.items():
+            if client_value.depends_on is not None:
+                if any(
+                    [
+                        x not in clients_candidate
+                        for x in client_value.depends_on.keys()
+                    ]
+                ):
+                    raise ValueError(
+                        "Nonexistent dependency in client, " "{0}".format(name)
+                    )
+                for this_name in [
+                    x for x, y in client_value.depends_on.items() if not y
+                ]:
+                    # default to the last release state from the dependency
+                    # client.
+                    default_value = clients_candidate[this_name].release_states[
+                        -1
+                    ]
+                    clients_candidate[name].depends_on[
+                        this_name
+                    ] = default_value  # type: ignore
+
+        return clients_candidate
 
 
 def load_clients(file_path: pathlib.Path) -> ClientsDefinition:

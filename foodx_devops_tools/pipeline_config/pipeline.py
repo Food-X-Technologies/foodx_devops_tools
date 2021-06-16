@@ -84,15 +84,15 @@ class PipelineConfiguration(pydantic.BaseModel):
             "subscriptions": subscription_config.subscriptions,
             "systems": system_config.systems,
         }
-        cls._validate_subscriptions(kwargs)
+        cls._validate_deployments(kwargs)
         new_object = cls(**kwargs)
 
         return new_object
 
     @staticmethod
-    def _validate_subscriptions(loaded_data: dict) -> None:
+    def _validate_deployments(loaded_data: dict) -> None:
         """
-        Validate loaded subscription data.
+        Validate loaded deployment data.
 
         Args:
             loaded_data: Data loaded from pipeline configuration.
@@ -125,4 +125,20 @@ class PipelineConfiguration(pydantic.BaseModel):
             if this_system not in loaded_data["systems"]:
                 raise PipelineConfigurationError(
                     "Bad system in deployment tuple, {0}".format(this_system)
+                )
+
+        for client_name, client_data in loaded_data["clients"].items():
+            if not all(
+                [
+                    x in loaded_data["release_states"]
+                    for x in client_data.release_states
+                ]
+            ):
+                raise PipelineConfigurationError(
+                    "Bad release state in " "client, {0}".format(client_name)
+                )
+
+            if client_data.system not in loaded_data["systems"]:
+                raise PipelineConfigurationError(
+                    "Bad system in client, " "{0}".format(client_name)
                 )

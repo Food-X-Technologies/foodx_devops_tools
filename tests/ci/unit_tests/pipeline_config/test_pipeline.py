@@ -26,7 +26,26 @@ from foodx_devops_tools.pipeline_config.subscriptions import (
 from foodx_devops_tools.pipeline_config.systems import SystemsDefinition
 
 MOCK_RESULTS = {
-    "clients": ClientsDefinition.parse_obj({"clients": ["c1", "c2"]}),
+    "clients": ClientsDefinition.parse_obj(
+        {
+            "clients": {
+                "c1": {
+                    "release_states": [
+                        "r1",
+                        "r2",
+                    ],
+                    "system": "s1",
+                },
+                "c2": {
+                    "depends_on": {"c1": "r1"},
+                    "release_states": [
+                        "r2",
+                    ],
+                    "system": "s2",
+                },
+            },
+        }
+    ),
     "release_states": ReleaseStatesDefinition.parse_obj(
         {"release_states": ["r1", "r2"]}
     ),
@@ -97,7 +116,7 @@ class TestPipelineConfiguration:
         under_test = PipelineConfiguration.from_files(MOCK_PATHS)
 
         assert len(under_test.clients) == 2
-        assert under_test.clients[0] == "c1"
+        assert "c1" in under_test.clients
         assert len(under_test.release_states) == 2
         assert under_test.release_states[0] == "r1"
         assert len(under_test.subscriptions) == 1
@@ -132,7 +151,9 @@ class TestPipelineConfiguration:
         mock_results = copy.deepcopy(MOCK_RESULTS)
         mock_results["clients"] = ClientsDefinition.parse_obj(
             {
-                "clients": ["c3"],
+                "clients": {
+                    "c3": {"release_states": ["r1"], "system": "s1"},
+                },
             }
         )
         mock_loads(mock_results)
@@ -142,11 +163,43 @@ class TestPipelineConfiguration:
         ):
             PipelineConfiguration.from_files(MOCK_PATHS)
 
-    def test_bad_subscription_release_states_raises(self, mock_loads):
+    def test_bad_client_release_states_raises(self, mock_loads):
+        mock_results = copy.deepcopy(MOCK_RESULTS)
+        mock_results["clients"] = ClientsDefinition.parse_obj(
+            {
+                "clients": {
+                    "c1": {"release_states": ["bad_state"], "system": "s1"},
+                },
+            }
+        )
+        mock_loads(mock_results)
+
+        with pytest.raises(
+            PipelineConfigurationError, match=r"Bad release state in client"
+        ):
+            PipelineConfiguration.from_files(MOCK_PATHS)
+
+    def test_bad_client_system_raises(self, mock_loads):
+        mock_results = copy.deepcopy(MOCK_RESULTS)
+        mock_results["clients"] = ClientsDefinition.parse_obj(
+            {
+                "clients": {
+                    "c1": {"release_states": ["r1"], "system": "bad_system"},
+                },
+            }
+        )
+        mock_loads(mock_results)
+
+        with pytest.raises(
+            PipelineConfigurationError, match=r"Bad system in client"
+        ):
+            PipelineConfiguration.from_files(MOCK_PATHS)
+
+    def test_bad_deployment_release_states_raises(self, mock_loads):
         mock_results = copy.deepcopy(MOCK_RESULTS)
         mock_results["release_states"] = ReleaseStatesDefinition.parse_obj(
             {
-                "release_states": ["c3"],
+                "release_states": ["bad_state"],
             }
         )
         mock_loads(mock_results)
