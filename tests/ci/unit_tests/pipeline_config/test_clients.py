@@ -35,6 +35,26 @@ clients:
     result = apply_clients_test(file_text)
 
     assert len(result.clients) == 1
+    assert result.clients["somename"].pseudonym is None
+    assert result.clients["somename"].release_states == ["std", "prd"]
+    assert result.clients["somename"].system == "egms"
+
+
+def test_pseudonym(apply_clients_test):
+    file_text = """---
+clients:
+  somename:
+    pseudonym: really long name
+    release_states:
+      - std
+      - prd
+    system: egms
+"""
+
+    result = apply_clients_test(file_text)
+
+    assert len(result.clients) == 1
+    assert result.clients["somename"].pseudonym == "really long name"
     assert result.clients["somename"].release_states == ["std", "prd"]
     assert result.clients["somename"].system == "egms"
 

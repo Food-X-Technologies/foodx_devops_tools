@@ -22,14 +22,13 @@ class ClientsDefinitionError(Exception):
 
 
 ReleaseStatesValueType = typing.List[str]
-PseudonymsValueType = typing.Optional[typing.List[str]]
 
 
 class SingularClientDefinition(pydantic.BaseModel):
     """A single client definition."""
 
     depends_on: typing.Optional[typing.Dict[str, typing.Optional[str]]]
-    pseudonyms: PseudonymsValueType
+    pseudonym: typing.Optional[str]
     release_states: ReleaseStatesValueType
     system: str
 
