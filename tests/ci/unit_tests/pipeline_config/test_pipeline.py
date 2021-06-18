@@ -64,7 +64,7 @@ MOCK_RESULTS = {
             "subscriptions": {
                 "subname": {
                     "ado_service_connection": "some-name",
-                    "id": "abc123",
+                    "subscription_id": "abc123",
                 },
             },
         }
@@ -124,7 +124,7 @@ class TestPipelineConfiguration:
             under_test.subscriptions["subname"].ado_service_connection
             == "some-name"
         )
-        assert under_test.subscriptions["subname"].id == "abc123"
+        assert under_test.subscriptions["subname"].subscription_id == "abc123"
         assert len(under_test.systems) == 2
         assert under_test.systems[0] == "s1"
 

@@ -28,7 +28,7 @@ def test_single(apply_subscriptions_test):
 subscriptions:
   name:
     ado_service_connection: some-name
-    id: abc123
+    subscription_id: abc123
 """
 
     result = apply_subscriptions_test(file_text)
@@ -36,7 +36,7 @@ subscriptions:
     assert len(result.subscriptions) == 1
     assert "name" in result.subscriptions
     assert result.subscriptions["name"].ado_service_connection == "some-name"
-    assert result.subscriptions["name"].id == "abc123"
+    assert result.subscriptions["name"].subscription_id == "abc123"
 
 
 def test_ado_none(apply_subscriptions_test):
@@ -45,7 +45,7 @@ def test_ado_none(apply_subscriptions_test):
 subscriptions:
   name:
     ado_service_connection: null
-    id: abc123
+    subscription_id: abc123
 """
 
     result = apply_subscriptions_test(file_text)
@@ -53,7 +53,7 @@ subscriptions:
     assert len(result.subscriptions) == 1
     assert "name" in result.subscriptions
     assert result.subscriptions["name"].ado_service_connection is None
-    assert result.subscriptions["name"].id == "abc123"
+    assert result.subscriptions["name"].subscription_id == "abc123"
 
 
 def test_multiple(apply_subscriptions_test):
@@ -61,19 +61,19 @@ def test_multiple(apply_subscriptions_test):
 ---
 subscriptions:
   name1:
-    id: abc123
+    subscription_id: abc123
   name2:
-    id: abc1234
+    subscription_id: abc1234
   name3:
-    id: abc12345
+    subscription_id: abc12345
 """
 
     result = apply_subscriptions_test(file_text)
 
     assert len(result.subscriptions) == 3
     assert all([x in result.subscriptions for x in ["name1", "name2", "name3"]])
-    assert result.subscriptions["name1"].id == "abc123"
-    assert result.subscriptions["name3"].id == "abc12345"
+    assert result.subscriptions["name1"].subscription_id == "abc123"
+    assert result.subscriptions["name3"].subscription_id == "abc12345"
 
 
 def test_duplicate_raises(apply_subscriptions_test):

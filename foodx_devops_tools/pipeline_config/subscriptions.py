@@ -25,7 +25,7 @@ class SingularSubscriptionDefinition(pydantic.BaseModel):
     """Single subscription definition."""
 
     ado_service_connection: typing.Optional[str]
-    id: str
+    subscription_id: str
 
 
 T = typing.TypeVar("T", bound="SubscriptionsDefinition")
