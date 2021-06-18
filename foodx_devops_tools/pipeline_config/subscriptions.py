@@ -5,7 +5,7 @@
 #  You should have received a copy of the MIT License along with
 #  foodx_devops_tools. If not, see <https://opensource.org/licenses/MIT>.
 
-"""Systems deployment configuration I/O."""
+"""Subscriptions deployment configuration I/O."""
 
 import pathlib
 import typing
@@ -25,7 +25,8 @@ class SingularSubscriptionDefinition(pydantic.BaseModel):
     """Single subscription definition."""
 
     ado_service_connection: typing.Optional[str]
-    subscription_id: str
+    azure_id: str
+    tenant: str
 
 
 T = typing.TypeVar("T", bound="SubscriptionsDefinition")

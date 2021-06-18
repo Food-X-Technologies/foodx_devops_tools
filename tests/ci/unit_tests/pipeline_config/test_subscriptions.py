@@ -28,7 +28,8 @@ def test_single(apply_subscriptions_test):
 subscriptions:
   name:
     ado_service_connection: some-name
-    subscription_id: abc123
+    azure_id: abc123
+    tenant: 123abc
 """
 
     result = apply_subscriptions_test(file_text)
@@ -36,16 +37,17 @@ subscriptions:
     assert len(result.subscriptions) == 1
     assert "name" in result.subscriptions
     assert result.subscriptions["name"].ado_service_connection == "some-name"
-    assert result.subscriptions["name"].subscription_id == "abc123"
+    assert result.subscriptions["name"].azure_id == "abc123"
+    assert result.subscriptions["name"].tenant == "123abc"
 
 
-def test_ado_none(apply_subscriptions_test):
+def test_ado_default(apply_subscriptions_test):
     file_text = """
 ---
 subscriptions:
   name:
-    ado_service_connection: null
-    subscription_id: abc123
+    azure_id: abc123
+    tenant: tname
 """
 
     result = apply_subscriptions_test(file_text)
@@ -53,7 +55,8 @@ subscriptions:
     assert len(result.subscriptions) == 1
     assert "name" in result.subscriptions
     assert result.subscriptions["name"].ado_service_connection is None
-    assert result.subscriptions["name"].subscription_id == "abc123"
+    assert result.subscriptions["name"].azure_id == "abc123"
+    assert result.subscriptions["name"].tenant == "tname"
 
 
 def test_multiple(apply_subscriptions_test):
@@ -61,34 +64,22 @@ def test_multiple(apply_subscriptions_test):
 ---
 subscriptions:
   name1:
-    subscription_id: abc123
+    azure_id: abc123
+    tenant: tname1
   name2:
-    subscription_id: abc1234
+    azure_id: abc1234
+    tenant: tname2
   name3:
-    subscription_id: abc12345
+    azure_id: abc12345
+    tenant: tname3
 """
 
     result = apply_subscriptions_test(file_text)
 
     assert len(result.subscriptions) == 3
     assert all([x in result.subscriptions for x in ["name1", "name2", "name3"]])
-    assert result.subscriptions["name1"].subscription_id == "abc123"
-    assert result.subscriptions["name3"].subscription_id == "abc12345"
-
-
-def test_duplicate_raises(apply_subscriptions_test):
-    file_text = """
----
-subscriptions:
-  - name
-  - name
-"""
-
-    with pytest.raises(
-        SubscriptionsDefinitionError,
-        match=r"Error validating subscriptions definition",
-    ):
-        apply_subscriptions_test(file_text)
+    assert result.subscriptions["name1"].azure_id == "abc123"
+    assert result.subscriptions["name3"].azure_id == "abc12345"
 
 
 def test_none_raises(apply_subscriptions_test):
@@ -103,7 +94,7 @@ def test_none_raises(apply_subscriptions_test):
         apply_subscriptions_test(file_text)
 
 
-def test_empty_list_raises(apply_subscriptions_test):
+def test_empty_raises(apply_subscriptions_test):
     file_text = """
 ---
 subscriptions:

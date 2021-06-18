@@ -30,7 +30,7 @@ deployments:
     locations:
       - loc1
       - loc2
-    ado_service_connection: some-name
+    subscription: some-name
 """
 
     result = apply_deployments_test(file_text)
@@ -38,7 +38,7 @@ deployments:
     assert len(result.deployments) == 1
     assert "name" in result.deployments
     assert result.deployments["name"].locations == ["loc1", "loc2"]
-    assert result.deployments["name"].ado_service_connection == "some-name"
+    assert result.deployments["name"].subscription == "some-name"
 
 
 def test_multiple(apply_deployments_test):
@@ -49,18 +49,18 @@ deployments:
     locations:
       - loc1
       - loc2
-    ado_service_connection: some-name
+    subscription: some-name
   name2:
     locations:
       - loc1
       - loc3
-    ado_service_connection: some-name
+    subscription: some-name
   name3:
     locations:
       - loc1
       - loc3
       - loc4
-    ado_service_connection: other-name
+    subscription: other-name
 """
 
     result = apply_deployments_test(file_text)
@@ -71,9 +71,9 @@ deployments:
     assert "name3" in result.deployments
     # Assume that name2 data is correct if name1, name3 are correct.
     assert result.deployments["name1"].locations == ["loc1", "loc2"]
-    assert result.deployments["name1"].ado_service_connection == "some-name"
+    assert result.deployments["name1"].subscription == "some-name"
     assert result.deployments["name3"].locations == ["loc1", "loc3", "loc4"]
-    assert result.deployments["name3"].ado_service_connection == "other-name"
+    assert result.deployments["name3"].subscription == "other-name"
 
 
 def test_bad_field_raises(apply_deployments_test):
@@ -84,7 +84,7 @@ deployments:
     bad_field:
       - loc1
       - loc2
-    ado_service_connection: some-name
+    subscription: some-name
 """
 
     with pytest.raises(

@@ -37,3 +37,8 @@ from .systems import (  # noqa: F401
     SystemsDefinitionError,
     load_systems,
 )
+from .tenants import (  # noqa: F401
+    TenantsDefinition,
+    TenantsDefinitionError,
+    load_tenants,
+)

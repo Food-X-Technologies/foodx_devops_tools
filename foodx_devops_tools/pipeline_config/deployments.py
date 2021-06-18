@@ -25,7 +25,7 @@ class SingularDeployment(pydantic.BaseModel):
     """Definition of a singular deployment."""
 
     locations: typing.List[str]
-    ado_service_connection: str
+    subscription: str
 
 
 T = typing.TypeVar("T", bound="DeploymentsDefinition")
