@@ -34,6 +34,23 @@ tenants:
     assert len(result.tenants) == 1
     assert "name" in result.tenants
     assert result.tenants["name"].azure_id == "abc123"
+    assert result.tenants["name"].azure_name is None
+
+
+def test_name(apply_tenants_test):
+    file_text = """---
+tenants:
+  name:
+    azure_id: abc123
+    azure_name: some name
+"""
+
+    result = apply_tenants_test(file_text)
+
+    assert len(result.tenants) == 1
+    assert "name" in result.tenants
+    assert result.tenants["name"].azure_id == "abc123"
+    assert result.tenants["name"].azure_name == "some name"
 
 
 def test_multiple(apply_tenants_test):

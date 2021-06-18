@@ -25,6 +25,7 @@ class SingularTenantDefinition(pydantic.BaseModel):
     """Single tenant definition."""
 
     azure_id: str
+    azure_name: typing.Optional[str]
 
 
 T = typing.TypeVar("T", bound="TenantsDefinition")
