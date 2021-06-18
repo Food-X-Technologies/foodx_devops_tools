@@ -35,6 +35,7 @@ clients:
     result = apply_clients_test(file_text)
 
     assert len(result.clients) == 1
+    assert result.clients["somename"].depends_on is None
     assert result.clients["somename"].pseudonym is None
     assert result.clients["somename"].release_states == ["std", "prd"]
     assert result.clients["somename"].system == "egms"
@@ -55,8 +56,6 @@ clients:
 
     assert len(result.clients) == 1
     assert result.clients["somename"].pseudonym == "really long name"
-    assert result.clients["somename"].release_states == ["std", "prd"]
-    assert result.clients["somename"].system == "egms"
 
 
 def test_depends_on_default(apply_clients_test):
