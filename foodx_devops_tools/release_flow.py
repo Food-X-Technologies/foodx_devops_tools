@@ -13,27 +13,31 @@ import re
 import sys
 import typing
 
+import click
 
-@enum.unique
-class ReleaseState(enum.Enum):
-    """Enumeration of release states."""
+from .console import report_failure
+from .exceptions import GitReferenceError
+from .patterns import BRANCH_PREFIX, SEMANTIC_VERSION_GITREF, TAG_PREFIX
+from .release import ReleaseState
 
-    ftr = enum.auto()
-    dev = enum.auto()
-    qa = enum.auto()
-    stg = enum.auto()
-    prd = enum.auto()
-
-
-SEMANTIC_VERSION_GITREF = r"refs/tags/(\d+\.\d+\.\d+)"
+SEMANTIC_TAG_GITREF = r"{0}{1}".format(TAG_PREFIX, SEMANTIC_VERSION_GITREF)
 
 REGEX_TABLE = {
-    ReleaseState.ftr.name: r"^(refs/heads/feature/)|(refs/pull/)",
-    ReleaseState.dev.name: r"^refs/heads/main$",
-    ReleaseState.qa.name: r"^{0}-alpha\.\d+$".format(SEMANTIC_VERSION_GITREF),
-    ReleaseState.stg.name: r"^{0}-beta\.\d+$".format(SEMANTIC_VERSION_GITREF),
-    ReleaseState.prd.name: r"^{0}$".format(SEMANTIC_VERSION_GITREF),
+    ReleaseState.ftr.name: r"^({0}feature/)|(refs/pull/)".format(BRANCH_PREFIX),
+    ReleaseState.dev.name: r"^{0}main$".format(BRANCH_PREFIX),
+    ReleaseState.qa.name: r"^{0}-alpha\.\d+$".format(SEMANTIC_TAG_GITREF),
+    ReleaseState.stg.name: r"^{0}-beta\.\d+$".format(SEMANTIC_TAG_GITREF),
+    ReleaseState.prd.name: r"^{0}$".format(SEMANTIC_TAG_GITREF),
 }
+
+
+@enum.unique
+class ExitState(enum.Enum):
+    """Release flow utility CLI exit states."""
+
+    UNKNOWN = 100
+    MISSING_GITREF = 101
+    GITREF_PARSE_FAILURE = 102
 
 
 class ReleaseStateError(Exception):
@@ -81,11 +85,22 @@ def _main(command_line_arguments: typing.List[str]) -> None:
     Raises:
         RuntimeError: If incorrect arguments are provided.
     """
-    if len(command_line_arguments) != 2:
-        raise RuntimeError("git reference must be specified")
+    try:
+        if len(command_line_arguments) != 2:
+            raise GitReferenceError("git reference must be specified")
 
-    state = identify_release_state(command_line_arguments[1])
-    print("{0}".format(state.name))
+        state = identify_release_state(command_line_arguments[1])
+
+        click.echo("{0}".format(state.name))
+    except GitReferenceError as e:
+        report_failure(str(e))
+        sys.exit(ExitState.MISSING_GITREF)
+    except ReleaseStateError as e:
+        report_failure(str(e))
+        sys.exit(ExitState.GITREF_PARSE_FAILURE)
+    except Exception as e:
+        report_failure("unknown error; {0}".format(str(e)))
+        sys.exit(ExitState.UNKNOWN)
 
 
 def flit_entry() -> None:

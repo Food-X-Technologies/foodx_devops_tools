@@ -8,18 +8,31 @@
 
 """Release id utility."""
 
+import enum
 import re
 import sys
 import typing
 
-from foodx_devops_tools.release_flow import (
+import click
+
+from .console import report_failure
+from .exceptions import GitReferenceError
+from .patterns import SEMANTIC_VERSION_GITREF, TAG_PREFIX
+from .release_flow import (
     ReleaseState,
     ReleaseStateError,
     identify_release_state,
 )
 
-TAG_PREFIX = r"refs/tags/"
-SEMANTIC_VERSION_GITREF = r"(\d+\.\d+\.\d+)"
+
+@enum.unique
+class ExitState(enum.Enum):
+    """Release id utility CLI exit states."""
+
+    UNKNOWN = 100
+    MISSING_GITREF = 101
+    GITREF_PARSE_FAILURE = 102
+
 
 REGEX_TABLE = {
     ReleaseState.qa: r"^{0}(?P<id>{1}-alpha\.\d+)$".format(
@@ -90,11 +103,21 @@ def _main(command_line_arguments: typing.List[str]) -> None:
     Raises:
         RuntimeError: If incorrect arguments are provided.
     """
-    if len(command_line_arguments) != 2:
-        raise RuntimeError("git reference must be specified")
+    try:
+        if len(command_line_arguments) != 2:
+            raise GitReferenceError("git reference must be specified")
 
-    this_id = identify_release_id(command_line_arguments[1])
-    print("{0}".format(this_id))
+        this_id = identify_release_id(command_line_arguments[1])
+        click.echo("{0}".format(this_id))
+    except GitReferenceError as e:
+        report_failure(str(e))
+        sys.exit(ExitState.MISSING_GITREF)
+    except ReleaseStateError as e:
+        report_failure(str(e))
+        sys.exit(ExitState.GITREF_PARSE_FAILURE)
+    except Exception as e:
+        report_failure("unknown error; {0}".format(str(e)))
+        sys.exit(ExitState.UNKNOWN)
 
 
 def flit_entry() -> None:
