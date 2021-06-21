@@ -7,7 +7,12 @@ env:
 
   PYPI_API_USER: __token__
 
+
+  VENV_DIR: .venv
   VENV_BIN: .venv/bin
+  PIP_CACHE_DIR: ~/.cache/pip
+  CACHE_HASH_PATH: pyproject.toml
+
   CALL_TARGET: ${VENV_BIN}/build-harness
 
 
@@ -28,18 +33,19 @@ jobs:
       - uses: actions/cache@v2
         id: pip-cache
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('pyproject.toml') }}
+          path: ${{ env.PIP_CACHE_DIR }}
+          key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles(env.CACHE_HASH_PATH) }}
       - uses: actions/cache@v2
         id: venv-cache
         with:
-          path: .venv
-          key: ${{ runner.os }}-venv-${{ matrix.python-version }}-${{ hashFiles('pyproject.toml') }}
+          path: ${{ env.VENV_DIR }}
+          key: ${{ runner.os }}-venv-${{ matrix.python-version }}-${{ hashFiles(env.CACHE_HASH_PATH) }}
       - run: |
           python3 -m venv .venv
           ${{ env.VENV_BIN }}/pip install build_harness
           ${{ env.VENV_BIN }}/build-harness install
           ${{ env.VENV_BIN }}/flit install -s
+        # Only reinstall packages if there is a cache miss.
         if: (steps.pip-cache.output.cache-hit != 'true') || (steps.venv-cache.output.cache-hit != 'true')
 
   formatting-check:
@@ -61,12 +67,12 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - uses: actions/cache@v2
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('pyproject.toml') }}
+          path: ${{ env.PIP_CACHE_DIR }}
+          key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles(env.CACHE_HASH_PATH) }}
       - uses: actions/cache@v2
         with:
-          path: .venv
-          key: ${{ runner.os }}-venv-${{ matrix.python-version }}-${{ hashFiles('pyproject.toml') }}
+          path: ${{ env.VENV_DIR }}
+          key: ${{ runner.os }}-venv-${{ matrix.python-version }}-${{ hashFiles(env.CACHE_HASH_PATH) }}
       - run: ${{ env.CALL_TARGET }} ${TARGET}
 
 
@@ -89,12 +95,12 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - uses: actions/cache@v2
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('pyproject.toml') }}
+          path: ${{ env.PIP_CACHE_DIR }}
+          key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles(env.CACHE_HASH_PATH) }}
       - uses: actions/cache@v2
         with:
-          path: .venv
-          key: ${{ runner.os }}-venv-${{ matrix.python-version }}-${{ hashFiles('pyproject.toml') }}
+          path: ${{ env.VENV_DIR }}
+          key: ${{ runner.os }}-venv-${{ matrix.python-version }}-${{ hashFiles(env.CACHE_HASH_PATH) }}
       - run: ${{ env.CALL_TARGET }} ${TARGET}
 
 
@@ -117,12 +123,12 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - uses: actions/cache@v2
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('pyproject.toml') }}
+          path: ${{ env.PIP_CACHE_DIR }}
+          key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles(env.CACHE_HASH_PATH) }}
       - uses: actions/cache@v2
         with:
-          path: .venv
-          key: ${{ runner.os }}-venv-${{ matrix.python-version }}-${{ hashFiles('pyproject.toml') }}
+          path: ${{ env.VENV_DIR }}
+          key: ${{ runner.os }}-venv-${{ matrix.python-version }}-${{ hashFiles(env.CACHE_HASH_PATH) }}
       - run: ${{ env.CALL_TARGET }} ${TARGET}
 
 
@@ -145,12 +151,12 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - uses: actions/cache@v2
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('pyproject.toml') }}
+          path: ${{ env.PIP_CACHE_DIR }}
+          key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles(env.CACHE_HASH_PATH) }}
       - uses: actions/cache@v2
         with:
-          path: .venv
-          key: ${{ runner.os }}-venv-${{ matrix.python-version }}-${{ hashFiles('pyproject.toml') }}
+          path: ${{ env.VENV_DIR }}
+          key: ${{ runner.os }}-venv-${{ matrix.python-version }}-${{ hashFiles(env.CACHE_HASH_PATH) }}
       - run: ${{ env.CALL_TARGET }} ${TARGET}
 
 
@@ -172,12 +178,12 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - uses: actions/cache@v2
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('pyproject.toml') }}
+          path: ${{ env.PIP_CACHE_DIR }}
+          key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles(env.CACHE_HASH_PATH) }}
       - uses: actions/cache@v2
         with:
-          path: .venv
-          key: ${{ runner.os }}-venv-${{ matrix.python-version }}-${{ hashFiles('pyproject.toml') }}
+          path: ${{ env.VENV_DIR }}
+          key: ${{ runner.os }}-venv-${{ matrix.python-version }}-${{ hashFiles(env.CACHE_HASH_PATH) }}
       - run: ${{ env.CALL_TARGET }} ${TARGET}
 
 
@@ -200,12 +206,12 @@ jobs:
 #          python-version: ${{ matrix.python-version }}
 #      - uses: actions/cache@v2
 #        with:
-#          path: ~/.cache/pip
-#          key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('pyproject.toml') }}
+#          path: ${{ env.PIP_CACHE_DIR }}
+#          key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles(env.CACHE_HASH_PATH) }}
 #      - uses: actions/cache@v2
 #        with:
-#          path: .venv
-#          key: ${{ runner.os }}-venv-${{ matrix.python-version }}-${{ hashFiles('pyproject.toml') }}
+#          path: ${{ env.VENV_DIR }}
+#          key: ${{ runner.os }}-venv-${{ matrix.python-version }}-${{ hashFiles(env.CACHE_HASH_PATH) }}
 #      - run: ${{ env.CALL_TARGET }} ${TARGET}
 
 
@@ -228,12 +234,12 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - uses: actions/cache@v2
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('pyproject.toml') }}
+          path: ${{ env.PIP_CACHE_DIR }}
+          key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles(env.CACHE_HASH_PATH) }}
       - uses: actions/cache@v2
         with:
-          path: .venv
-          key: ${{ runner.os }}-venv-${{ matrix.python-version }}-${{ hashFiles('pyproject.toml') }}
+          path: ${{ env.VENV_DIR }}
+          key: ${{ runner.os }}-venv-${{ matrix.python-version }}-${{ hashFiles(env.CACHE_HASH_PATH) }}
       - run: ${{ env.CALL_TARGET }} ${TARGET}
 
 
@@ -255,12 +261,12 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - uses: actions/cache@v2
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('pyproject.toml') }}
+          path: ${{ env.PIP_CACHE_DIR }}
+          key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles(env.CACHE_HASH_PATH) }}
       - uses: actions/cache@v2
         with:
-          path: .venv
-          key: ${{ runner.os }}-venv-${{ matrix.python-version }}-${{ hashFiles('pyproject.toml') }}
+          path: ${{ env.VENV_DIR }}
+          key: ${{ runner.os }}-venv-${{ matrix.python-version }}-${{ hashFiles(env.CACHE_HASH_PATH) }}
       - run: ${{ env.CALL_TARGET }} ${TARGET}
 
 
@@ -285,12 +291,12 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - uses: actions/cache@v2
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('pyproject.toml') }}
+          path: ${{ env.PIP_CACHE_DIR }}
+          key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles(env.CACHE_HASH_PATH) }}
       - uses: actions/cache@v2
         with:
-          path: .venv
-          key: ${{ runner.os }}-venv-${{ matrix.python-version }}-${{ hashFiles('pyproject.toml') }}
+          path: ${{ env.VENV_DIR }}
+          key: ${{ runner.os }}-venv-${{ matrix.python-version }}-${{ hashFiles(env.CACHE_HASH_PATH) }}
       - run: |
           git config user.name github-actions
           git config user.email github-actions@github.com
@@ -302,10 +308,11 @@ jobs:
           name: distribution-package-artifacts
           path: dist
 
+
   publish-release-packages:
     concurrency: publish
     env:
-      TARGET: publish --user $PYPI_API_USER --password ${{ secrets.PYPI_API_TOKEN }}
+      PYPI_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
     # Lack of regular expression parsing limits what conditions are possible here.
     # Want to scope in on valid semantic versions https://semver.org including "alpha", "beta" pre-releases.
     if: ${{ startsWith(github.ref, 'refs/tags/') && !contains(github.ref, '+dryrun') }}
@@ -325,12 +332,12 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - uses: actions/cache@v2
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('pyproject.toml') }}
+          path: ${{ env.PIP_CACHE_DIR }}
+          key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles(env.CACHE_HASH_PATH) }}
       - uses: actions/cache@v2
         with:
-          path: .venv
-          key: ${{ runner.os }}-venv-${{ matrix.python-version }}-${{ hashFiles('pyproject.toml') }}
+          path: ${{ env.VENV_DIR }}
+          key: ${{ runner.os }}-venv-${{ matrix.python-version }}-${{ hashFiles(env.CACHE_HASH_PATH) }}
       - uses: actions/download-artifact@v2
         with:
           name: distribution-package-artifacts
@@ -338,13 +345,13 @@ jobs:
       - run: |
           echo "github.ref: ${{ github.ref }}"
           ls dist/
-          ${{ env.CALL_TARGET }} ${TARGET}
+          ${{ env.CALL_TARGET }} publish --user ${PYPI_API_USER} --password ${PYPI_TOKEN}
 
 
   publish-release-dryrun:
     concurrency: publish
     env:
-      TARGET: publish --user ${PYPI_API_USER} --password ${{ secrets.PYPI_API_TOKEN }} --dryrun
+      PYPI_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
     if: ${{ startsWith(github.ref, 'refs/tags/') && contains(github.ref, '+dryrun') }}
     needs:
       - build-packages
@@ -362,12 +369,12 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - uses: actions/cache@v2
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('pyproject.toml') }}
+          path: ${{ env.PIP_CACHE_DIR }}
+          key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles(env.CACHE_HASH_PATH) }}
       - uses: actions/cache@v2
         with:
-          path: .venv
-          key: ${{ runner.os }}-venv-${{ matrix.python-version }}-${{ hashFiles('pyproject.toml') }}
+          path: ${{ env.VENV_DIR }}
+          key: ${{ runner.os }}-venv-${{ matrix.python-version }}-${{ hashFiles(env.CACHE_HASH_PATH) }}
       - uses: actions/download-artifact@v2
         with:
           name: distribution-package-artifacts
@@ -375,14 +382,14 @@ jobs:
       - run: |
           echo "github.ref: ${{ github.ref }}"
           ls dist/
-          ${{ env.CALL_TARGET }} ${TARGET}
+          ${{ env.CALL_TARGET }} publish --user ${PYPI_API_USER} --password ${PYPI_TOKEN} --dryrun
 
 
 
   publish-prerelease-baseline-packages:
     concurrency: publish
     env:
-      TARGET: publish --user ${PYPI_API_USER} --password ${{ secrets.PYPI_API_TOKEN }}
+      PYPI_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
     if: ${{ startsWith(github.ref, 'refs/heads/main') }}
     needs:
       - build-packages
@@ -400,12 +407,12 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - uses: actions/cache@v2
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('pyproject.toml') }}
+          path: ${{ env.PIP_CACHE_DIR }}
+          key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles(env.CACHE_HASH_PATH) }}
       - uses: actions/cache@v2
         with:
-          path: .venv
-          key: ${{ runner.os }}-venv-${{ matrix.python-version }}-${{ hashFiles('pyproject.toml') }}
+          path: ${{ env.VENV_DIR }}
+          key: ${{ runner.os }}-venv-${{ matrix.python-version }}-${{ hashFiles(env.CACHE_HASH_PATH) }}
       - uses: actions/download-artifact@v2
         with:
           name: distribution-package-artifacts
@@ -415,13 +422,14 @@ jobs:
           # debug logging
           echo "github.ref: ${{ github.ref }}"
           ls dist/
-          echo "github.ref: ${{ github.ref }}"
-          # publish feature branch packages with appropriate release id
-          ${{ env.CALL_TARGET }} ${TARGET}
+          # publish main branch packages with appropriate release id
+          ${{ env.CALL_TARGET }} publish --user ${PYPI_API_USER} --password ${PYPI_TOKEN}
 
 
   publish-feature-packages:
     concurrency: publish
+    env:
+      PYPI_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
     if: ${{ !startsWith(github.ref, 'refs/tags/') && !startsWith(github.ref, 'refs/heads/main') }}
     needs:
       - build-packages
@@ -439,12 +447,12 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - uses: actions/cache@v2
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('pyproject.toml') }}
+          path: ${{ env.PIP_CACHE_DIR }}
+          key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles(env.CACHE_HASH_PATH) }}
       - uses: actions/cache@v2
         with:
-          path: .venv
-          key: ${{ runner.os }}-venv-${{ matrix.python-version }}-${{ hashFiles('pyproject.toml') }}
+          path: ${{ env.VENV_DIR }}
+          key: ${{ runner.os }}-venv-${{ matrix.python-version }}-${{ hashFiles(env.CACHE_HASH_PATH) }}
       - uses: actions/download-artifact@v2
         with:
           name: distribution-package-artifacts
