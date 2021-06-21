@@ -4,3 +4,9 @@
 #
 #  You should have received a copy of the MIT License along with
 #  foodx_devops_tools. If not, see <https://opensource.org/licenses/MIT>.
+
+"""Publically exported exceptions."""
+
+
+class GitReferenceError(Exception):
+    """Problem with git reference."""
