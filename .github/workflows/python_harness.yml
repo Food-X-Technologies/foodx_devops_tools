@@ -259,6 +259,7 @@ jobs:
           path: dist
       - run: |
           echo "github.ref: ${{ github.ref }}"
+          ls dist/
           ${{ env.CALL_TARGET }} ${TARGET}
 
 
@@ -291,12 +292,16 @@ jobs:
           path: dist
       - run: |
           echo "github.ref: ${{ github.ref }}"
+          ls dist/
           ${{ env.CALL_TARGET }} ${TARGET}
 
 
-  publish-nonrelease-packages:
+
+  publish-prerelease-baseline-packages:
     concurrency: publish
-    if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+    env:
+      TARGET: publish --user $PYPI_API_USER --password ${{ secrets.PYPI_API_TOKEN }}
+    if: ${{ startsWith(github.ref, 'refs/heads/main') }}
     needs:
       - build-packages
     runs-on: ubuntu-20.04
@@ -319,6 +324,42 @@ jobs:
         with:
           name: distribution-package-artifacts
           path: dist
+      # Main branch publish pre-release "baseline" package (semantic version "-post.N" release id suffix).
+      - run: |
+          # debug logging
+          echo "github.ref: ${{ github.ref }}"
+          ls dist/
+          echo "github.ref: ${{ github.ref }}"
+          # publish feature branch packages with appropriate release id
+          ${{ env.CALL_TARGET }} ${TARGET}
+
+
+  publish-feature-packages:
+    concurrency: publish
+    if: ${{ !startsWith(github.ref, 'refs/tags/') && !startsWith(github.ref, 'refs/heads/main') }}
+    needs:
+      - build-packages
+    runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [3.9]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: |
+          python3 -m venv .venv
+          ${{ env.VENV_BIN }}/pip install build_harness
+          ${{ env.VENV_BIN }}/build-harness install
+          ${{ env.VENV_BIN }}/flit install -s
+      - uses: actions/download-artifact@v2
+        with:
+          name: distribution-package-artifacts
+          path: dist
+      # Don't publish feature branch packages, just provide diagnostic logging.
       - run: |
           # debug logging
           echo "github.ref: ${{ github.ref }}"
