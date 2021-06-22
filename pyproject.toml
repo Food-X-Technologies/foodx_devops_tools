@@ -14,6 +14,7 @@ classifiers = ["License :: OSI Approved :: MIT License"]
 requires-python = ">=3.8"
 
 requires = [
+    "azure-devops == 6.0.0b4",
     "click == 7.1.2",
     "pydantic == 1.8.2",
     "ruamel.yaml == 0.17.9"
@@ -23,6 +24,7 @@ requires = [
 [tool.flit.scripts]
 release_flow = "foodx_devops_tools.release_flow:flit_entry"
 release_id = "foodx_devops_tools.release_id:flit_entry"
+validate_configuration = "foodx_devops_tools.validate_configuration:flit_entry"
 
 
 [tool.flit.metadata.requires-extra]
