@@ -7,8 +7,5 @@
 
 """Pipeline release flow coordination."""
 
-from .azure_cd import (  # noqa: F401
-    ExitState,
-    ReleaseStateError,
-    identify_release_state,
-)
+from ._group import release_flow  # noqa: F401
+from .azure_cd import ReleaseStateError, identify_release_state  # noqa: F401

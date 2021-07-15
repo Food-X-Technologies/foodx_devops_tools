@@ -6,11 +6,16 @@
 # You should have received a copy of the MIT License along with
 # foodx_devops_tools. If not, see <https://opensource.org/licenses/MIT>.
 
-"""Release flow utility."""
+"""Axure CD release flow utility."""
 
 import enum
 import re
+import sys
 
+import click
+
+from .._exceptions import GitReferenceError
+from ..console import report_failure
 from ..patterns import BRANCH_PREFIX, SEMANTIC_VERSION_GITREF, TAG_PREFIX
 from ..release import ReleaseState
 
@@ -65,3 +70,29 @@ def identify_release_state(git_ref: str) -> ReleaseState:
         )
 
     return state_found
+
+
+@click.command()
+@click.argument(
+    "git_reference",
+    type=str,
+)
+def azure_subcommand(git_reference: str) -> None:
+    """
+    Extract Azure deployment release state from git reference.
+
+    Report release state to stdout.
+    """
+    try:
+        state = identify_release_state(git_reference)
+
+        click.echo("{0}".format(state.name), nl=False)
+    except GitReferenceError as e:
+        report_failure(str(e))
+        sys.exit(ExitState.MISSING_GITREF)
+    except ReleaseStateError as e:
+        report_failure(str(e))
+        sys.exit(ExitState.GITREF_PARSE_FAILURE)
+    except Exception as e:
+        report_failure("unknown error; {0}".format(str(e)))
+        sys.exit(ExitState.UNKNOWN)
