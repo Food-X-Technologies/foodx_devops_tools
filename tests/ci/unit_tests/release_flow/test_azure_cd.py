@@ -5,82 +5,23 @@
 # You should have received a copy of the MIT License along with
 # foodx_devops_tools. If not, see <https://opensource.org/licenses/MIT>.
 
-import pytest
-
-from foodx_devops_tools.release_flow import (
-    ReleaseStateError,
-    identify_release_state,
-)
-from foodx_devops_tools.release_flow.azure_cd import ReleaseState
+from foodx_devops_tools.release_flow_entry import release_flow
+from tests.ci.support.click_runner import click_runner  # noqa: F401
 
 
-class TestIdentifyReleaseState:
-    def test_clean_feature(self):
-        expected_state = ReleaseState.ftr
+class TestReleaseFlow:
+    def test_release_state(self, click_runner):
+        mock_input = ["azure", "state", "refs/heads/feature/some/path"]
 
-        result = identify_release_state("refs/heads/feature/some/path")
-        assert result == expected_state
+        result = click_runner.invoke(release_flow, mock_input)
 
-        # Assume PR is only valid for feature/*->main
-        result = identify_release_state("refs/pull/1/merge")
-        assert result == expected_state
+        assert result.exit_code == 0
+        assert result.output == "ftr"
 
-    def test_clean_development(self):
-        expected_state = ReleaseState.dev
+    def test_release_id(self, click_runner):
+        mock_input = ["azure", "id", "refs/tags/3.14.159-alpha.13"]
 
-        result = identify_release_state("refs/heads/main")
-        assert result == expected_state
+        result = click_runner.invoke(release_flow, mock_input)
 
-    def test_clean_qa(self):
-        expected_state = ReleaseState.qa
-
-        result = identify_release_state("refs/tags/3.14.159-alpha.13")
-        assert result == expected_state
-
-    def test_clean_staging(self):
-        expected_state = ReleaseState.stg
-
-        result = identify_release_state("refs/tags/3.14.159-beta.13")
-        assert result == expected_state
-
-    def test_clean_production(self):
-        expected_state = ReleaseState.prd
-
-        result = identify_release_state("refs/tags/3.14.159")
-        assert result == expected_state
-
-    def test_dirty_qa(self):
-        """Only strictly semantic version alpha tags allowed."""
-        with pytest.raises(
-            ReleaseStateError,
-            match="^Unable to match git reference to any release state",
-        ):
-            identify_release_state("refs/tags/3.14.159-alpha")
-
-        with pytest.raises(
-            ReleaseStateError,
-            match="^Unable to match git reference to any release state",
-        ):
-            identify_release_state("refs/tags/3.14.159-alpha13")
-
-    def test_dirty_staging(self):
-        """Only strictly semantic version beta tags allowed."""
-        with pytest.raises(
-            ReleaseStateError,
-            match="^Unable to match git reference to any release state",
-        ):
-            identify_release_state("refs/tags/3.14.159-beta")
-
-        with pytest.raises(
-            ReleaseStateError,
-            match="^Unable to match git reference to any release state",
-        ):
-            identify_release_state("refs/tags/3.14.159-beta13")
-
-    def test_dirty_production(self):
-        """Only strictly semantic releases are allowed."""
-        with pytest.raises(
-            ReleaseStateError,
-            match="^Unable to match git reference to any release state",
-        ):
-            identify_release_state("refs/tags/3.14.159.54")
+        assert result.exit_code == 0
+        assert result.output == "3.14.159-alpha.13"

@@ -7,13 +7,10 @@
 
 import pytest
 
-from foodx_devops_tools.release_id import (
+from foodx_devops_tools.release_flow._cd_release_id import (
     ReleaseIdentityError,
-    _main,
     identify_release_id,
 )
-
-from ..support.capture import capture_stdout_stderr
 
 
 class TestIdentifyReleaseId:
@@ -88,21 +85,12 @@ class TestIdentifyReleaseId:
             identify_release_id("refs/tags/3.14.159.54")
 
     def test_unknown_state(self, mocker):
-        mocker.patch("foodx_devops_tools.release_id.identify_release_state")
+        mocker.patch(
+            "foodx_devops_tools.release_flow._cd_release_id"
+            ".identify_release_state"
+        )
         with pytest.raises(
             ReleaseIdentityError,
             match="^Unable to match git reference to any release id",
         ):
             identify_release_id("refs/tags/3.14.159.54")
-
-
-class TestMain:
-    def test_default(self):
-        mock_input = ["release_id", "refs/tags/3.14.159-alpha.13"]
-
-        with capture_stdout_stderr() as (captured_out, captured_err):
-            _main(mock_input)
-
-        captured_out.seek(0)
-
-        assert captured_out.read().strip() == "3.14.159-alpha.13"

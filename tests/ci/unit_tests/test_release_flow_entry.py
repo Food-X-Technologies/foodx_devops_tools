@@ -5,16 +5,15 @@
 # You should have received a copy of the MIT License along with
 # foodx_devops_tools. If not, see <https://opensource.org/licenses/MIT>.
 
-from foodx_devops_tools.release_flow_entry import release_flow
-
-from ..support.click_runner import click_runner  # noqa: F401
+from foodx_devops_tools.release_flow_entry import flit_entry
 
 
-class TestMain:
-    def test_default(self, click_runner):
-        mock_input = ["azure", "refs/heads/feature/some/path"]
+class TestFlitEntry:
+    def test_release_state(self, mocker):
+        mock_flow = mocker.patch(
+            "foodx_devops_tools.release_flow_entry.release_flow"
+        )
 
-        result = click_runner.invoke(release_flow, mock_input)
+        flit_entry()
 
-        assert result.exit_code == 0
-        assert result.output == "ftr"
+        mock_flow.assert_called_once_with()
