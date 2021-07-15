@@ -18,11 +18,8 @@ import click
 from .console import report_failure
 from .exceptions import GitReferenceError
 from .patterns import SEMANTIC_VERSION_GITREF, TAG_PREFIX
-from .release_flow import (
-    ReleaseState,
-    ReleaseStateError,
-    identify_release_state,
-)
+from .release import ReleaseState
+from .release_flow import ReleaseStateError, identify_release_state
 
 
 @enum.unique

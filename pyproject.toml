@@ -22,7 +22,7 @@ requires = [
 
 
 [tool.flit.scripts]
-release_flow = "foodx_devops_tools.release_flow:flit_entry"
+release_flow = "foodx_devops_tools.release_flow_entry:flit_entry"
 release_id = "foodx_devops_tools.release_id:flit_entry"
 validate_configuration = "foodx_devops_tools.validate_configuration:flit_entry"
 
