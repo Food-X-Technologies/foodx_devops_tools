@@ -7,14 +7,11 @@
 
 import pytest
 
-from foodx_devops_tools.release_flow import (
+from foodx_devops_tools.release_flow._cd_release_state import (
     ReleaseState,
     ReleaseStateError,
-    _main,
     identify_release_state,
 )
-
-from ..support.capture import capture_stdout_stderr
 
 
 class TestIdentifyReleaseState:
@@ -87,15 +84,3 @@ class TestIdentifyReleaseState:
             match="^Unable to match git reference to any release state",
         ):
             identify_release_state("refs/tags/3.14.159.54")
-
-
-class TestMain:
-    def test_default(self):
-        mock_input = ["release_flow", "refs/heads/feature/some/path"]
-
-        with capture_stdout_stderr() as (captured_out, captured_err):
-            _main(mock_input)
-
-        captured_out.seek(0)
-
-        assert captured_out.read().strip() == "ftr"

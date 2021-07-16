@@ -1,0 +1,19 @@
+# Copyright (c) 2021 Food-X Technologies
+#
+# This file is part of foodx_devops_tools.
+#
+# You should have received a copy of the MIT License along with
+# foodx_devops_tools. If not, see <https://opensource.org/licenses/MIT>.
+
+from foodx_devops_tools.release_flow_entry import flit_entry
+
+
+class TestFlitEntry:
+    def test_release_state(self, mocker):
+        mock_flow = mocker.patch(
+            "foodx_devops_tools.release_flow_entry.release_flow"
+        )
+
+        flit_entry()
+
+        mock_flow.assert_called_once_with()
