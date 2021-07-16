@@ -9,6 +9,7 @@ import click
 
 from .._version import acquire_version
 from .azure_cd import azure_subcommand
+from .npm_ci import npm_subcommand
 
 
 @click.group()
@@ -18,3 +19,4 @@ def release_flow() -> None:
 
 
 release_flow.add_command(azure_subcommand, name="azure")
+release_flow.add_command(npm_subcommand, name="npm")
