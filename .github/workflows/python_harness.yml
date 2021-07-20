@@ -250,7 +250,9 @@ jobs:
   unit-tests-coverage-check:
     env:
       # Don't forget to update the coverage threshold in .pre-commit-config.yaml
-      TARGET: unit-test --check 90
+      # Setting CI threshold to 89% because GHA calculates a different coverage result than locally (94%);
+      # the problem seems to be with foodx_devops_tools/pull/puffignore.py (32% coverage in GHA, 100% coverage locally).
+      TARGET: unit-test --check 89
     needs:
       - install-dependencies
     runs-on: ubuntu-20.04
