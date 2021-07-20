@@ -215,7 +215,39 @@ jobs:
 #      - run: ${{ env.CALL_TARGET }} ${TARGET}
 
 
-  unit-tests-coverage:
+  unit-tests-coverage-report:
+    env:
+      # Don't forget to update the coverage threshold in .pre-commit-config.yaml
+      TARGET: unit-test --coverage-html
+    needs:
+      - install-dependencies
+    runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [3.8, 3.9]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - uses: actions/cache@v2
+        with:
+          path: ${{ env.PIP_CACHE_DIR }}
+          key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles(env.CACHE_HASH_PATH) }}
+      - uses: actions/cache@v2
+        with:
+          path: ${{ env.VENV_DIR }}
+          key: ${{ runner.os }}-venv-${{ matrix.python-version }}-${{ hashFiles(env.CACHE_HASH_PATH) }}
+      - run: ${{ env.CALL_TARGET }} ${TARGET}
+      - uses: actions/upload-artifact@v2
+        with:
+          name: coverage-report-artifacts-${{ matrix.python-version }}
+          path: dist/coverage_report
+
+
+  unit-tests-coverage-check:
     env:
       # Don't forget to update the coverage threshold in .pre-commit-config.yaml
       TARGET: unit-test --check 90
