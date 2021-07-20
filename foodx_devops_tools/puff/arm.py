@@ -110,7 +110,9 @@ async def _save_parameter_file(
                 "value": value,
             }
     async with aiofiles.open(target_path, mode="w") as f:
-        await f.write(json.dumps(generated_parameters))
+        await f.write(
+            json.dumps(generated_parameters, sort_keys=True, indent=2)
+        )
 
 
 async def _delete_parameter_file(
@@ -243,12 +245,13 @@ async def do_arm_template_parameter_action(
     """
     target_path = puff_file_path.parent
 
+    log.info("loading, {0}".format(puff_file_path))
     yaml_data = await load_yaml(puff_file_path)
     try:
         # for now, just use the pydantic model to validate the YAML data.
         PuffParameterModel.parse_obj(yaml_data)
     except pydantic.ValidationError as e:
-        log.error(str(e))
+        log.error("{0}, {1}".format(puff_file_path, str(e)))
         raise ArmTemplateError("Puff parameter validation failed") from e
 
     file_name = pathlib.Path(puff_file_path.stem).name
