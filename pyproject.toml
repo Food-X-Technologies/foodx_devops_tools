@@ -60,8 +60,6 @@ branch = true
 
 
 [tool.coverage.report]
-show_missing = true
-precision = 0
 exclude_lines = [
     "except ImportError",
     "raise NotImplementedError",
@@ -70,3 +68,8 @@ exclude_lines = [
     "abstractmethod",
     "warnings.warn",
 ]
+omit = [
+    "*exceptions*",
+]
+precision = 0
+show_missing = true
