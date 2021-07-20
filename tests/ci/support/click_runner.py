@@ -7,6 +7,7 @@
 
 import contextlib
 import os
+import pathlib
 
 import pytest
 from click.testing import CliRunner
@@ -22,4 +23,4 @@ def isolated_filesystem(expected_dir, mock_runner):
     with mock_runner.isolated_filesystem():
         os.makedirs(expected_dir)
 
-        yield expected_dir
+        yield pathlib.Path(expected_dir).absolute()

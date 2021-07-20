@@ -14,8 +14,11 @@ classifiers = ["License :: OSI Approved :: MIT License"]
 requires-python = ">=3.8"
 
 requires = [
+    "aiofiles == 0.7.0",
     "azure-devops == 6.0.0b4",
     "click == 7.1.2",
+    "click-log == 0.3.2",
+    "deepmerge == 0.3.0",
     "pydantic == 1.8.2",
     "ruamel.yaml == 0.17.9"
 ]
@@ -60,8 +63,6 @@ branch = true
 
 
 [tool.coverage.report]
-show_missing = true
-precision = 0
 exclude_lines = [
     "except ImportError",
     "raise NotImplementedError",
@@ -70,3 +71,11 @@ exclude_lines = [
     "abstractmethod",
     "warnings.warn",
 ]
+omit = [
+    "*exceptions*",
+    "*pytest_cache*",
+    ".venv/*",
+    "dist/*",
+]
+precision = 0
+show_missing = true
