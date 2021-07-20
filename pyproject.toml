@@ -73,6 +73,9 @@ exclude_lines = [
 ]
 omit = [
     "*exceptions*",
+    "*pytest_cache*",
+    ".venv/*",
+    "dist/*",
 ]
 precision = 0
 show_missing = true
