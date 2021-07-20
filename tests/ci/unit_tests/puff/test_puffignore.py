@@ -25,17 +25,18 @@ MOCK_PUFFIGNORE_CONTENT = """
 
 @contextlib.contextmanager
 def mock_puffignore(content: str):
-    with simple_isolated_filesystem():
-        with open(".puffignore", mode="w") as f:
+    with simple_isolated_filesystem() as dir:
+        puffignore_path = dir / ".puffignore"
+        with open(puffignore_path, mode="w") as f:
             f.write(content)
 
-        yield
+        yield puffignore_path
 
 
 @pytest.mark.asyncio
 async def test_whitespace_dropped():
-    with mock_puffignore(MOCK_PUFFIGNORE_CONTENT):
-        result = await load_puffignore()
+    with mock_puffignore(MOCK_PUFFIGNORE_CONTENT) as puffignore_path:
+        result = await load_puffignore(puffignore_path)
 
     expected_result = BASE_IGNORE + [
         "**/some-file.yml",
@@ -54,8 +55,8 @@ async def test_appended_wildcard():
         """
 **/ignore_another_dir/
 """
-    ):
-        result = await load_puffignore()
+    ) as puffignore_path:
+        result = await load_puffignore(puffignore_path)
 
     expected_result = BASE_IGNORE + [
         "**/ignore_another_dir/*",
@@ -66,8 +67,8 @@ async def test_appended_wildcard():
 
 @pytest.mark.asyncio
 async def test_empty_loads_clean():
-    with mock_puffignore(""):
-        result = await load_puffignore()
+    with mock_puffignore("") as puffignore_path:
+        result = await load_puffignore(puffignore_path)
 
     expected_result = BASE_IGNORE
 
@@ -76,8 +77,8 @@ async def test_empty_loads_clean():
 
 @pytest.mark.asyncio
 async def test_functionally_empty_loads_clean():
-    with mock_puffignore("# just a comment\n"):
-        result = await load_puffignore()
+    with mock_puffignore("# just a comment\n") as puffignore_path:
+        result = await load_puffignore(puffignore_path)
 
     expected_result = BASE_IGNORE
 
@@ -86,8 +87,9 @@ async def test_functionally_empty_loads_clean():
 
 @pytest.mark.asyncio
 async def test_nonexistent_file_loads_clean():
-    with simple_isolated_filesystem():
-        result = await load_puffignore()
+    with simple_isolated_filesystem() as dir:
+        puffignore_path = dir / ".puffignore"
+        result = await load_puffignore(puffignore_path)
 
     expected_result = BASE_IGNORE
 

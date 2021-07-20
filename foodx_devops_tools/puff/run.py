@@ -51,6 +51,7 @@ ACTION_MESSAGES = {
         message=DELETING_MESSAGE, art=PUFFIN
     ),
 }
+DEFAULT_PUFFIGNORE_PATH = pathlib.Path("./.puffignore")
 
 YamlFilenames = typing.Set[pathlib.Path]
 
@@ -91,7 +92,7 @@ async def run_puff(path: pathlib.Path, is_delete_files: bool) -> None:
     click.echo(ACTION_MESSAGES[this_action].art)
     click.echo(ACTION_MESSAGES[this_action].message)
 
-    ignore_patterns = await load_puffignore()
+    ignore_patterns = await load_puffignore(DEFAULT_PUFFIGNORE_PATH)
     if path.is_dir():
         yaml_filenames = _acquire_yaml_filenames(path, ignore_patterns)
     elif path.is_file():

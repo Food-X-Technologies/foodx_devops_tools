@@ -21,7 +21,7 @@ BASE_IGNORE = ["**/node_modules/**/*"]
 IgnorePatterns = typing.List[str]
 
 
-async def load_puffignore() -> IgnorePatterns:
+async def load_puffignore(puffignore_path: pathlib.Path) -> IgnorePatterns:
     """
     Load .puffignore data from current working directory.
 
@@ -30,7 +30,7 @@ async def load_puffignore() -> IgnorePatterns:
     Returns:
         Loaded ignore patterns or empty list.
     """
-    puffignore_path = pathlib.Path("./.puffignore")
+    puffignore_path = puffignore_path
     try:
         async with aiofiles.open(str(puffignore_path), mode="r") as f:
             lines = await f.readlines()
