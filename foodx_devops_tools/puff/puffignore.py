@@ -30,7 +30,6 @@ async def load_puffignore(puffignore_path: pathlib.Path) -> IgnorePatterns:
     Returns:
         Loaded ignore patterns or empty list.
     """
-    puffignore_path = puffignore_path
     try:
         async with aiofiles.open(str(puffignore_path), mode="r") as f:
             lines = await f.readlines()
