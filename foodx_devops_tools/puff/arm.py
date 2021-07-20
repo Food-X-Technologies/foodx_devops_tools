@@ -110,7 +110,9 @@ async def _save_parameter_file(
                 "value": value,
             }
     async with aiofiles.open(target_path, mode="w") as f:
-        await f.write(json.dumps(generated_parameters))
+        await f.write(
+            json.dumps(generated_parameters, sort_keys=True, indent=2)
+        )
 
 
 async def _delete_parameter_file(
