@@ -16,6 +16,8 @@ import sys
 import click
 import click_log  # type: ignore
 
+from foodx_devops_tools._version import acquire_version
+
 from .puff import PuffError, run_puff
 
 log = logging.getLogger(__name__)
@@ -43,6 +45,7 @@ async def do_run(path: pathlib.Path, is_delete_files: bool) -> None:
 
 @click.command()
 @click_log.simple_verbosity_option(log)
+@click.version_option(version=acquire_version())
 @click.argument(
     "path",
     type=click.Path(exists=True, file_okay=True, dir_okay=True),
