@@ -69,7 +69,7 @@ def _main(path: str, delete: bool) -> None:
     try:
         asyncio.run(do_run(pathlib.Path(path), delete))
     except PuffError as e:
-        log.error(str(e))
+        click.echo(str(e), err=True)
         sys.exit(ExitState.PUFF_FAILED.value)
     except asyncio.exceptions.CancelledError:
         log.warning("Exiting due to cancellation")

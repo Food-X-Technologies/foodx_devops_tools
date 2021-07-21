@@ -14,10 +14,12 @@ import typing
 
 import aiofiles  # type: ignore
 import aiofiles.os  # type: ignore
+import click
 import pydantic
 import ruamel.yaml
 from deepmerge import always_merger  # type: ignore
 
+from ._exceptions import ArmTemplateError
 from ._header import ARMTEMPLATE_PARAMETERS_HEADER
 from ._puff_parameters import PuffParameterModel
 
@@ -26,10 +28,6 @@ log = logging.getLogger(__name__)
 YamlData = typing.Dict[str, typing.Any]
 
 BASE_PARAMETER_EXCLUDE_LABELS = ["default", "environments", "name", "services"]
-
-
-class ArmTemplateError(Exception):
-    """Problem occurred with ARM template generation."""
 
 
 async def load_yaml(path: pathlib.Path) -> YamlData:
@@ -245,15 +243,17 @@ async def do_arm_template_parameter_action(
     """
     target_path = puff_file_path.parent
 
-    log.info("loading, {0}".format(puff_file_path))
+    click.echo("loading, {0}".format(puff_file_path))
     yaml_data = await load_yaml(puff_file_path)
     try:
         # for now, just use the pydantic model to validate the YAML data.
         PuffParameterModel.parse_obj(yaml_data)
-    except pydantic.ValidationError as e:
-        log.error("{0}, {1}".format(puff_file_path, str(e)))
-        raise ArmTemplateError("Puff parameter validation failed") from e
 
-    file_name = pathlib.Path(puff_file_path.stem).name
-    merged_data = _linearize_parameters(yaml_data, file_name)
-    await _do_file_actions(is_delete_action, target_path, merged_data)
+        file_name = pathlib.Path(puff_file_path.stem).name
+        merged_data = _linearize_parameters(yaml_data, file_name)
+        await _do_file_actions(is_delete_action, target_path, merged_data)
+    except pydantic.ValidationError as e:
+        raise ArmTemplateError(
+            "Puff parameter validation failed, "
+            "{0}. {1}".format(puff_file_path, str(e))
+        ) from e
