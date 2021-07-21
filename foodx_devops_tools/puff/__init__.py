@@ -7,5 +7,5 @@
 
 """Core implementation of ``puff`` utility."""
 
-from ._exceptions import PuffError  # noqa: F401
+from ._exceptions import ArmTemplateError, PuffError  # noqa: F401
 from .run import run_puff  # noqa: F401

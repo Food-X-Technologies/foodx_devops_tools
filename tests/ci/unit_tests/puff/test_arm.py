@@ -778,6 +778,27 @@ some:
 
 class TestGenerateArmTemplateParameters:
     @pytest.mark.asyncio
+    async def test_file_logging(self, capsys, mocker):
+        puff_content = """---
+environments:
+  e1:
+    k1: e1k1
+    k2: e1k2
+"""
+        this_yaml = YAML(typ="safe")
+        data = this_yaml.load(puff_content)
+        mocker.patch("foodx_devops_tools.puff.arm.load_yaml", return_value=data)
+        mocker.patch("foodx_devops_tools.puff.arm._save_parameter_file")
+        this_directory = pathlib.Path("some/path")
+        puff_path = this_directory / "this_file.yml"
+
+        await do_arm_template_parameter_action(puff_path, False)
+
+        out = capsys.readouterr().out
+
+        assert "loading, {0}".format(str(puff_path)) in out
+
+    @pytest.mark.asyncio
     async def test_name_optional(self, mocker):
         puff_content = """---
 environments:
