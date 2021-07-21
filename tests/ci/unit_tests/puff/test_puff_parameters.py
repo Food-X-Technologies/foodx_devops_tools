@@ -58,6 +58,36 @@ class TestPuffRegions:
         assert under_test[0]["r1"] == {"n1": "v1", "n2": "v2"}
         assert under_test[1]["r2"] == {"n2": "v3"}
 
+    def test_empty_region(self):
+        under_test = PuffRegions.parse_obj(
+            [
+                {
+                    "r1": {},
+                },
+                {
+                    "r2": {"n2": "v3"},
+                },
+            ]
+        )
+
+        assert "r1" in under_test[0]
+        assert under_test[1]["r2"] == {"n2": "v3"}
+
+    def test_none_region(self):
+        under_test = PuffRegions.parse_obj(
+            [
+                {
+                    "r1": None,
+                },
+                {
+                    "r2": {"n2": "v3"},
+                },
+            ]
+        )
+
+        assert "r1" in under_test[0]
+        assert under_test[1]["r2"] == {"n2": "v3"}
+
     def test_multiple_names_raises(self):
         with pytest.raises(
             pydantic.ValidationError,

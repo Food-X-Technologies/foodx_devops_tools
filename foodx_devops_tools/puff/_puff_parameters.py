@@ -13,7 +13,7 @@ import pydantic
 
 PuffRegionVariables = typing.Dict[str, typing.Any]
 
-PuffRegionValues = typing.Dict[str, PuffRegionVariables]
+PuffRegionValues = typing.Dict[str, typing.Optional[PuffRegionVariables]]
 
 T = typing.TypeVar("T", bound="PuffRegion")
 
@@ -27,7 +27,7 @@ class PuffRegion(pydantic.BaseModel):
 
     __root__: PuffRegionValues
 
-    def __getitem__(self: T, item: str) -> PuffRegionVariables:
+    def __getitem__(self: T, item: str) -> typing.Optional[PuffRegionVariables]:
         """Get region parameters."""
         return self.__root__[item]
 
