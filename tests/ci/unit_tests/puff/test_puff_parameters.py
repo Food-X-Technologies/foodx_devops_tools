@@ -146,6 +146,44 @@ class TestPuffEnvironments:
         assert "n1" not in under_test["e2"]
         assert "e1" in under_test
 
+    def test_empty_environment(self):
+        under_test = PuffEnvironments.parse_obj(
+            {
+                "e1": dict(),
+                "e2": {
+                    "regions": [
+                        {
+                            "r1": {
+                                "n2": "v3",
+                            },
+                        }
+                    ]
+                },
+            }
+        )
+
+        assert "n1" not in under_test["e2"]
+        assert "e1" in under_test
+
+    def test_none_environment(self):
+        under_test = PuffEnvironments.parse_obj(
+            {
+                "e1": None,
+                "e2": {
+                    "regions": [
+                        {
+                            "r1": {
+                                "n2": "v3",
+                            },
+                        }
+                    ]
+                },
+            }
+        )
+
+        assert "n1" not in under_test["e2"]
+        assert "e1" in under_test
+
 
 class TestPuffService:
     def test_clean(self):

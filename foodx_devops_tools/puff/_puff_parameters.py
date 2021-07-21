@@ -122,9 +122,9 @@ W = typing.TypeVar("W", bound="PuffEnvironments")
 class PuffEnvironments(pydantic.BaseModel):
     """Puff parameter environments data model."""
 
-    __root__: typing.Dict[str, PuffEnvironment]
+    __root__: typing.Dict[str, typing.Optional[PuffEnvironment]]
 
-    def __getitem__(self: W, item: str) -> PuffEnvironment:
+    def __getitem__(self: W, item: str) -> typing.Optional[PuffEnvironment]:
         """Get named environment entry."""
         return self.__root__[item]
 
