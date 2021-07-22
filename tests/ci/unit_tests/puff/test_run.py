@@ -135,7 +135,7 @@ class TestRunPuff:
         )
         mocker.patch("foodx_devops_tools.puff.arm._save_parameter_file")
 
-        await run_puff(mock_path, False)
+        await run_puff(mock_path, False, False)
 
         result = capsys.readouterr().out
         assert GENERATING_MESSAGE in result
@@ -156,7 +156,7 @@ class TestRunPuff:
         )
         mocker.patch("foodx_devops_tools.puff.arm._delete_parameter_file")
 
-        await run_puff(mock_path, True)
+        await run_puff(mock_path, True, False)
 
         result = capsys.readouterr().out
         assert DELETING_MESSAGE in result

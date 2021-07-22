@@ -11,7 +11,6 @@ import pathlib
 import typing
 import uuid
 
-import aiofiles
 import pytest
 from ruamel.yaml import YAML
 
@@ -28,6 +27,7 @@ from foodx_devops_tools.puff.arm import (
     do_arm_template_parameter_action,
     load_yaml,
 )
+from tests.ci.support.asyncio import mock_context  # noqa: F401
 
 
 def initialize_filesystem(file_name: pathlib.Path, file_content: str):
@@ -637,13 +637,16 @@ class TestSaveParameterFile:
         return content
 
     async def _do_create_test(
-        self, parameter_data: typing.Optional[dict], path_factory
+        self,
+        parameter_data: typing.Optional[dict],
+        path_factory,
+        is_pretty: bool = False,
     ) -> dict:
         this_directory = path_factory.mktemp(str(uuid.uuid4()))
         this_file = this_directory / "some_file"
         assert not this_file.exists()
 
-        await _save_parameter_file(this_file, parameter_data)
+        await _save_parameter_file(this_file, parameter_data, is_pretty)
 
         return self._check_basic_content(this_file)
 
@@ -654,6 +657,30 @@ class TestSaveParameterFile:
     @pytest.mark.asyncio
     async def test_empty_parameters(self, tmp_path_factory):
         await self._do_create_test(dict(), tmp_path_factory)
+
+    @pytest.mark.asyncio
+    async def test_pretty(self, mock_context, mocker, tmp_path_factory):
+        mock_context("foodx_devops_tools.puff.arm.aiofiles.open")
+        mock_dump = mocker.patch("foodx_devops_tools.puff.arm.json.dumps")
+
+        this_directory = pathlib.Path("some/path")
+        this_file = this_directory / "some_file"
+
+        await _save_parameter_file(this_file, dict(), True)
+
+        mock_dump.assert_called_once_with(mocker.ANY, sort_keys=True, indent=2)
+
+    @pytest.mark.asyncio
+    async def test_not_pretty(self, mock_context, mocker, tmp_path_factory):
+        mock_context("foodx_devops_tools.puff.arm.aiofiles.open")
+        mock_dump = mocker.patch("foodx_devops_tools.puff.arm.json.dumps")
+
+        this_directory = pathlib.Path("some/path")
+        this_file = this_directory / "some_file"
+
+        await _save_parameter_file(this_file, dict(), False)
+
+        mock_dump.assert_called_once_with(mocker.ANY)
 
 
 class TestDeleteParameterFile:
@@ -685,7 +712,7 @@ class TestDoFileActions:
         mocker.patch("foodx_devops_tools.puff.arm._save_parameter_file")
 
         await _do_file_actions(
-            True, pathlib.Path("some/path"), self.MOCK_PARAMETER_DATA
+            True, pathlib.Path("some/path"), self.MOCK_PARAMETER_DATA, False
         )
 
         mock_delete.assert_called_once()
@@ -698,7 +725,7 @@ class TestDoFileActions:
         )
 
         await _do_file_actions(
-            False, pathlib.Path("some/path"), self.MOCK_PARAMETER_DATA
+            False, pathlib.Path("some/path"), self.MOCK_PARAMETER_DATA, False
         )
 
         mock_save.assert_called_once()
@@ -792,7 +819,7 @@ environments:
         this_directory = pathlib.Path("some/path")
         puff_path = this_directory / "this_file.yml"
 
-        await do_arm_template_parameter_action(puff_path, False)
+        await do_arm_template_parameter_action(puff_path, False, False)
 
         out = capsys.readouterr().out
 
@@ -850,7 +877,9 @@ environments:
         this_directory = pathlib.Path("some/path")
         puff_path = this_directory / "this_file.yml"
 
-        await do_arm_template_parameter_action(puff_path, is_delete_action)
+        await do_arm_template_parameter_action(
+            puff_path, is_delete_action, False
+        )
 
         expected_paths = [this_directory / x for x in expected_files]
 
@@ -1075,7 +1104,7 @@ services:
         initialize_filesystem(puff_path, puff_content)
 
         with pytest.raises(ArmTemplateError):
-            await do_arm_template_parameter_action(puff_path, False)
+            await do_arm_template_parameter_action(puff_path, False, False)
 
     @pytest.mark.asyncio
     async def test_empty_services_raises(self, tmp_path_factory):
@@ -1090,4 +1119,4 @@ services:
         initialize_filesystem(puff_path, puff_content)
 
         with pytest.raises(ArmTemplateError):
-            await do_arm_template_parameter_action(puff_path, False)
+            await do_arm_template_parameter_action(puff_path, False, False)

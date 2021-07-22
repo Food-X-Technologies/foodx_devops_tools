@@ -93,6 +93,7 @@ def _remove_keys(
 async def _save_parameter_file(
     target_path: pathlib.Path,
     parameter_data: typing.Optional[dict],
+    is_pretty: bool,
 ) -> None:
     """
     Create ARM template parameter file.
@@ -100,6 +101,7 @@ async def _save_parameter_file(
     Args:
         target_path: File path to be created or deleted.
         parameter_data: Parameters to be applied to data.
+        is_pretty: Create nicely formatted JSON for humans.
     """
     generated_parameters = ARMTEMPLATE_PARAMETERS_HEADER.copy()
     if parameter_data:
@@ -107,10 +109,11 @@ async def _save_parameter_file(
             generated_parameters["parameters"][item_key] = {
                 "value": value,
             }
+    dump_arguments: dict = dict()
+    if is_pretty:
+        dump_arguments = {"sort_keys": True, "indent": 2}
     async with aiofiles.open(target_path, mode="w") as f:
-        await f.write(
-            json.dumps(generated_parameters, sort_keys=True, indent=2)
-        )
+        await f.write(json.dumps(generated_parameters, **dump_arguments))
 
 
 async def _delete_parameter_file(
@@ -127,7 +130,10 @@ async def _delete_parameter_file(
 
 
 async def _do_file_actions(
-    is_delete_action: bool, target_path: pathlib.Path, parameter_data: dict
+    is_delete_action: bool,
+    target_path: pathlib.Path,
+    parameter_data: dict,
+    is_pretty: bool,
 ) -> None:
     """
     Create or delete generated ARM template parameter files.
@@ -136,13 +142,14 @@ async def _do_file_actions(
         is_delete_action: Signal deleting or creating parameter files.
         target_path: Directory to store or delete parameter files.
         parameter_data: Data for each ARM template parameter file.
+        is_pretty: Create nicely formatted JSON for humans.
     """
     for key, values in parameter_data.items():
         this_path = target_path / ".".join([key, "json"])
         if is_delete_action:
             await _delete_parameter_file(this_path)
         else:
-            await _save_parameter_file(this_path, values)
+            await _save_parameter_file(this_path, values, is_pretty)
 
 
 def _linearize_name(base_data: dict, filename: str) -> dict:
@@ -230,6 +237,7 @@ def _linearize_parameters(yaml_data: dict, file_name: str) -> dict:
 async def do_arm_template_parameter_action(
     puff_file_path: pathlib.Path,
     is_delete_action: bool,
+    is_pretty: bool,
 ) -> None:
     """
     Generate ARM template parameter files from puff YAML file.
@@ -240,6 +248,7 @@ async def do_arm_template_parameter_action(
     Args:
         puff_file_path: Path to source YAML parameter file.
         is_delete_action: True if files should be deleted instead of created.
+        is_pretty: Create nicely formatted JSON for humans.
     """
     target_path = puff_file_path.parent
 
@@ -251,7 +260,9 @@ async def do_arm_template_parameter_action(
 
         file_name = pathlib.Path(puff_file_path.stem).name
         merged_data = _linearize_parameters(yaml_data, file_name)
-        await _do_file_actions(is_delete_action, target_path, merged_data)
+        await _do_file_actions(
+            is_delete_action, target_path, merged_data, is_pretty
+        )
     except pydantic.ValidationError as e:
         raise ArmTemplateError(
             "Puff parameter validation failed, "
