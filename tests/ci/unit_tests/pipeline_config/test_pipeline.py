@@ -50,8 +50,11 @@ MOCK_RESULTS = {
         {
             "deployments": {
                 "sys1-c1-r1": {
-                    "locations": ["l1", "l2"],
-                    "subscription": "sub1",
+                    "subscriptions": {
+                        "sub1": {
+                            "locations": [{"primary": "l1"}, {"primary": "l2"}],
+                        },
+                    },
                 },
             }
         }
@@ -143,8 +146,14 @@ class TestPipelineConfiguration:
             {
                 "deployments": {
                     "badname": {
-                        "locations": ["l1", "l2"],
-                        "subscription": "sub1",
+                        "subscriptions": {
+                            "sub1": {
+                                "locations": [
+                                    {"primary": "l1"},
+                                    {"primary": "l2"},
+                                ]
+                            },
+                        },
                     },
                 }
             }
@@ -162,8 +171,14 @@ class TestPipelineConfiguration:
             {
                 "deployments": {
                     "sys1-bad-r1": {
-                        "locations": ["l1", "l2"],
-                        "subscription": "sub1",
+                        "subscriptions": {
+                            "sub1": {
+                                "locations": [
+                                    {"primary": "l1"},
+                                    {"primary": "l2"},
+                                ]
+                            }
+                        },
                     },
                 }
             }
@@ -181,8 +196,14 @@ class TestPipelineConfiguration:
             {
                 "deployments": {
                     "s1-c1-bad": {
-                        "locations": ["l1", "l2"],
-                        "subscription": "subname",
+                        "subscriptions": {
+                            "subname": {
+                                "locations": [
+                                    {"primary": "l1"},
+                                    {"primary": "l2"},
+                                ]
+                            }
+                        },
                     },
                 }
             }
@@ -201,8 +222,14 @@ class TestPipelineConfiguration:
             {
                 "deployments": {
                     "bad-c1-r1": {
-                        "locations": ["l1", "l2"],
-                        "subscription": "subname",
+                        "subscriptions": {
+                            "subname": {
+                                "locations": [
+                                    {"primary": "l1"},
+                                    {"primary": "l2"},
+                                ]
+                            }
+                        },
                     },
                 }
             }
@@ -220,8 +247,14 @@ class TestPipelineConfiguration:
             {
                 "deployments": {
                     "sys1-c1-r1": {
-                        "locations": ["l1", "l2"],
-                        "subscription": "bad_name",
+                        "subscriptions": {
+                            "bad_name": {
+                                "locations": [
+                                    {"primary": "l1"},
+                                    {"primary": "l2"},
+                                ]
+                            }
+                        },
                     },
                 }
             }

@@ -153,13 +153,14 @@ class PipelineConfiguration(pydantic.BaseModel):
                     "Bad system in deployment tuple, {0}".format(this_system)
                 )
 
-            this_subscription = loaded_data["deployments"][
+            this_subscriptions = loaded_data["deployments"][
                 this_name
-            ].subscription
-            if this_subscription not in loaded_data["subscriptions"]:
-                raise PipelineConfigurationError(
-                    "Bad subscription in deployment, {0}".format(this_name)
-                )
+            ].subscriptions
+            for subscription_name in this_subscriptions.keys():
+                if subscription_name not in loaded_data["subscriptions"]:
+                    raise PipelineConfigurationError(
+                        "Bad subscription in deployment, {0}".format(this_name)
+                    )
 
     @staticmethod
     def _validate_subscriptions(loaded_data: dict) -> None:

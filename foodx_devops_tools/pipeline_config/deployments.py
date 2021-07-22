@@ -21,11 +21,23 @@ class DeploymentsDefinitionError(Exception):
     """Problem loading deployment definitions."""
 
 
+class DeploymentLocations(pydantic.BaseModel):
+    """Define primary and/or secondary locations for deployment."""
+
+    primary: str
+    secondary: typing.Optional[str]
+
+
+class DeploymentSubscriptionReference(pydantic.BaseModel):
+    """A subscription reference in a deployment definition."""
+
+    locations: typing.List[DeploymentLocations]
+
+
 class SingularDeployment(pydantic.BaseModel):
     """Definition of a singular deployment."""
 
-    locations: typing.List[str]
-    subscription: str
+    subscriptions: typing.Dict[str, DeploymentSubscriptionReference]
 
 
 T = typing.TypeVar("T", bound="DeploymentsDefinition")

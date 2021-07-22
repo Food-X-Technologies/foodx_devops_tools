@@ -33,10 +33,11 @@ clients:
         "good": """---
 deployments:
   sys1-c1-r1:
-    locations:
-      - loc1
-      - loc2
-    subscription: sub1
+    subscriptions: 
+      sub1:
+        locations:
+          - primary: loc1
+          - primary: loc2
 """,
         "bad": "",
     },

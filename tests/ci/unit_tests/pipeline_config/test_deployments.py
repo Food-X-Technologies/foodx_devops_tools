@@ -27,18 +27,40 @@ def test_single(apply_deployments_test):
 ---
 deployments:
   name:
-    locations:
-      - loc1
-      - loc2
-    subscription: some-name
+    subscriptions: 
+      some-name:
+        locations:
+          - primary: ploc1
+            secondary: sloc1
+          - primary: ploc2
 """
 
     result = apply_deployments_test(file_text)
 
     assert len(result.deployments) == 1
     assert "name" in result.deployments
-    assert result.deployments["name"].locations == ["loc1", "loc2"]
-    assert result.deployments["name"].subscription == "some-name"
+    assert "some-name" in result.deployments["name"].subscriptions
+    assert (
+        result.deployments["name"]
+        .subscriptions["some-name"]
+        .locations[0]
+        .primary
+        == "ploc1"
+    )
+    assert (
+        result.deployments["name"]
+        .subscriptions["some-name"]
+        .locations[0]
+        .secondary
+        == "sloc1"
+    )
+    assert (
+        result.deployments["name"]
+        .subscriptions["some-name"]
+        .locations[1]
+        .primary
+        == "ploc2"
+    )
 
 
 def test_multiple(apply_deployments_test):
@@ -46,21 +68,24 @@ def test_multiple(apply_deployments_test):
 ---
 deployments:
   name1:
-    locations:
-      - loc1
-      - loc2
-    subscription: some-name
+    subscriptions: 
+      some-name:
+        locations:
+          - primary: loc1
+          - primary: loc2
   name2:
-    locations:
-      - loc1
-      - loc3
-    subscription: some-name
+    subscriptions: 
+      some-name:
+        locations:
+          - primary: loc1
+          - primary: loc3
   name3:
-    locations:
-      - loc1
-      - loc3
-      - loc4
-    subscription: other-name
+    subscriptions: 
+      other-name:
+        locations:
+          - primary: loc1
+          - primary: loc3
+          - primary: loc4
 """
 
     result = apply_deployments_test(file_text)
@@ -70,10 +95,43 @@ deployments:
     assert "name2" in result.deployments
     assert "name3" in result.deployments
     # Assume that name2 data is correct if name1, name3 are correct.
-    assert result.deployments["name1"].locations == ["loc1", "loc2"]
-    assert result.deployments["name1"].subscription == "some-name"
-    assert result.deployments["name3"].locations == ["loc1", "loc3", "loc4"]
-    assert result.deployments["name3"].subscription == "other-name"
+    assert "some-name" in result.deployments["name1"].subscriptions
+    assert "other-name" in result.deployments["name3"].subscriptions
+    assert (
+        result.deployments["name1"]
+        .subscriptions["some-name"]
+        .locations[0]
+        .primary
+        == "loc1"
+    )
+    assert (
+        result.deployments["name1"]
+        .subscriptions["some-name"]
+        .locations[1]
+        .primary
+        == "loc2"
+    )
+    assert (
+        result.deployments["name3"]
+        .subscriptions["other-name"]
+        .locations[0]
+        .primary
+        == "loc1"
+    )
+    assert (
+        result.deployments["name3"]
+        .subscriptions["other-name"]
+        .locations[1]
+        .primary
+        == "loc3"
+    )
+    assert (
+        result.deployments["name3"]
+        .subscriptions["other-name"]
+        .locations[2]
+        .primary
+        == "loc4"
+    )
 
 
 def test_bad_field_raises(apply_deployments_test):
