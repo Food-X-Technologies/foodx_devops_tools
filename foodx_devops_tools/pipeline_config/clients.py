@@ -56,6 +56,7 @@ class ClientsDefinition(pydantic.BaseModel):
 
         for name, client_value in clients_candidate.items():
             if client_value.depends_on is not None:
+                # check that the "depends_on" target exists.
                 if any(
                     [
                         x not in clients_candidate

@@ -17,6 +17,11 @@ from .deployments import (  # noqa: F401
     DeploymentsDefinitionError,
     load_deployments,
 )
+from .modules import (  # noqa: F401
+    ModuleDefinitionsError,
+    ModulesDefinition,
+    load_modules,
+)
 from .pipeline import (  # noqa: F401
     PipelineConfiguration,
     PipelineConfigurationError,
