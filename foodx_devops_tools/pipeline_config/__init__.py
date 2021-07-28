@@ -17,10 +17,10 @@ from .deployments import (  # noqa: F401
     DeploymentsDefinitionError,
     load_deployments,
 )
-from .modules import (  # noqa: F401
-    ModuleDefinitionsError,
-    ModulesDefinition,
-    load_modules,
+from .frames import (  # noqa: F401
+    FrameDefinitionsError,
+    FramesDefinition,
+    load_frames,
 )
 from .pipeline import (  # noqa: F401
     PipelineConfiguration,
