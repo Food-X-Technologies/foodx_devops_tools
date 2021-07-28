@@ -41,7 +41,8 @@ repos:
 
   - repo: local
     hooks:
-      - entry: build-harness unit-test
+      # have to avoid executing manual tests here
+      - entry: build-harness unit-test --test-dir tests/ci
         id: unit-test
         language: system
         name: Unit tests run clean
@@ -49,8 +50,9 @@ repos:
 
   - repo: local
     hooks:
+      # have to avoid executing manual tests here
       # Don't forget to update the coverage threshold in .gitlab-ci.yml
-      - entry: build-harness unit-test --check 90
+      - entry: build-harness unit-test --test-dir tests/ci --check 90
         id: unit-test-check
         language: system
         name: Coverage analysis passes

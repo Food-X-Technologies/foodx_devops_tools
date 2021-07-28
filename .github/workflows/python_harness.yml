@@ -162,7 +162,8 @@ jobs:
 
   unit-tests:
     env:
-      TARGET: unit-test
+      # have to avoid the new manual directory in CI pipeline
+      TARGET: unit-test --test-dir tests/ci
     needs:
       - install-dependencies
     runs-on: ubuntu-20.04
@@ -218,7 +219,8 @@ jobs:
   unit-tests-coverage-report:
     env:
       # Don't forget to update the coverage threshold in .pre-commit-config.yaml
-      TARGET: unit-test --coverage-html
+      # have to avoid the new manual directory in CI pipeline
+      TARGET: unit-test --test-dir tests/ci --coverage-html
     needs:
       - install-dependencies
     runs-on: ubuntu-20.04
@@ -252,7 +254,8 @@ jobs:
       # Don't forget to update the coverage threshold in .pre-commit-config.yaml
       # Setting CI threshold to 89% because GHA calculates a different coverage result than locally (94%);
       # the problem seems to be with foodx_devops_tools/pull/puffignore.py (32% coverage in GHA, 100% coverage locally).
-      TARGET: unit-test --check 89
+      # have to avoid the new manual directory in CI pipeline
+      TARGET: unit-test --test-dir tests/ci --check 89
     needs:
       - install-dependencies
     runs-on: ubuntu-20.04
