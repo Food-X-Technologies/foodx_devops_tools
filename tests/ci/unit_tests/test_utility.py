@@ -34,6 +34,7 @@ class TestRunAsyncCommand:
     async def test_simple(self, mocker):
         expected_output = CapturedStreams(out="123", error="no errors")
         async_mock = AsyncMock()
+        async_mock.return_value.returncode = 0
         async_mock.return_value.communicate.return_value = (
             expected_output.out.encode(),
             expected_output.error.encode(),

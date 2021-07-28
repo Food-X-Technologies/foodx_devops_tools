@@ -21,6 +21,10 @@ log = logging.getLogger(__name__)
 CommandArgs = typing.List[str]
 
 
+class CommandError(Exception):
+    """Problem completing an external command run."""
+
+
 @dataclasses.dataclass()
 class CapturedStreams:
     """Encapsulate output and error streams captured from a process."""
@@ -68,4 +72,10 @@ async def run_async_command(command: CommandArgs) -> CapturedStreams:
     result = CapturedStreams(
         out=stdout.decode("utf-8"), error=stderr.decode("utf-8")
     )
+    if this_process.returncode != 0:
+        raise CommandError(
+            "External command run did not exit cleanly, {0}".format(
+                result.error
+            )
+        )
     return result

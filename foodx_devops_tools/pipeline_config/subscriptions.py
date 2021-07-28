@@ -24,8 +24,11 @@ class SubscriptionsDefinitionError(Exception):
 class SingularSubscriptionDefinition(pydantic.BaseModel):
     """Single subscription definition."""
 
+    # Azure DevOps sevice connection name mapping to this subscription
     ado_service_connection: typing.Optional[str]
+    # Azure subscription id
     azure_id: str
+    # tenant name this subscription maps to
     tenant: str
 
 
