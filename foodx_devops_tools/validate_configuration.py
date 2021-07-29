@@ -71,5 +71,5 @@ def _main(configuration_dir: str) -> None:
 
 
 def flit_entry() -> None:
-    """Flit script entry function for ``validate_configuration`` utility."""
+    """Flit script entry function for ``validate-configuration`` utility."""
     _main()

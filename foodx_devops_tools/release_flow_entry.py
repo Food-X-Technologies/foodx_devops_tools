@@ -12,5 +12,5 @@ from .release_flow import release_flow
 
 
 def flit_entry() -> None:
-    """Flit script entry function for release_flow utility."""
+    """Flit script entry function for ``foodx-release-flow`` utility."""
     release_flow()
