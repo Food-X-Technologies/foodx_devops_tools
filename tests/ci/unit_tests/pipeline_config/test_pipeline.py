@@ -13,6 +13,7 @@ import pytest
 from foodx_devops_tools.pipeline_config import (
     ClientsDefinition,
     DeploymentsDefinition,
+    FramesDefinition,
     PipelineConfiguration,
     PipelineConfigurationError,
     PipelineConfigurationPaths,
@@ -59,6 +60,23 @@ MOCK_RESULTS = {
             }
         }
     ),
+    "frames": FramesDefinition.parse_obj(
+        {
+            "frames": {
+                "f1": {
+                    "applications": {
+                        "a1": [
+                            {
+                                "resource_group": "a1_group",
+                                "mode": "Incremental",
+                            },
+                        ]
+                    },
+                    "folder": "some/path",
+                },
+            },
+        },
+    ),
     "subscriptions": SubscriptionsDefinition.parse_obj(
         {
             "subscriptions": {
@@ -93,6 +111,10 @@ def mock_loads(mocker):
             return_value=mock_data["deployments"],
         )
         mocker.patch(
+            "foodx_devops_tools.pipeline_config.pipeline.load_frames",
+            return_value=mock_data["frames"],
+        )
+        mocker.patch(
             "foodx_devops_tools.pipeline_config.pipeline.load_subscriptions",
             return_value=mock_data["subscriptions"],
         )
@@ -112,6 +134,7 @@ MOCK_PATHS = PipelineConfigurationPaths(
     clients=pathlib.Path("client/path"),
     release_states=pathlib.Path("release_state/path"),
     deployments=pathlib.Path("deployment/path"),
+    frames=pathlib.Path("frame/path"),
     subscriptions=pathlib.Path("subscription/path"),
     systems=pathlib.Path("system/path"),
     tenants=pathlib.Path("tenant/path"),

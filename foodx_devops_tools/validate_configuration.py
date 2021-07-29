@@ -24,6 +24,7 @@ from .pipeline_config import (
 DEFAULT_CONFIGURATION_FILES = {
     "clients": "clients.yml",
     "deployments": "deployments.yml",
+    "frames": "frames.yml",
     "release_states": "release_states.yml",
     "subscriptions": "subscriptions.yml",
     "systems": "systems.yml",
