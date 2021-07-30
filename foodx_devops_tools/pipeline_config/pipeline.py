@@ -18,7 +18,8 @@ from .clients import ValueType as ClientsData
 from .clients import load_clients
 from .deployments import ValueType as DeploymentsData
 from .deployments import load_deployments
-from .frames import FramesDefinition, load_frames
+from .frames import ValueType as FramesData
+from .frames import load_frames
 from .release_states import ValueType as ReleaseStatesData
 from .release_states import load_release_states
 from .subscriptions import ValueType as SubscriptionsData
@@ -63,7 +64,7 @@ class PipelineConfiguration(pydantic.BaseModel):
     clients: ClientsData
     release_states: ReleaseStatesData
     deployments: DeploymentsData
-    frames: FramesDefinition
+    frames: FramesData
     subscriptions: SubscriptionsData
     systems: SystemsData
     tenants: TenantsData
@@ -90,7 +91,7 @@ class PipelineConfiguration(pydantic.BaseModel):
             "clients": client_config.clients,
             "release_states": release_state_config.release_states,
             "deployments": deployment_config.deployments,
-            "frames": frames_config,
+            "frames": frames_config.frames,
             "subscriptions": subscription_config.subscriptions,
             "systems": system_config.systems,
             "tenants": tenant_config.tenants,

@@ -9,7 +9,7 @@ from foodx_devops_tools.release_flow_entry import flit_entry
 
 
 class TestFlitEntry:
-    def test_release_state(self, mocker):
+    def test_clean(self, mocker):
         mock_flow = mocker.patch(
             "foodx_devops_tools.release_flow_entry.release_flow"
         )

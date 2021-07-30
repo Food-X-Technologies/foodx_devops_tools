@@ -34,11 +34,23 @@ class ExitState(enum.Enum):
 
 
 def _do_release_state_actions(git_reference: str) -> None:
+    """
+    Process git reference to infer release state.
+
+    Args:
+        git_reference: Git reference to process.
+    """
     state = identify_release_state(git_reference)
     click.echo("{0}".format(state.name), nl=False)
 
 
 def _do_release_id_actions(git_reference: str) -> None:
+    """
+    Process git reference to infer release id.
+
+    Args:
+        git_reference: Git reference to process.
+    """
     this_id = identify_release_id(git_reference)
     click.echo("{0}".format(this_id), nl=False)
 

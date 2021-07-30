@@ -69,15 +69,10 @@ class SingularFrameDefinition(pydantic.BaseModel):
     triggers: typing.Optional[TriggersDefinition]
 
 
-ValueType = typing.Dict[str, SingularFrameDefinition]
+class FramesTriggersDefinition(pydantic.BaseModel):
+    """Definition of frames and triggers."""
 
-T = typing.TypeVar("T", bound="FramesDefinition")
-
-
-class FramesDefinition(pydantic.BaseModel):
-    """Definition of frames."""
-
-    frames: ValueType
+    frames: typing.Dict[str, SingularFrameDefinition]
     triggers: typing.Optional[TriggersDefinition]
 
     @pydantic.validator(ENTITY_NAME)
@@ -123,6 +118,17 @@ class FramesDefinition(pydantic.BaseModel):
                 raise ValueError(message)
 
         return frames_candidate
+
+
+ValueType = FramesTriggersDefinition
+
+T = typing.TypeVar("T", bound="FramesDefinition")
+
+
+class FramesDefinition(pydantic.BaseModel):
+    """Definition of frames."""
+
+    frames: ValueType
 
 
 def load_frames(file_path: pathlib.Path) -> FramesDefinition:
