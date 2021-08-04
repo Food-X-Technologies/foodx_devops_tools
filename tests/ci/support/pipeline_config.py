@@ -26,6 +26,18 @@ CLEAN_SPLIT = {
         "tenants",
     },
 }
+NOT_SPLIT = {
+    "client": {},
+    "system": {
+        "release_states",
+        "subscriptions",
+        "systems",
+        "tenants",
+        "clients",
+        "deployments",
+        "frames",
+    },
+}
 
 MOCK_RESULTS = {
     "clients": {

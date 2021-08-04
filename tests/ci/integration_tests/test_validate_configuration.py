@@ -15,6 +15,11 @@ from tests.ci.support.click_runner import (  # noqa: F401
     click_runner,
     isolated_filesystem,
 )
+from tests.ci.support.pipeline_config import (
+    CLEAN_SPLIT,
+    NOT_SPLIT,
+    split_directories,
+)
 
 # Due to validation checks in pipeline configuration, each "good" sample must
 # be self-consistent with all other samples.
@@ -118,11 +123,17 @@ def mock_files(
 
 
 def test_good_exits_clean(click_runner):
-    expected_dir = pathlib.Path("goodpath")
-    expected_state = "good"
-
-    with mock_files("clients.yml", expected_state, expected_dir, click_runner):
-        result = click_runner.invoke(_main, [str(expected_dir)])
+    with split_directories(CLEAN_SPLIT.copy()) as (
+        client_config,
+        system_config,
+    ):
+        result = click_runner.invoke(
+            _main,
+            [
+                str(client_config),
+                str(system_config),
+            ],
+        )
 
         if result.exit_code != 0:
             pytest.fail(result.output)

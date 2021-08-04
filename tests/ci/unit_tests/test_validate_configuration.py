@@ -14,19 +14,41 @@ from tests.ci.support.click_runner import (  # noqa: F401
     click_runner,
     isolated_filesystem,
 )
+from tests.ci.support.pipeline_config import (
+    CLEAN_SPLIT,
+    NOT_SPLIT,
+    split_directories,
+)
 
 
 class TestMain:
-    def test_default(self, click_runner, mocker):
-        expected_dir = "some/path"
+    def test_default(self, click_runner):
+        with split_directories(NOT_SPLIT.copy()) as (
+            client_config,
+            system_config,
+        ):
+            result = click_runner.invoke(
+                _main,
+                [
+                    str(client_config),
+                    str(system_config),
+                ],
+            )
 
-        mocker.patch(
-            "foodx_devops_tools.validate_configuration"
-            ".PipelineConfiguration.from_files"
-        )
+            assert result.exit_code == 0
 
-        with isolated_filesystem(expected_dir, click_runner):
-            result = click_runner.invoke(_main, [expected_dir])
+    def test_split_files(self, click_runner):
+        with split_directories(CLEAN_SPLIT.copy()) as (
+            client_config,
+            system_config,
+        ):
+            result = click_runner.invoke(
+                _main,
+                [
+                    str(client_config),
+                    str(system_config),
+                ],
+            )
 
             assert result.exit_code == 0
 
@@ -39,8 +61,17 @@ class TestMain:
             side_effect=PipelineConfigurationError("some error"),
         )
 
-        with isolated_filesystem(expected_dir, click_runner):
-            result = click_runner.invoke(_main, [expected_dir])
+        with split_directories(CLEAN_SPLIT.copy()) as (
+            client_config,
+            system_config,
+        ):
+            result = click_runner.invoke(
+                _main,
+                [
+                    str(client_config),
+                    str(system_config),
+                ],
+            )
 
             assert result.exit_code == ExitState.MISSING_GITREF.value
 
@@ -53,7 +84,16 @@ class TestMain:
             side_effect=RuntimeError("some error"),
         )
 
-        with isolated_filesystem(expected_dir, click_runner):
-            result = click_runner.invoke(_main, [expected_dir])
+        with split_directories(CLEAN_SPLIT.copy()) as (
+            client_config,
+            system_config,
+        ):
+            result = click_runner.invoke(
+                _main,
+                [
+                    str(client_config),
+                    str(system_config),
+                ],
+            )
 
             assert result.exit_code == ExitState.UNKNOWN.value
