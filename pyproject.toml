@@ -16,7 +16,7 @@ requires-python = ">=3.8"
 requires = [
     "aiofiles == 0.7.0",
     "azure-devops == 6.0.0b4",
-    "click == 7.1.2",
+    "click == 8.0.1",
     "click-log == 0.3.2",
     "deepmerge == 0.3.0",
     "pydantic == 1.8.2",
@@ -25,9 +25,10 @@ requires = [
 
 
 [tool.flit.scripts]
+deploy-me = "foodx_devops_tools.deploy_me_entry:flit_entry"
 puff = "foodx_devops_tools.puff_utility:entrypoint"
-release_flow = "foodx_devops_tools.release_flow_entry:flit_entry"
-validate_configuration = "foodx_devops_tools.validate_configuration:flit_entry"
+foodx-release-flow = "foodx_devops_tools.release_flow_entry:flit_entry"
+validate-configuration = "foodx_devops_tools.validate_configuration:flit_entry"
 
 
 [tool.flit.metadata.requires-extra]

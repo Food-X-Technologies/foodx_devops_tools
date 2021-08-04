@@ -24,6 +24,7 @@ from .pipeline_config import (
 DEFAULT_CONFIGURATION_FILES = {
     "clients": "clients.yml",
     "deployments": "deployments.yml",
+    "frames": "frames.yml",
     "release_states": "release_states.yml",
     "subscriptions": "subscriptions.yml",
     "systems": "systems.yml",
@@ -70,5 +71,5 @@ def _main(configuration_dir: str) -> None:
 
 
 def flit_entry() -> None:
-    """Flit script entry function for ``validate_configuration`` utility."""
+    """Flit script entry function for ``validate-configuration`` utility."""
     _main()

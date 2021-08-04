@@ -5,14 +5,12 @@
 # You should have received a copy of the MIT License along with
 # foodx_devops_tools. If not, see <https://opensource.org/licenses/MIT>.
 
-from foodx_devops_tools.release_flow_entry import flit_entry
+from foodx_devops_tools.deploy_me_entry import flit_entry
 
 
 class TestFlitEntry:
     def test_clean(self, mocker):
-        mock_flow = mocker.patch(
-            "foodx_devops_tools.release_flow_entry.release_flow"
-        )
+        mock_flow = mocker.patch("foodx_devops_tools.deploy_me_entry.deploy_me")
 
         flit_entry()
 

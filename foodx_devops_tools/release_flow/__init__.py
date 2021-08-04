@@ -7,5 +7,7 @@
 
 """Pipeline release flow coordination."""
 
+from ._cd_release_id import identify_release_id  # noqa: F401
+from ._cd_release_state import identify_release_state  # noqa: F401
 from ._exceptions import ReleaseStateError  # noqa: F401
 from ._group import release_flow  # noqa: F401

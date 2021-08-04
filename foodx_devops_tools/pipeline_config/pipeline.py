@@ -18,6 +18,8 @@ from .clients import ValueType as ClientsData
 from .clients import load_clients
 from .deployments import ValueType as DeploymentsData
 from .deployments import load_deployments
+from .frames import ValueType as FramesData
+from .frames import load_frames
 from .release_states import ValueType as ReleaseStatesData
 from .release_states import load_release_states
 from .subscriptions import ValueType as SubscriptionsData
@@ -47,6 +49,7 @@ class PipelineConfigurationPaths:
     clients: pathlib.Path
     release_states: pathlib.Path
     deployments: pathlib.Path
+    frames: pathlib.Path
     subscriptions: pathlib.Path
     systems: pathlib.Path
     tenants: pathlib.Path
@@ -61,6 +64,7 @@ class PipelineConfiguration(pydantic.BaseModel):
     clients: ClientsData
     release_states: ReleaseStatesData
     deployments: DeploymentsData
+    frames: FramesData
     subscriptions: SubscriptionsData
     systems: SystemsData
     tenants: TenantsData
@@ -79,6 +83,7 @@ class PipelineConfiguration(pydantic.BaseModel):
         client_config = load_clients(paths.clients)
         release_state_config = load_release_states(paths.release_states)
         deployment_config = load_deployments(paths.deployments)
+        frames_config = load_frames(paths.frames)
         subscription_config = load_subscriptions(paths.subscriptions)
         system_config = load_systems(paths.systems)
         tenant_config = load_tenants(paths.tenants)
@@ -86,19 +91,18 @@ class PipelineConfiguration(pydantic.BaseModel):
             "clients": client_config.clients,
             "release_states": release_state_config.release_states,
             "deployments": deployment_config.deployments,
+            "frames": frames_config.frames,
             "subscriptions": subscription_config.subscriptions,
             "systems": system_config.systems,
             "tenants": tenant_config.tenants,
         }
-        cls._validate_clients(kwargs)
-        cls._validate_deployments(kwargs)
-        cls._validate_subscriptions(kwargs)
         new_object = cls(**kwargs)
 
         return new_object
 
-    @staticmethod
-    def _validate_clients(loaded_data: dict) -> None:
+    @pydantic.root_validator()
+    def check_clients(cls: pydantic.BaseModel, loaded_data: dict) -> dict:
+        """Cross-check clients data with other fields."""
         for name, data in loaded_data["clients"].items():
             if not all(
                 [
@@ -114,15 +118,11 @@ class PipelineConfiguration(pydantic.BaseModel):
                 raise PipelineConfigurationError(
                     "Bad system in client, {0}".format(name)
                 )
+        return loaded_data
 
-    @staticmethod
-    def _validate_deployments(loaded_data: dict) -> None:
-        """
-        Validate loaded deployment data.
-
-        Args:
-            loaded_data: Data loaded from pipeline configuration.
-        """
+    @pydantic.root_validator()
+    def check_deployments(cls: pydantic.BaseModel, loaded_data: dict) -> dict:
+        """Validate loaded deployment data."""
         deployment_names = set(loaded_data["deployments"].keys())
         this_re = re.compile(DEPLOYMENT_NAME_REGEX)
         for this_name in deployment_names:
@@ -161,11 +161,14 @@ class PipelineConfiguration(pydantic.BaseModel):
                     raise PipelineConfigurationError(
                         "Bad subscription in deployment, {0}".format(this_name)
                     )
+        return loaded_data
 
-    @staticmethod
-    def _validate_subscriptions(loaded_data: dict) -> None:
+    @pydantic.root_validator()
+    def check_subscriptions(cls: pydantic.BaseModel, loaded_data: dict) -> dict:
+        """Validate subscriptions data."""
         for name, data in loaded_data["subscriptions"].items():
             if data.tenant not in loaded_data["tenants"]:
                 raise PipelineConfigurationError(
                     "Bad tenant in subscription, {0}".format(name)
                 )
+        return loaded_data

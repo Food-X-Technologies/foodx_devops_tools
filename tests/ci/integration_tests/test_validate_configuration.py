@@ -41,6 +41,27 @@ deployments:
 """,
         "bad": "",
     },
+    "frames.yml": {
+        "good": """---
+frames:
+  frames:
+    f1:
+      applications:
+        a1: 
+          - resource_group: a1_group
+            mode: Incremental
+        a2:
+          - resource_group: a2_group
+            mode: Complete
+            arm_file: something.json
+      folder: some/path
+      triggers:
+        paths:
+          - "some/glob/**"
+          - "*/stuff/*"
+""",
+        "bad": "",
+    },
     "release_states.yml": {
         "good": """---
 release_states:
