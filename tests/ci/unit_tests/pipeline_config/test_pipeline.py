@@ -326,3 +326,6 @@ class TestPipelineConfiguration:
             )
             # just expect no exceptions, for now.
             PipelineConfiguration.from_files(this_paths)
+
+    def test_load_dict(self):
+        under_test = PipelineConfiguration.parse_obj(MOCK_RESULTS.copy())

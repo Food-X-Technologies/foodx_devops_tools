@@ -37,7 +37,6 @@ MOCK_RESULTS = {
             "system": "sys1",
         },
         "c2": {
-            "depends_on": {"c1": "r1"},
             "release_states": [
                 "r2",
             ],

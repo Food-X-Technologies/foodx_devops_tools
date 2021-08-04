@@ -47,3 +47,8 @@ from .tenants import (  # noqa: F401
     TenantsDefinitionError,
     load_tenants,
 )
+from .views import (  # noqa: F401
+    DeploymentContext,
+    PipelineViewError,
+    ReleaseView,
+)
