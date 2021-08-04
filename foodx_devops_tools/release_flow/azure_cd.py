@@ -12,6 +12,8 @@ import sys
 
 import click
 
+from foodx_devops_tools._version import acquire_version
+
 from .._exceptions import GitReferenceError
 from ..console import report_failure
 from ._cd_release_id import identify_release_id
@@ -62,6 +64,7 @@ COMMAND_ACTIONS = {
 
 
 @click.command()
+@click.version_option(acquire_version())
 @click.argument(
     "output_type",
     type=click.Choice(COMMAND_OUTPUT_TYPES),
