@@ -43,7 +43,7 @@ def load_configuration(
         return result
     except pydantic.ValidationError as e:
         raise error_type(
-            "Error validating {0} definition".format(
-                entity_name.replace("_", " ")
+            "Error validating {0} definition, {1}".format(
+                entity_name.replace("_", " "), e
             )
         ) from e
