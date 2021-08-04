@@ -10,11 +10,10 @@ import logging
 
 import pytest
 
-from foodx_devops_tools.deploy_me import ExitState
 from foodx_devops_tools.deploy_me._main import (
-    DeploymentConfigurationError,
-    _acquire_configuration_paths,
+    ConfigurationPathsError,
     _get_sha,
+    acquire_configuration_paths,
 )
 from foodx_devops_tools.deploy_me_entry import deploy_me
 from foodx_devops_tools.pipeline_config import PipelineConfigurationPaths
@@ -28,7 +27,7 @@ class TestAcquireConfigurationPaths:
             client_config,
             system_config,
         ):
-            result = _acquire_configuration_paths(client_config, system_config)
+            result = acquire_configuration_paths(client_config, system_config)
 
             assert result == PipelineConfigurationPaths(
                 clients=client_config / "clients.yml",
@@ -60,10 +59,10 @@ class TestAcquireConfigurationPaths:
             client_config,
             system_config,
         ), pytest.raises(
-            DeploymentConfigurationError,
+            ConfigurationPathsError,
             match=r"^Duplicate files between directories",
         ):
-            _acquire_configuration_paths(client_config, system_config)
+            acquire_configuration_paths(client_config, system_config)
 
 
 @pytest.fixture()

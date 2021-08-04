@@ -13,11 +13,14 @@ import typing
 
 import click
 
+from foodx_devops_tools._paths import (
+    ConfigurationPathsError,
+    acquire_configuration_paths,
+)
 from foodx_devops_tools._version import acquire_version
 from foodx_devops_tools.pipeline_config import (
     DeploymentContext,
     PipelineConfiguration,
-    PipelineConfigurationPaths,
     ReleaseView,
 )
 from foodx_devops_tools.release_flow import (
@@ -30,51 +33,9 @@ from ._state import ExitState
 
 log = logging.getLogger(__name__)
 
-PIPELINE_CONFIG_FILES = {
-    "clients.yml",
-    "release_states.yml",
-    "deployments.yml",
-    "frames.yml",
-    "subscriptions.yml",
-    "systems.yml",
-    "tenants.yml",
-}
-
 
 class DeploymentConfigurationError(Exception):
     """Problem acquiring deployment configuration."""
-
-
-def _acquire_configuration_paths(
-    client_config: pathlib.Path, system_config: pathlib.Path
-) -> PipelineConfigurationPaths:
-    """Acquire system, pipeline configuration paths."""
-    client_files = [
-        x
-        for x in client_config.iterdir()
-        if x.is_file() and x.name in PIPELINE_CONFIG_FILES
-    ]
-    system_files = [
-        x
-        for x in system_config.iterdir()
-        if x.is_file() and x.name in PIPELINE_CONFIG_FILES
-    ]
-
-    if len(client_files + system_files) > len(PIPELINE_CONFIG_FILES):
-        # must be duplicate files between the directories
-        log.debug("client files, {0}".format(str(client_files)))
-        log.debug("system files, {0}".format(str(system_files)))
-        raise DeploymentConfigurationError(
-            "Duplicate files between "
-            "directories, {0}, {1}".format(client_config, system_config)
-        )
-
-    path_arguments = {
-        x.name.strip(".yml"): x
-        for x in set(client_files).union(set(system_files))
-    }
-    result = PipelineConfigurationPaths(**path_arguments)
-    return result
 
 
 def _get_sha() -> str:
@@ -131,7 +92,7 @@ def deploy_me(
                    and deployment configuration.
     """
     try:
-        configuration_paths = _acquire_configuration_paths(
+        configuration_paths = acquire_configuration_paths(
             client_config, system_config
         )
         this_configuration = PipelineConfiguration.from_files(
@@ -157,11 +118,11 @@ def deploy_me(
         deployment_iterations = pipeline_state.flatten()
 
         log.debug(str(deployment_iterations))
-    except DeploymentConfigurationError as e:
+    except (ConfigurationPathsError, DeploymentConfigurationError) as e:
         message = str(e)
         log.error(message)
         click.echo(message, err=True)
-        sys.exit(ExitState.BAD_DEPLOYMENT_CONFIGURATION)
+        sys.exit(ExitState.BAD_DEPLOYMENT_CONFIGURATION.value)
     except asyncio.CancelledError:
         log.debug("Async cancellation exception")
         raise
@@ -172,4 +133,4 @@ def deploy_me(
             "details), {0}".format(str(e)),
             err=True,
         )
-        sys.exit(ExitState.UNKNOWN_ERROR)
+        sys.exit(ExitState.UNKNOWN_ERROR.value)

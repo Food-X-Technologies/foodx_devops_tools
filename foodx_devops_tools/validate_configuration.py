@@ -14,22 +14,9 @@ import sys
 
 import click
 
+from ._paths import ConfigurationPathsError, acquire_configuration_paths
 from .console import report_failure, report_success
-from .pipeline_config import (
-    PipelineConfiguration,
-    PipelineConfigurationError,
-    PipelineConfigurationPaths,
-)
-
-DEFAULT_CONFIGURATION_FILES = {
-    "clients": "clients.yml",
-    "deployments": "deployments.yml",
-    "frames": "frames.yml",
-    "release_states": "release_states.yml",
-    "subscriptions": "subscriptions.yml",
-    "systems": "systems.yml",
-    "tenants": "tenants.yml",
-}
+from .pipeline_config import PipelineConfiguration, PipelineConfigurationError
 
 
 @enum.unique
@@ -39,14 +26,19 @@ class ExitState(enum.Enum):
     UNKNOWN = 100
     MISSING_GITREF = 101
     GITREF_PARSE_FAILURE = 102
+    BAD_CONFIGURATION_PATHS = 103
 
 
 @click.command()
 @click.argument(
-    "configuration_dir",
-    type=click.Path(exists=True, file_okay=False, dir_okay=True),
+    "client_config",
+    type=click.Path(dir_okay=True, file_okay=False, path_type=pathlib.Path),
 )
-def _main(configuration_dir: str) -> None:
+@click.argument(
+    "system_config",
+    type=click.Path(dir_okay=True, file_okay=False, path_type=pathlib.Path),
+)
+def _main(client_config: pathlib.Path, system_config: pathlib.Path) -> None:
     """Validate pipeline configuration files.
 
     Exits non-zero if validation fails.
@@ -55,13 +47,15 @@ def _main(configuration_dir: str) -> None:
     files are located.
     """
     try:
-        this_dir = pathlib.Path(configuration_dir)
-        paths = PipelineConfigurationPaths(
-            **{x: this_dir / y for x, y in DEFAULT_CONFIGURATION_FILES.items()}
+        configuration_paths = acquire_configuration_paths(
+            client_config, system_config
         )
-        PipelineConfiguration.from_files(paths)
+        PipelineConfiguration.from_files(configuration_paths)
 
         report_success("pipeline configuration validated")
+    except ConfigurationPathsError as e:
+        report_failure(str(e))
+        sys.exit(ExitState.BAD_CONFIGURATION_PATHS.value)
     except PipelineConfigurationError as e:
         report_failure(str(e))
         sys.exit(ExitState.MISSING_GITREF.value)
