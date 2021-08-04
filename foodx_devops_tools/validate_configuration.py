@@ -15,8 +15,20 @@ import sys
 import click
 
 from ._paths import ConfigurationPathsError, acquire_configuration_paths
+from ._version import acquire_version
 from .console import report_failure, report_success
-from .pipeline_config import PipelineConfiguration, PipelineConfigurationError
+from .pipeline_config import (
+    ClientsDefinitionError,
+    DeploymentsDefinitionError,
+    FrameDefinitionsError,
+    PipelineConfiguration,
+    PipelineConfigurationError,
+    PipelineViewError,
+    ReleaseStatesDefinitionError,
+    SubscriptionsDefinitionError,
+    SystemsDefinitionError,
+    TenantsDefinitionError,
+)
 
 
 @enum.unique
@@ -30,6 +42,7 @@ class ExitState(enum.Enum):
 
 
 @click.command()
+@click.version_option(acquire_version())
 @click.argument(
     "client_config",
     type=click.Path(dir_okay=True, file_okay=False, path_type=pathlib.Path),
@@ -59,6 +72,19 @@ def _main(client_config: pathlib.Path, system_config: pathlib.Path) -> None:
     except PipelineConfigurationError as e:
         report_failure(str(e))
         sys.exit(ExitState.MISSING_GITREF.value)
+    except (
+        PipelineConfigurationError,
+        ClientsDefinitionError,
+        DeploymentsDefinitionError,
+        FrameDefinitionsError,
+        ReleaseStatesDefinitionError,
+        SubscriptionsDefinitionError,
+        SystemsDefinitionError,
+        TenantsDefinitionError,
+        PipelineViewError,
+    ) as e:
+        report_failure("Configuration schema error, {0}".format(e))
+        sys.exit(ExitState.BAD_CONFIGURATION_PATHS.value)
     except Exception as e:
         report_failure("unknown error, {0}".format(str(e)))
         sys.exit(ExitState.UNKNOWN.value)
