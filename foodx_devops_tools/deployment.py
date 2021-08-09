@@ -10,11 +10,11 @@
 import dataclasses
 import typing
 
-T = typing.TypeVar("T", bound="DeploymentState")
+T = typing.TypeVar("T", bound="DeploymentTuple")
 
 
 @dataclasses.dataclass
-class DeploymentState:
+class DeploymentTuple:
     """System deployment tuple."""
 
     client: str
@@ -22,6 +22,6 @@ class DeploymentState:
     system: str
 
     def __str__(self: T) -> str:
-        """Convert ``DeploymentState`` object to normalized representation."""
+        """Convert ``DeploymentTuple` object to normalized representation."""
         result = "-".join([self.system, self.client, self.release_state])
         return result

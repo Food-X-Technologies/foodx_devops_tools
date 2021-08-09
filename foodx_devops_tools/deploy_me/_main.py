@@ -63,13 +63,19 @@ async def _gather_main(
     enable_validation: bool,
     deployment_iterations: typing.List[FlattenedDeployment],
 ) -> typing.List[DeploymentState]:
-    result = await asyncio.gather(
+    """Deploy each deployment iteration asynchronously."""
+    results = await asyncio.gather(
         *[
             do_deploy(configuration, x, enable_validation)
             for x in deployment_iterations
-        ]
+        ],
+        return_exceptions=False,
     )
-    return result
+
+    filtered_results = [x for x in results if isinstance(x, DeploymentState)]
+    if len(filtered_results) != len(results):
+        log.error("Some deployments may have had unexpected failures.")
+    return filtered_results
 
 
 @click.command()

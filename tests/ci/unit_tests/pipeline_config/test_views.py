@@ -9,32 +9,14 @@ import copy
 
 import pytest
 
-from foodx_devops_tools.pipeline_config import PipelineConfiguration
 from foodx_devops_tools.pipeline_config.views import (
-    DeploymentContext,
-    DeploymentState,
+    DeploymentTuple,
     DeploymentView,
     PipelineViewError,
     ReleaseView,
     SubscriptionView,
 )
-from tests.ci.support.pipeline_config import MOCK_RESULTS
-
-
-@pytest.fixture
-def mock_pipeline_config():
-    def _apply(mock_data=MOCK_RESULTS.copy()) -> PipelineConfiguration:
-        return PipelineConfiguration.parse_obj(mock_data)
-
-    return _apply
-
-
-MOCK_CONTEXT = DeploymentContext(
-    commit_sha="abc123",
-    pipeline_id="12345",
-    release_id="0.0.0-dev.3",
-    release_state="r1",
-)
+from tests.ci.support.pipeline_config import MOCK_CONTEXT
 
 
 class TestSubscriptionView:
@@ -42,7 +24,7 @@ class TestSubscriptionView:
         release_view = ReleaseView(mock_pipeline_config(), MOCK_CONTEXT)
         deployment_view = DeploymentView(
             release_view,
-            DeploymentState(client="c1", release_state="r1", system="sys1"),
+            DeploymentTuple(client="c1", release_state="r1", system="sys1"),
         )
         under_test = SubscriptionView(
             deployment_view,
@@ -53,7 +35,7 @@ class TestSubscriptionView:
         release_view = ReleaseView(mock_pipeline_config(), MOCK_CONTEXT)
         deployment_view = DeploymentView(
             release_view,
-            DeploymentState(client="c1", release_state="r1", system="sys1"),
+            DeploymentTuple(client="c1", release_state="r1", system="sys1"),
         )
         under_test = SubscriptionView(
             deployment_view,
@@ -72,7 +54,7 @@ class TestSubscriptionView:
         release_view = ReleaseView(mock_pipeline_config(), MOCK_CONTEXT)
         deployment_view = DeploymentView(
             release_view,
-            DeploymentState(client="c1", release_state="r1", system="sys1"),
+            DeploymentTuple(client="c1", release_state="r1", system="sys1"),
         )
         with pytest.raises(PipelineViewError, match=r"^Bad subscription"):
             SubscriptionView(
@@ -83,7 +65,7 @@ class TestSubscriptionView:
 
 class TestDeploymentView:
     def test_clean(self, mock_pipeline_config):
-        expected_state = DeploymentState(
+        expected_state = DeploymentTuple(
             client="c1", release_state="r2", system="sys1"
         )
         this_context = copy.deepcopy(MOCK_CONTEXT)
@@ -101,27 +83,27 @@ class TestDeploymentView:
         with pytest.raises(PipelineViewError, match=r"^Bad client"):
             DeploymentView(
                 release_view,
-                DeploymentState(
+                DeploymentTuple(
                     client="bad_client", release_state="r2", system="sys2"
                 ),
             )
         with pytest.raises(PipelineViewError, match=r"^Bad release state"):
             DeploymentView(
                 release_view,
-                DeploymentState(
+                DeploymentTuple(
                     client="c1", release_state="bad_release", system="sys2"
                 ),
             )
         with pytest.raises(PipelineViewError, match=r"^Bad system"):
             DeploymentView(
                 release_view,
-                DeploymentState(
+                DeploymentTuple(
                     client="c1", release_state="r2", system="bad_system"
                 ),
             )
 
     def test_subscriptions_clean(self, mock_pipeline_config):
-        expected_state = DeploymentState(
+        expected_state = DeploymentTuple(
             client="c1", release_state="r1", system="sys1"
         )
         this_context = copy.deepcopy(MOCK_CONTEXT)
@@ -140,7 +122,7 @@ class TestDeploymentView:
         release_view = ReleaseView(mock_pipeline_config(), this_context)
         under_test = DeploymentView(
             release_view,
-            DeploymentState(client="c2", release_state="r2", system="sys2"),
+            DeploymentTuple(client="c2", release_state="r2", system="sys2"),
         )
 
         assert not under_test.subscriptions
