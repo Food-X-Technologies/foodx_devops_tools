@@ -152,7 +152,9 @@ def assess_results(results: typing.List[DeploymentState]) -> DeploymentState:
     Returns:
         Success, if all results are success. Failed otherwise.
     """
-    if any([x.code != DeploymentState.ResultType.success for x in results]):
+    if all([x.code == DeploymentState.ResultType.success for x in results]):
+        this_result = DeploymentState(code=DeploymentState.ResultType.success)
+    else:
         messages = [
             x.message
             for x in results
@@ -161,11 +163,6 @@ def assess_results(results: typing.List[DeploymentState]) -> DeploymentState:
         this_result = DeploymentState(
             code=DeploymentState.ResultType.failed, message=str(messages)
         )
-    elif all([x.code == DeploymentState.ResultType.success for x in results]):
-        this_result = DeploymentState(code=DeploymentState.ResultType.success)
-    else:
-        # shouldn't ever get here, but just in case...
-        raise DeploymentError("Unexpected problem parsing deployment results")
 
     return this_result
 
