@@ -54,6 +54,14 @@ class DeployDataView:
     release_state: str
 
 
+@dataclasses.dataclass
+class FlattenedDeployment:
+    """Flattened deployment data for deployment concurrency."""
+
+    context: DeploymentContext
+    data: DeployDataView
+
+
 V = typing.TypeVar("V", bound="SubscriptionView")
 U = typing.TypeVar("U", bound="DeploymentView")
 T = typing.TypeVar("T", bound="ReleaseView")
@@ -208,9 +216,9 @@ class ReleaseView:
 
     def flatten(
         self: T,
-    ) -> typing.List[dict]:
+    ) -> typing.List[FlattenedDeployment]:
         """Flatten the nested hierarchy of views into a simple list."""
-        result: typing.List[dict] = list()
+        result: typing.List[FlattenedDeployment] = list()
         for this_deployment in self.deployments:
             for this_subscription in this_deployment.subscriptions:
                 for this_deploy_data in this_subscription.deploy_data:
@@ -230,10 +238,10 @@ class ReleaseView:
                         this_deployment.deployment_state.system
                     )
 
-                    this_value = {
-                        "context": updated_context,
-                        "data": this_deploy_data,
-                    }
+                    this_value = FlattenedDeployment(
+                        context=updated_context,
+                        data=this_deploy_data,
+                    )
                     result.append(this_value)
         return result
 

@@ -8,12 +8,14 @@
 """Azure resource group utilities."""
 
 import asyncio
+import contextlib
 import json
 import logging
 import pathlib
 import re
+import typing
 
-from foodx_devops_tools.utility import run_async_command
+from foodx_devops_tools.utility import CommandError, run_async_command
 
 from .model import AzureSubscriptionConfiguration
 
@@ -165,6 +167,7 @@ async def deploy(
     arm_template_path: pathlib.Path,
     arm_parameters_path: pathlib.Path,
     location: str,
+    mode: str,
     subscription: AzureSubscriptionConfiguration,
 ) -> None:
     """
@@ -178,21 +181,119 @@ async def deploy(
         arm_template_path: Path to ARM template deployment file.
         arm_parameters_path: Path to ARM template deployment parameters file.
         location: Azure location in which to deploy resource group.
+        mode: Deployment mode; "Complete" or "Incremental".
         subscription: Target subscription/tenant for deployment.
     """
-    await create(resource_group_name, location, subscription)
-    this_command = [
-        "az",
-        "deployment",
-        "group",
-        "create",
-        "--resource-group",
-        resource_group_name,
-        "--parameters",
-        "{0}".format(arm_parameters_path),
-        "--template-file",
-        str(arm_template_path),
-    ]
-    result = await run_async_command(this_command)
-    log.debug("resource group deployment stdout, {0}".format(result.out))
-    log.debug("resource group deployment stderr, {0}".format(result.error))
+    try:
+        await create(resource_group_name, location, subscription)
+        this_command = [
+            "az",
+            "deployment",
+            "group",
+            "create",
+            "--mode",
+            mode,
+            "--resource-group",
+            resource_group_name,
+            "--parameters",
+            "{0}".format(arm_parameters_path),
+            "--template-file",
+            str(arm_template_path),
+        ]
+        result = await run_async_command(this_command)
+        log.info(
+            "resource group deployment succeeded, {0} ({1})".format(
+                resource_group_name, subscription.subscription_id
+            )
+        )
+    except CommandError:
+        log.error(
+            "resource group deployment failed, {0} ({1})".format(
+                resource_group_name, subscription.subscription_id
+            )
+        )
+        log.debug("resource group deployment stdout, {0}".format(result.out))
+        log.debug("resource group deployment stderr, {0}".format(result.error))
+        raise
+
+
+@contextlib.asynccontextmanager
+async def delete_when_done(
+    resource_group_name: str,
+    subscription: AzureSubscriptionConfiguration,
+) -> typing.AsyncGenerator[None, None]:
+    """
+    Delete a resource group when this context goes out of scope.
+
+    Should probably not be used for "normal" resource group creation
+    deployments, but is likely to be useful for clean up of validation
+    deployments.
+
+    Args:
+        resource_group_name: Name of resource group to delete.
+        subscription: Subscription that "owns" the resource group.
+    """
+    yield
+
+    # don't block for deletion event.
+    await asyncio.shield(delete(resource_group_name, subscription))
+
+
+async def validate(
+    resource_group_name: str,
+    arm_template_path: pathlib.Path,
+    arm_parameters_path: pathlib.Path,
+    location: str,
+    mode: str,
+    subscription: AzureSubscriptionConfiguration,
+) -> None:
+    """
+    Validate ARM template deployment.
+
+    Args:
+        resource_group_name: Resource group name
+        arm_template_path: Path to ARM template deployment file.
+        arm_parameters_path: Path to ARM template deployment parameters file.
+        location: Azure location in which to deploy resource group.
+        mode: Deployment mode; "Complete" or "Incremental".
+        subscription: Target subscription/tenant for deployment.
+
+    """
+    async with delete_when_done(resource_group_name, subscription):
+        try:
+            await create(resource_group_name, location, subscription)
+            this_command = [
+                "az",
+                "deployment",
+                "group",
+                "validate",
+                "--mode",
+                mode,
+                "--resource-group",
+                resource_group_name,
+                "--parameters",
+                "{0}".format(arm_parameters_path),
+                "--template-file",
+                str(arm_template_path),
+            ]
+            result = await run_async_command(this_command)
+            log.info(
+                "resource group deployment validation succeeded, "
+                "{0} ({1})".format(
+                    resource_group_name, subscription.subscription_id
+                )
+            )
+        except CommandError:
+            log.error(
+                "Resource group deployment validation failed, "
+                "{0} ({1})".format(
+                    resource_group_name, subscription.subscription_id
+                )
+            )
+            log.debug(
+                "resource group validation stdout, {0}".format(result.out)
+            )
+            log.debug(
+                "resource group validation stderr, {0}".format(result.error)
+            )
+            raise

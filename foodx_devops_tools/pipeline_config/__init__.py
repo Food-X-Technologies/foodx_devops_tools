@@ -20,6 +20,7 @@ from .deployments import (  # noqa: F401
 from .frames import (  # noqa: F401
     FrameDefinitionsError,
     FramesDefinition,
+    SingularFrameDefinition,
     load_frames,
 )
 from .pipeline import (  # noqa: F401
@@ -49,6 +50,7 @@ from .tenants import (  # noqa: F401
 )
 from .views import (  # noqa: F401
     DeploymentContext,
+    FlattenedDeployment,
     PipelineViewError,
     ReleaseView,
 )

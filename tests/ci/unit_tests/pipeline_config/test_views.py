@@ -187,13 +187,13 @@ class TestReleaseView:
         result = under_test.flatten()
 
         assert len(result) == 2
-        assert {x["context"].client for x in result} == {
+        assert {x.context.client for x in result} == {
             "c1",
         }
-        assert {x["context"].system for x in result} == {
+        assert {x.context.system for x in result} == {
             "sys1",
         }
-        assert {x["data"].location_primary for x in result} == {
+        assert {x.data.location_primary for x in result} == {
             "l1",
             "l2",
         }

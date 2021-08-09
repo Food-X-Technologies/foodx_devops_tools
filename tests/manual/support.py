@@ -4,8 +4,7 @@
 #
 #  You should have received a copy of the MIT License along with
 #  foodx_devops_tools. If not, see <https://opensource.org/licenses/MIT>.
-
-
+import asyncio
 import contextlib
 import logging
 import typing
@@ -36,7 +35,9 @@ def prexisting_resource_group(user_subscription):
         yield
 
         # clean up any created resource group on context close
-        await delete_resource_group(group_name, user_subscription)
+        await asyncio.shield(
+            delete_resource_group(group_name, user_subscription)
+        )
 
     return _apply
 

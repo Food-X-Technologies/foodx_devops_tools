@@ -10,13 +10,16 @@ import logging
 
 import pytest
 
+from foodx_devops_tools.deploy_me._deployment import DeploymentState
 from foodx_devops_tools.deploy_me._main import (
     ConfigurationPathsError,
     _get_sha,
     acquire_configuration_paths,
+    do_deploy,
 )
 from foodx_devops_tools.deploy_me_entry import deploy_me
 from foodx_devops_tools.pipeline_config import PipelineConfigurationPaths
+from tests.ci.support.asyncio import mock_async_method  # noqa: F401
 from tests.ci.support.click_runner import click_runner  # noqa: F401
 from tests.ci.support.pipeline_config import CLEAN_SPLIT, split_directories
 
@@ -80,6 +83,17 @@ def mock_gitsha_result(mocker):
     return _apply
 
 
+@pytest.fixture()
+def mock_getsha(mocker):
+    def _apply(output: str = ""):
+        mocker.patch(
+            "foodx_devops_tools.deploy_me._main._get_sha",
+            return_value=output,
+        )
+
+    return _apply
+
+
 class TestGetSha:
     def test_clean(self, mock_gitsha_result):
         mock_gitsha_result(0, output="abc123")
@@ -97,24 +111,130 @@ class TestDeployMe:
     class MockReleaseState(enum.Enum):
         r1 = enum.auto()
 
-    def test_default(self, click_runner, caplog, mock_gitsha_result, mocker):
-        mock_gitsha_result(0)
+    def test_default(
+        self,
+        click_runner,
+        caplog,
+        mock_async_method,
+        mock_getsha,
+        mocker,
+    ):
+        mock_input = list()
+
+        result, mock_deploy = self._run_test(
+            mock_input,
+            caplog,
+            click_runner,
+            mock_async_method,
+            mock_getsha,
+            mocker,
+        )
+
+        assert result.exit_code == 0
+        mock_deploy.assert_has_calls(
+            [
+                mocker.call(mocker.ANY, mocker.ANY, False),
+                mocker.call(mocker.ANY, mocker.ANY, False),
+            ]
+        )
+
+    def test_pipeline_id(
+        self,
+        click_runner,
+        caplog,
+        mock_async_method,
+        mock_getsha,
+        mocker,
+    ):
+        mock_input = [
+            "--pipeline-id",
+            "refs/heads/main",
+        ]
+
+        result, mock_deploy = self._run_test(
+            mock_input,
+            caplog,
+            click_runner,
+            mock_async_method,
+            mock_getsha,
+            mocker,
+        )
+
+        assert result.exit_code == 0
+        mock_deploy.assert_has_calls(
+            [
+                mocker.call(mocker.ANY, mocker.ANY, False),
+                mocker.call(mocker.ANY, mocker.ANY, False),
+            ]
+        )
+
+    def _run_test(
+        self,
+        mock_input,
+        caplog,
+        click_runner,
+        mock_async_method,
+        mock_getsha,
+        mocker,
+    ):
+        mock_getsha()
         mocker.patch(
-            "foodx_devops_tools.deploy_me._main" ".identify_release_state",
+            "foodx_devops_tools.deploy_me._main.identify_release_state",
             return_value=TestDeployMe.MockReleaseState.r1,
         )
-        with caplog.at_level(logging.DEBUG):
-            with split_directories(CLEAN_SPLIT.copy()) as (
-                client_config,
-                system_config,
-            ):
-                mock_input = [
-                    str(client_config),
-                    str(system_config),
-                    "--git-ref",
-                    "refs/heads/main",
-                ]
-
+        mock_deploy = mock_async_method(
+            "foodx_devops_tools.deploy_me._main.do_deploy",
+            return_value=DeploymentState(
+                code=DeploymentState.ResultType.success
+            ),
+        )
+        # mock_deploy = mocker.patch(
+        #     "foodx_devops_tools.deploy_me._main.asyncio.run"
+        # )
+        # mock_deploy = mock_async_method(
+        #     "foodx_devops_tools.deploy_me._main.asyncio.run"
+        # )
+        with split_directories(CLEAN_SPLIT.copy()) as (
+            client_config,
+            system_config,
+        ):
+            mock_input += [
+                str(client_config),
+                str(system_config),
+                # --git-ref is mandatory, for now
+                "--git-ref",
+                "refs/heads/main",
+            ]
+            with caplog.at_level(logging.DEBUG):
                 result = click_runner.invoke(deploy_me, mock_input)
 
-                assert result.exit_code == 0
+        return result, mock_deploy
+
+    def test_validation(
+        self,
+        caplog,
+        click_runner,
+        mock_async_method,
+        mock_getsha,
+        mocker,
+    ):
+        mock_input = [
+            "--validation",
+        ]
+
+        result, mock_deploy = self._run_test(
+            mock_input,
+            caplog,
+            click_runner,
+            mock_async_method,
+            mock_getsha,
+            mocker,
+        )
+
+        assert result.exit_code == 0
+        mock_deploy.assert_has_calls(
+            [
+                mocker.call(mocker.ANY, mocker.ANY, True),
+                mocker.call(mocker.ANY, mocker.ANY, True),
+            ]
+        )

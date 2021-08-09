@@ -59,6 +59,7 @@ class TestDeployResourceGroup:
                 template_file,
                 parameters_file,
                 expected_location,
+                "Complete",
                 user_subscription,
             )
 
@@ -99,6 +100,7 @@ class TestDeployResourceGroup:
                 template_file,
                 parameters_file,
                 expected_location,
+                "Complete",
                 user_subscription,
             )
 
