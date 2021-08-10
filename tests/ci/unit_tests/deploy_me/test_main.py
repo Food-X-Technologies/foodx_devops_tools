@@ -19,7 +19,6 @@ from foodx_devops_tools.deploy_me._main import (
 )
 from foodx_devops_tools.deploy_me_entry import deploy_me
 from foodx_devops_tools.pipeline_config import PipelineConfigurationPaths
-from tests.ci.support.asyncio import mock_async_method  # noqa: F401
 from tests.ci.support.click_runner import click_runner  # noqa: F401
 from tests.ci.support.pipeline_config import CLEAN_SPLIT, split_directories
 

@@ -103,6 +103,8 @@ async def run_puff(
     else:
         raise PuffError("Path must be file or directory, {0}".format(path))
 
+    log.debug(str(yaml_filenames))
+
     if not yaml_filenames:
         log.warning(
             "No puff parameter files found in directory, {0}".format(path)

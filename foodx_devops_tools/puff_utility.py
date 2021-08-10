@@ -32,20 +32,6 @@ class ExitState(enum.Enum):
     PUFF_FAILED = 101
 
 
-async def do_run(
-    path: pathlib.Path, is_delete_files: bool, is_pretty: bool
-) -> None:
-    """
-    Create or delete puff generated ARM template JSON files.
-
-    Args:
-        path: Root directory path to walk.
-        is_delete_files: Flag enabling deleting files instead of creating.
-        is_pretty: Create nicely formatted JSON for humans.
-    """
-    await run_puff(path, is_delete_files, is_pretty)
-
-
 @click.command()
 @click_log.simple_verbosity_option(log)
 @click.version_option(version=acquire_version())
@@ -81,7 +67,7 @@ def _main(path: str, delete: bool, pretty: bool) -> None:
     PATH Directory or file path for finding yml files to generate from.
     """
     try:
-        asyncio.run(do_run(pathlib.Path(path), delete, pretty))
+        asyncio.run(run_puff(pathlib.Path(path), delete, pretty))
     except PuffError as e:
         click.echo(str(e), err=True)
         sys.exit(ExitState.PUFF_FAILED.value)

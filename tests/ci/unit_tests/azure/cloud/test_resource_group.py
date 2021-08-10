@@ -9,15 +9,13 @@
 #
 #  You should have received a copy of the MIT License along with
 #  foodx_devops_tools. If not, see <https://opensource.org/licenses/MIT>.
+
 import asyncio
 import re
 
 import pytest
 
-from foodx_devops_tools.azure.cloud import (
-    AzureSubscriptionConfiguration,
-    deploy_resource_group,
-)
+from foodx_devops_tools.azure.cloud import AzureSubscriptionConfiguration
 from foodx_devops_tools.azure.cloud.exceptions import ResourceGroupError
 from foodx_devops_tools.azure.cloud.resource_group import AZURE_GROUP_ID_PATTERN
 from foodx_devops_tools.azure.cloud.resource_group import (
@@ -27,7 +25,6 @@ from foodx_devops_tools.azure.cloud.resource_group import (
     create as create_resource_group,
 )
 from foodx_devops_tools.utility import CapturedStreams
-from tests.ci.support.asyncio import mock_async_method  # noqa: F401
 
 MOCK_SUBSCRIPTION = AzureSubscriptionConfiguration(
     subscription_id="123-abc", tenant_id="abc-123"
