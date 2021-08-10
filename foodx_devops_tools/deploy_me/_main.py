@@ -12,6 +12,7 @@ import sys
 import typing
 
 import click
+import click_log  # type: ignore
 
 from foodx_devops_tools._paths import (
     ConfigurationPathsError,
@@ -79,6 +80,7 @@ async def _gather_main(
 
 
 @click.command()
+@click_log.simple_verbosity_option(log)
 @click.version_option(acquire_version())
 @click.argument(
     "client_config",
