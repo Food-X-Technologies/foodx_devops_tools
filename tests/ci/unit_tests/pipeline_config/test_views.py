@@ -74,7 +74,7 @@ class TestDeploymentView:
         under_test = DeploymentView(release_view, expected_state)
 
         assert under_test.release_view == release_view
-        assert under_test.deployment_state == expected_state
+        assert under_test.deployment_tuple == expected_state
 
     def test_bad_deployment_state_raises(self, mock_pipeline_config):
         this_context = copy.deepcopy(MOCK_CONTEXT)
@@ -112,7 +112,7 @@ class TestDeploymentView:
         under_test = DeploymentView(release_view, expected_state)
 
         assert under_test.release_view == release_view
-        assert under_test.deployment_state == expected_state
+        assert under_test.deployment_tuple == expected_state
 
         assert under_test.subscriptions
 
@@ -148,7 +148,7 @@ class TestReleaseView:
 
         result = under_test.deployments
 
-        result_tuples = {str(x.deployment_state) for x in result}
+        result_tuples = {str(x.deployment_tuple) for x in result}
         assert result_tuples == {
             "sys1-c1-r1",
         }
@@ -160,7 +160,7 @@ class TestReleaseView:
 
         result = under_test.deployments
 
-        result_tuples = {str(x.deployment_state) for x in result}
+        result_tuples = {str(x.deployment_tuple) for x in result}
         assert not result_tuples
 
     def test_flatten_clean(self, mock_pipeline_config):
