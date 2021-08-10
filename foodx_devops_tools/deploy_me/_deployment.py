@@ -138,8 +138,10 @@ async def deploy_frame(
         log.debug("frame deployment, {0}".format(name))
         if enable_validation:
             log.debug("validation deployment enabled")
+            await status.write(name, DeploymentState.ResultType.success)
         else:
             log.debug("deployment enabled")
+            await status.write(name, DeploymentState.ResultType.failed)
 
 
 def assess_results(results: typing.List[DeploymentState]) -> DeploymentState:
@@ -186,7 +188,7 @@ async def do_deploy(
             )
             for name, data in this_frames.frames.items()
         ],
-        return_exceptions=True,
+        return_exceptions=False,
     )
     log.debug(
         "deployment data, {0}".format(str(dataclasses.asdict(deployment_data)))

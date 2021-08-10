@@ -12,7 +12,7 @@ import dataclasses
 import logging
 import typing
 
-from ..deployment import DeploymentState
+from ..deployment import DeploymentTuple
 from .pipeline import PipelineConfiguration
 
 log = logging.getLogger(__name__)
@@ -50,8 +50,9 @@ class DeployDataView:
     azure_tenant_name: str
     deployment_state: str
     location_primary: str
-    location_secondary: typing.Optional[str]
     release_state: str
+
+    location_secondary: typing.Optional[str] = None
 
 
 @dataclasses.dataclass
@@ -127,10 +128,10 @@ class DeploymentView:
     """View of pipeline configuration conditioned by deployment state."""
 
     release_view: "ReleaseView"
-    deployment_state: DeploymentState
+    deployment_state: DeploymentTuple
 
     def __init__(
-        self: U, release_view: T, deployment_state: DeploymentState
+        self: U, release_view: T, deployment_state: DeploymentTuple
     ) -> None:
         """Construct ``DeploymentView`` object."""
         self.release_view = release_view
@@ -204,7 +205,7 @@ class ReleaseView:
         result: typing.List[DeploymentView] = list()
         for this_client in self.configuration.clients.keys():
             for this_system in self.configuration.systems:
-                this_state = DeploymentState(
+                this_state = DeploymentTuple(
                     client=this_client,
                     release_state=self.deployment_context.release_state,
                     system=this_system,

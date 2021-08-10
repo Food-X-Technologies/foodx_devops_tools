@@ -120,20 +120,21 @@ class TestAcquireYamlFilenames:
 
 class TestRunPuff:
     @pytest.mark.asyncio
-    async def test_generate_clean(self, capsys, mocker):
+    async def test_generate_clean(self, capsys, mocker, mock_async_method):
         """Empty ignore patterns run acquires all YAML files."""
         mock_path = mocker.create_autospec(pathlib.Path)
         mock_path.is_dir.return_value = False
         mock_path.is_file.return_value = True
+        mock_path.stem.return_value = "this_file"
         mocker.patch(
             "foodx_devops_tools.puff.run.load_puffignore",
             side_effect=AsyncMock(return_value=list()),
         )
-        mocker.patch(
+        mock_async_method(
             "foodx_devops_tools.puff.arm.load_yaml",
             return_value={"environments": dict()},
         )
-        mocker.patch("foodx_devops_tools.puff.arm._save_parameter_file")
+        mock_async_method("foodx_devops_tools.puff.arm._save_parameter_file")
 
         await run_puff(mock_path, False, False)
 
@@ -141,20 +142,21 @@ class TestRunPuff:
         assert GENERATING_MESSAGE in result
 
     @pytest.mark.asyncio
-    async def test_delete_clean(self, capsys, mocker):
+    async def test_delete_clean(self, capsys, mocker, mock_async_method):
         """Empty ignore patterns run acquires all YAML files."""
         mock_path = mocker.create_autospec(pathlib.Path)
         mock_path.is_dir.return_value = False
         mock_path.is_file.return_value = True
+        mock_path.stem.return_value = "this_file"
         mocker.patch(
             "foodx_devops_tools.puff.run.load_puffignore",
             side_effect=AsyncMock(return_value=list()),
         )
-        mocker.patch(
+        mock_async_method(
             "foodx_devops_tools.puff.arm.load_yaml",
             return_value={"environments": dict()},
         )
-        mocker.patch("foodx_devops_tools.puff.arm._delete_parameter_file")
+        mock_async_method("foodx_devops_tools.puff.arm._delete_parameter_file")
 
         await run_puff(mock_path, True, False)
 

@@ -5,11 +5,21 @@
 #  You should have received a copy of the MIT License along with
 #  foodx_devops_tools. If not, see <https://opensource.org/licenses/MIT>.
 
+import copy
 import pathlib
 import typing
+import unittest.mock
 
 import pydantic
 import pytest
+from asynctest import CoroutineMock
+
+from foodx_devops_tools.pipeline_config import PipelineConfiguration
+from foodx_devops_tools.pipeline_config.views import (
+    DeploymentContext,
+    ReleaseView,
+)
+from tests.ci.support.pipeline_config import MOCK_RESULTS
 
 
 @pytest.fixture
@@ -24,5 +34,51 @@ def apply_pipeline_config_test(mocker):
         result = method_under_test(mock_path)
 
         return result
+
+    return _apply
+
+
+@pytest.fixture
+def mock_pipeline_config():
+    def _apply(mock_data=MOCK_RESULTS.copy()) -> PipelineConfiguration:
+        return PipelineConfiguration.parse_obj(mock_data)
+
+    return _apply
+
+
+@pytest.fixture()
+def mock_flattened_deployment(mock_pipeline_config):
+    base_context = DeploymentContext(
+        commit_sha="abc123",
+        pipeline_id="123456",
+        release_id="3.1.4+local",
+        release_state="r1",
+    )
+    pipeline_state = ReleaseView(mock_pipeline_config(), base_context)
+    mock_flattened = pipeline_state.flatten()
+
+    return copy.deepcopy(mock_flattened)
+
+
+@pytest.fixture()
+def mock_async_method(mocker):
+    def _apply(
+        path_to_mock: str, return_value: typing.Optional[typing.Any] = None
+    ):
+        async_mock = unittest.mock.AsyncMock(return_value=return_value)
+        this_mock = mocker.patch(path_to_mock, side_effect=async_mock)
+
+        return this_mock
+
+    return _apply
+
+
+@pytest.fixture()
+def mock_context(mocker):
+    def _apply(path_to_mock: str):
+        this_mock = mocker.patch(path_to_mock)
+        this_mock.return_value.__aenter__.return_value.write = CoroutineMock()
+
+        return this_mock
 
     return _apply

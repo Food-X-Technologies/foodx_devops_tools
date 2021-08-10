@@ -7,6 +7,7 @@
 
 """Azure ARM template parameter generation."""
 
+import copy
 import json
 import logging
 import pathlib
@@ -47,7 +48,8 @@ async def load_yaml(path: pathlib.Path) -> YamlData:
         yaml = ruamel.yaml.YAML(typ="safe")
         async with aiofiles.open(str(path), mode="r") as f:
             content = await f.read()
-            yaml_data = yaml.load(content)
+        yaml_data = yaml.load(content)
+        log.debug("{0}, {1}".format(path, str(yaml_data)))
 
         if not yaml_data:
             log.warning("Empty YAML file, {0}".format(str(path)))
@@ -103,12 +105,17 @@ async def _save_parameter_file(
         parameter_data: Parameters to be applied to data.
         is_pretty: Create nicely formatted JSON for humans.
     """
-    generated_parameters = ARMTEMPLATE_PARAMETERS_HEADER.copy()
+    # WARNING: The header template dict contains a dict in a field and
+    # dict.copy() is shallow so care needs to be taken to ensure all
+    # concurrent copies are unique due to Python reference-copy default.
+    generated_parameters = copy.deepcopy(ARMTEMPLATE_PARAMETERS_HEADER)
     if parameter_data:
+        parameters = dict()
         for item_key, value in parameter_data.items():
-            generated_parameters["parameters"][item_key] = {
+            parameters[item_key] = {
                 "value": value,
             }
+        generated_parameters["parameters"] = parameters
     dump_arguments: dict = dict()
     if is_pretty:
         dump_arguments = {"sort_keys": True, "indent": 2}
@@ -126,6 +133,7 @@ async def _delete_parameter_file(
         target_path: File path to be created or deleted.
     """
     if target_path.exists():
+        log.warning("deleting parameter file, {0}".format(target_path))
         await aiofiles.os.remove(target_path)
 
 

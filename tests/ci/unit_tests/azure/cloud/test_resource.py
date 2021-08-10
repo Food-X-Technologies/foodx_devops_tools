@@ -17,7 +17,6 @@ from foodx_devops_tools.azure.cloud.resource import (
     list_resources,
 )
 from foodx_devops_tools.utility import CapturedStreams
-from tests.ci.support.asyncio import mock_async_method  # noqa: F401
 
 MOCKING_PATHS = {
     "json_loads": "foodx_devops_tools.azure.cloud.resource.json.loads",
