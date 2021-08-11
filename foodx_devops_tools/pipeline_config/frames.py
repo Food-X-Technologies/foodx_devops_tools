@@ -47,11 +47,11 @@ class TriggersDefinition(pydantic.BaseModel):
 class ApplicationDeploymentDefinition(pydantic.BaseModel):
     """Application resource group deployment definition."""
 
-    resource_group: str
     mode: DeploymentMode
 
     arm_file: typing.Optional[pathlib.Path]
     puff_file: typing.Optional[pathlib.Path]
+    resource_group: typing.Optional[str]
 
 
 ApplicationDeploymentSteps = typing.List[ApplicationDeploymentDefinition]
