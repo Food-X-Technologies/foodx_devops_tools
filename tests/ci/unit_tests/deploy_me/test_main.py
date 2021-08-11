@@ -35,6 +35,7 @@ class TestAcquireConfigurationPaths:
                 clients=client_config / "clients.yml",
                 deployments=client_config / "deployments.yml",
                 frames=client_config / "frames.yml",
+                puff_map=client_config / "puff_map.yml",
                 release_states=system_config / "release_states.yml",
                 subscriptions=system_config / "subscriptions.yml",
                 systems=system_config / "systems.yml",
@@ -48,6 +49,7 @@ class TestAcquireConfigurationPaths:
                 "clients",
                 "deployments",
                 "frames",
+                "puff_map",
                 "release_states",
             },
             "system": {

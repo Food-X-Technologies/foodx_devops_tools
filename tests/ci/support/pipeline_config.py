@@ -28,6 +28,7 @@ CLEAN_SPLIT = {
         "clients",
         "deployments",
         "frames",
+        "puff_map",
     },
     "system": {
         "release_states",
@@ -46,6 +47,7 @@ NOT_SPLIT = {
         "clients",
         "deployments",
         "frames",
+        "puff_map",
     },
 }
 
@@ -89,6 +91,21 @@ MOCK_RESULTS = {
             },
         },
     },
+    "puff_map": {
+        "frames": {
+            "f1": {
+                "applications": {
+                    "a1": {
+                        "arm_parameters_files": {
+                            "r1": {
+                                "sub1": "some/puff_map/path",
+                            },
+                        },
+                    },
+                },
+            },
+        },
+    },
     "release_states": ["r1", "r2"],
     "subscriptions": {
         "sub1": {
@@ -107,6 +124,7 @@ MOCK_PATHS = PipelineConfigurationPaths(
         "release_states": pathlib.Path("release_state/path"),
         "deployments": pathlib.Path("deployment/path"),
         "frames": pathlib.Path("frame/path"),
+        "puff_map": pathlib.Path("puff_map/path"),
         "subscriptions": pathlib.Path("subscription/path"),
         "systems": pathlib.Path("system/path"),
         "tenants": pathlib.Path("tenant/path"),

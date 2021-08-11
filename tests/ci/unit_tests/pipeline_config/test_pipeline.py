@@ -17,6 +17,7 @@ from foodx_devops_tools.pipeline_config import (
     PipelineConfiguration,
     PipelineConfigurationError,
     PipelineConfigurationPaths,
+    PuffMapGeneratedFiles,
     ReleaseStatesDefinition,
     SubscriptionsDefinition,
     SystemsDefinition,
@@ -36,6 +37,7 @@ PIPELINE_CONFIG_FILES = {
     "release_states.yml",
     "deployments.yml",
     "frames.yml",
+    "puff_map.yml",
     "subscriptions.yml",
     "systems.yml",
     "tenants.yml",
@@ -61,6 +63,12 @@ def mock_loads(mocker):
             "foodx_devops_tools.pipeline_config.pipeline.load_frames",
             return_value=FramesDefinition.parse_obj(
                 {"frames": mock_data.frames}
+            ),
+        )
+        mocker.patch(
+            "foodx_devops_tools.pipeline_config.pipeline.load_puff_map",
+            return_value=PuffMapGeneratedFiles.parse_obj(
+                {"puff_map": mock_data.puff_map}
             ),
         )
         mocker.patch(

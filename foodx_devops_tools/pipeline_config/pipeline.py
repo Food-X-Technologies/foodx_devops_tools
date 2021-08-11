@@ -20,6 +20,7 @@ from .deployments import ValueType as DeploymentsData
 from .deployments import load_deployments
 from .frames import ValueType as FramesData
 from .frames import load_frames
+from .puff_map import PuffMap, load_puff_map
 from .release_states import ValueType as ReleaseStatesData
 from .release_states import load_release_states
 from .subscriptions import ValueType as SubscriptionsData
@@ -50,6 +51,7 @@ class PipelineConfigurationPaths:
     release_states: pathlib.Path
     deployments: pathlib.Path
     frames: pathlib.Path
+    puff_map: pathlib.Path
     subscriptions: pathlib.Path
     systems: pathlib.Path
     tenants: pathlib.Path
@@ -65,6 +67,7 @@ class PipelineConfiguration(pydantic.BaseModel):
     release_states: ReleaseStatesData
     deployments: DeploymentsData
     frames: FramesData
+    puff_map: PuffMap
     subscriptions: SubscriptionsData
     systems: SystemsData
     tenants: TenantsData
@@ -84,6 +87,7 @@ class PipelineConfiguration(pydantic.BaseModel):
         release_state_config = load_release_states(paths.release_states)
         deployment_config = load_deployments(paths.deployments)
         frames_config = load_frames(paths.frames)
+        puff_map_config = load_puff_map(paths.puff_map)
         subscription_config = load_subscriptions(paths.subscriptions)
         system_config = load_systems(paths.systems)
         tenant_config = load_tenants(paths.tenants)
@@ -92,6 +96,7 @@ class PipelineConfiguration(pydantic.BaseModel):
             "release_states": release_state_config.release_states,
             "deployments": deployment_config.deployments,
             "frames": frames_config.frames,
+            "puff_map": puff_map_config.puff_map,
             "subscriptions": subscription_config.subscriptions,
             "systems": system_config.systems,
             "tenants": tenant_config.tenants,
