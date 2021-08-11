@@ -18,6 +18,7 @@ from .deployments import (  # noqa: F401
     load_deployments,
 )
 from .frames import (  # noqa: F401
+    ApplicationDeploymentSteps,
     FrameDefinitionsError,
     FramesDefinition,
     SingularFrameDefinition,

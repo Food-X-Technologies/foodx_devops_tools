@@ -54,9 +54,9 @@ class ApplicationDeploymentDefinition(pydantic.BaseModel):
     puff_file: typing.Optional[pathlib.Path]
 
 
-ApplicationDeclarations = typing.Dict[
-    str, typing.List[ApplicationDeploymentDefinition]
-]
+ApplicationDeploymentSteps = typing.List[ApplicationDeploymentDefinition]
+
+ApplicationDeclarations = typing.Dict[str, ApplicationDeploymentSteps]
 
 
 class SingularFrameDefinition(pydantic.BaseModel):
@@ -69,10 +69,13 @@ class SingularFrameDefinition(pydantic.BaseModel):
     triggers: typing.Optional[TriggersDefinition]
 
 
+FrameDeclarations = typing.Dict[str, SingularFrameDefinition]
+
+
 class FramesTriggersDefinition(pydantic.BaseModel):
     """Definition of frames and triggers."""
 
-    frames: typing.Dict[str, SingularFrameDefinition]
+    frames: FrameDeclarations
     triggers: typing.Optional[TriggersDefinition]
 
     @pydantic.validator(ENTITY_NAME)
