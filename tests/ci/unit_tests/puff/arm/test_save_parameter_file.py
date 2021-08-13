@@ -95,7 +95,7 @@ class TestSaveParameterFile:
         assert content["parameters"]["p2"]["value"] == "v2"
         assert content["parameters"]["p3"]["value"] == 3.14
         assert content["parameters"]["p4"]["value"] == 10
-        assert content["parameters"]["p5"]["value"] == "false"
+        assert content["parameters"]["p5"]["value"] is False
         assert content["parameters"]["p6"]["value"] == "[1, 2, 3]"
 
     @pytest.mark.asyncio
