@@ -183,6 +183,20 @@ def _linearize_name(base_data: dict, filename: str) -> dict:
     return linearized
 
 
+def _merge_default_name(base_data: dict) -> dict:
+    this_data = copy.deepcopy(base_data)
+    for key, value in this_data.items():
+        if "default" in value:
+            new_parameters = value["default"]
+            cleaned = _remove_keys(value, ["default"])
+
+            updated = always_merger.merge(cleaned, new_parameters)
+
+            this_data[key] = updated
+
+    return this_data
+
+
 def _iterate_iterable(
     cleaned: dict, base_key: str, this_data: dict, singular: str
 ) -> dict:
@@ -259,7 +273,11 @@ def _linearize_regions(base_data: dict) -> dict:
 
 def _linearize_parameters(yaml_data: dict, file_name: str) -> dict:
     level0_merge = _linearize_name(yaml_data, file_name)
-    level1_merge = _linearize_services(level0_merge)
+
+    # a hack to enable a variable called "name" to be specified.
+    default_merged = _merge_default_name(level0_merge)
+
+    level1_merge = _linearize_services(default_merged)
     level2_merge = _linearize_environments(level1_merge)
     level3_merge = _linearize_regions(level2_merge)
 
