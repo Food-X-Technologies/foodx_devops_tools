@@ -5,7 +5,9 @@
 #  You should have received a copy of the MIT License along with
 #  foodx_devops_tools. If not, see <https://opensource.org/licenses/MIT>.
 
-from foodx_devops_tools.deployment import DeploymentTuple
+import pytest
+
+from foodx_devops_tools.deployment import DeploymentTuple, DeploymentTupleError
 
 
 def test_clean():
@@ -20,3 +22,16 @@ def test_str():
     )
 
     assert str(under_test) == "this_system-this_client-this_release"
+
+
+def test_parse_clean():
+    expected_text = "this_system-this_client-this_release"
+    under_test = DeploymentTuple.parse(expected_text)
+
+    assert str(under_test) == "this_system-this_client-this_release"
+
+
+def test_parse_raises():
+    expected_text = "this_system-NOTVALID??-this_release"
+    with pytest.raises(DeploymentTupleError):
+        under_test = DeploymentTuple.parse(expected_text)

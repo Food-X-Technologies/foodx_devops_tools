@@ -48,7 +48,7 @@ class DeployDataView:
     ado_service_connection: str
     azure_subscription_name: str
     azure_tenant_name: str
-    deployment_state: str
+    deployment_tuple: str
     location_primary: str
     release_state: str
 
@@ -92,7 +92,7 @@ class SubscriptionView:
         result: typing.List[DeployDataView] = list()
         this_deployment = (
             self.deployment_view.release_view.configuration.deployments[
-                str(self.deployment_view.deployment_state)
+                str(self.deployment_view.deployment_tuple)
             ]
         )
         for this_locations in this_deployment.subscriptions[
@@ -102,7 +102,7 @@ class SubscriptionView:
                 "ado_service_connection": base_data.ado_service_connection,
                 "azure_subscription_name": self.subscription_name,
                 "azure_tenant_name": base_data.tenant,
-                "deployment_state": str(self.deployment_view.deployment_state),
+                "deployment_tuple": str(self.deployment_view.deployment_tuple),
                 "location_primary": this_locations.primary,
                 "location_secondary": None,
                 "release_state": self.deployment_view.release_view.deployment_context.release_state,  # noqa E501
@@ -128,57 +128,57 @@ class DeploymentView:
     """View of pipeline configuration conditioned by deployment state."""
 
     release_view: "ReleaseView"
-    deployment_state: DeploymentTuple
+    deployment_tuple: DeploymentTuple
 
     def __init__(
         self: U, release_view: T, deployment_state: DeploymentTuple
     ) -> None:
         """Construct ``DeploymentView`` object."""
         self.release_view = release_view
-        self.deployment_state = deployment_state
+        self.deployment_tuple = deployment_state
 
-        self._validate_deployment_state()
+        self._validate_deployment_tuple()
 
     @property
     def subscriptions(self: U) -> typing.List[SubscriptionView]:
         """Provide the subscriptions in this deployment."""
         result: typing.List[SubscriptionView] = list()
         if (
-            str(self.deployment_state)
+            str(self.deployment_tuple)
             in self.release_view.configuration.deployments
         ):
             for (
                 this_subscription
             ) in self.release_view.configuration.deployments[
-                str(self.deployment_state)
+                str(self.deployment_tuple)
             ].subscriptions.keys():
                 result.append(SubscriptionView(self, this_subscription))
 
         return result
 
-    def _validate_deployment_state(self: U) -> None:
+    def _validate_deployment_tuple(self: U) -> None:
         if (
-            self.deployment_state.release_state
+            self.deployment_tuple.release_state
             not in self.release_view.configuration.release_states
         ):
             raise PipelineViewError(
-                "Bad release state, {0}".format(str(self.deployment_state))
+                "Bad release state, {0}".format(str(self.deployment_tuple))
             )
 
         if (
-            self.deployment_state.client
+            self.deployment_tuple.client
             not in self.release_view.configuration.clients.keys()
         ):
             raise PipelineViewError(
-                "Bad client, {0}".format(str(self.deployment_state))
+                "Bad client, {0}".format(str(self.deployment_tuple))
             )
 
         if (
-            self.deployment_state.system
+            self.deployment_tuple.system
             not in self.release_view.configuration.systems
         ):
             raise PipelineViewError(
-                "Bad system, {0}".format(str(self.deployment_state))
+                "Bad system, {0}".format(str(self.deployment_tuple))
             )
 
 
@@ -233,10 +233,10 @@ class ReleaseView:
                         ].tenant
                     )
                     updated_context.client = (
-                        this_deployment.deployment_state.client
+                        this_deployment.deployment_tuple.client
                     )
                     updated_context.system = (
-                        this_deployment.deployment_state.system
+                        this_deployment.deployment_tuple.system
                     )
 
                     this_value = FlattenedDeployment(

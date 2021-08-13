@@ -177,9 +177,7 @@ class TestConcurrentTargets:
         ]
         await asyncio.gather(
             *[
-                _save_parameter_file(
-                    x["path"], copy.deepcopy(x["expected"]["parameters"]), True
-                )
+                _save_parameter_file(x["path"], x["parameters"], True)
                 for x in data
             ]
         )
@@ -189,3 +187,4 @@ class TestConcurrentTargets:
 
         # Ensure that the parameters sub-dict is unique in each concurrent call.
         assert id(a["parameters"]) != id(b["parameters"])
+        assert a["parameters"] != b["parameters"]
