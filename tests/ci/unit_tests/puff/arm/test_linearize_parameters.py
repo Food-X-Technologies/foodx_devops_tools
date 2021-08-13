@@ -133,32 +133,37 @@ class TestLinearizeParameters:
         assert result == expected_result
 
     def test_from_yaml(self):
-        empty_region = """environments:
-          e1:
-            p1: e1p1
-            p2: e1p2
-            p3:
-              p3p4: e1p3p4
-              p3p5: e1p3p5
-            p6: e1p6
-            regions:
-              - r1:
+        mock_data = """services:
+  s1:
+    p1: s1p1
+    environments:
+      e1:
+        p1: s1e1p1
+        regions:
+          - r1:
+              p1: s1e1r1p1
+              p2:
+                reference: 
+                  keyVault:
+                    id: idv
+                  secretName: sn
         """
         expected_result = {
-            "this.stub.e1.r1": {
+            "this.stub.s1.e1.r1": {
+                "service": "s1",
                 "environment": "e1",
                 "region": "r1",
-                "p1": "e1p1",
-                "p2": "e1p2",
-                "p3": {
-                    "p3p4": "e1p3p4",
-                    "p3p5": "e1p3p5",
+                "p1": "s1e1r1p1",
+                "p2": {
+                    "reference": {
+                        "keyVault": {"id": "idv"},
+                        "secretName": "sn",
+                    },
                 },
-                "p6": "e1p6",
             },
         }
         yaml = YAML(typ="safe")
-        yaml_data = yaml.load(empty_region)
+        yaml_data = yaml.load(mock_data)
 
         result = _linearize_parameters(yaml_data, "this.stub")
 
