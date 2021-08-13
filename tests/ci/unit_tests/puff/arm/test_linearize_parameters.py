@@ -11,6 +11,48 @@ from foodx_devops_tools.puff.arm import _linearize_parameters
 
 
 class TestLinearizeParameters:
+    def test_name(self):
+        mock_base = {
+            "name": "some-name",
+            "p1": "bp1",
+            "k2": "bk2",
+            "environments": {
+                "e1": dict(),
+            },
+        }
+        expected_result = {
+            "some-name.e1": {
+                "environment": "e1",
+                "p1": "bp1",
+                "k2": "bk2",
+            },
+        }
+        result = _linearize_parameters(mock_base, "this.stub")
+
+        assert result == expected_result
+
+    def test_default_name(self):
+        mock_base = {
+            "name": "file-name",
+            "default": {"name": "name-variable-value"},
+            "p1": "bp1",
+            "k2": "bk2",
+            "environments": {
+                "e1": dict(),
+            },
+        }
+        expected_result = {
+            "file-name.e1": {
+                "environment": "e1",
+                "name": "name-variable-value",
+                "p1": "bp1",
+                "k2": "bk2",
+            },
+        }
+        result = _linearize_parameters(mock_base, "this.stub")
+
+        assert result == expected_result
+
     def test_empty_environment(self):
         mock_base = {
             "p1": "bp1",

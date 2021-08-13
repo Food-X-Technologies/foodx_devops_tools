@@ -9,7 +9,11 @@ import uuid
 
 import pytest
 
-from foodx_devops_tools.puff.arm import _delete_parameter_file, _remove_keys
+from foodx_devops_tools.puff.arm import (
+    _delete_parameter_file,
+    _merge_default_name,
+    _remove_keys,
+)
 
 from .support import initialize_filesystem
 
@@ -46,3 +50,36 @@ class TestDeleteParameterFile:
         await _delete_parameter_file(this_file)
 
         assert not this_file.exists()
+
+
+class TestMergeDefaultName:
+    def test_default_present(self):
+        mock_base = {
+            "some-name": {
+                "default": {"name": "name-variable-value"},
+                "p1": "p1",
+            }
+        }
+        expected_value = {
+            "some-name": {"p1": "p1", "name": "name-variable-value"}
+        }
+
+        result = _merge_default_name(mock_base)
+
+        assert result == expected_value
+
+    def test_default_absent(self):
+        mock_base = {
+            "some-name": {
+                "p1": "p1",
+            }
+        }
+        expected_value = {
+            "some-name": {
+                "p1": "p1",
+            }
+        }
+
+        result = _merge_default_name(mock_base)
+
+        assert result == expected_value
