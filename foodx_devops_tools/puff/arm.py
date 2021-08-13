@@ -192,9 +192,11 @@ def _iterate_iterable(
             raise RuntimeError("Invalid empty {0} name".format(singular))
 
         if iterable_data:
-            this_value = always_merger.merge(cleaned.copy(), iterable_data)
+            this_value = always_merger.merge(
+                copy.deepcopy(cleaned), iterable_data
+            )
         else:
-            this_value = cleaned.copy()
+            this_value = copy.deepcopy(cleaned)
 
         this_value[singular] = iterable_key
         linearized["{0}.{1}".format(base_key, iterable_key)] = this_value
@@ -206,9 +208,11 @@ def _linearize_iterable(base_data: dict, plural: str, singular: str) -> dict:
     linearized = dict()
     for base_key, base_value in base_data.items():
         this_data = (
-            base_value[plural].copy() if plural in base_value else dict()
+            copy.deepcopy(base_value[plural])
+            if plural in base_value
+            else dict()
         )
-        cleaned = _remove_keys(base_value, [plural])
+        cleaned = _remove_keys(copy.deepcopy(base_value), [plural])
         if this_data:
             iterated = _iterate_iterable(cleaned, base_key, this_data, singular)
             linearized.update(iterated)
@@ -236,7 +240,9 @@ def _linearize_regions(base_data: dict) -> dict:
     linearized = dict()
     for base_key, base_value in base_data.items():
         this_data = (
-            base_value[plural].copy() if plural in base_value else list()
+            copy.deepcopy(base_value[plural])
+            if plural in base_value
+            else list()
         )
         cleaned = _remove_keys(base_value, [plural])
         if this_data:
@@ -248,7 +254,7 @@ def _linearize_regions(base_data: dict) -> dict:
         else:
             linearized[base_key] = cleaned
 
-    return linearized if linearized else base_data.copy()
+    return linearized if linearized else copy.deepcopy(base_data)
 
 
 def _linearize_parameters(yaml_data: dict, file_name: str) -> dict:
