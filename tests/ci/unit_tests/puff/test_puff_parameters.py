@@ -4,6 +4,7 @@
 #
 #  You should have received a copy of the MIT License along with
 #  foodx_devops_tools. If not, see <https://opensource.org/licenses/MIT>.
+
 import pydantic
 import pytest
 
@@ -322,7 +323,7 @@ class TestPuffParameterModel:
                                             "n2": "v3",
                                         },
                                     }
-                                ]
+                                ],
                             },
                         },
                     },

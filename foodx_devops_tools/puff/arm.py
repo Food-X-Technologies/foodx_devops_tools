@@ -112,9 +112,20 @@ async def _save_parameter_file(
     if parameter_data:
         parameters = dict()
         for item_key, value in parameter_data.items():
-            parameters[item_key] = {
-                "value": value,
-            }
+            if isinstance(value, dict):
+                # assume the dict is valid ARM template parameter structure.
+                # the dict SHOULD be an ARM template parameter reference:
+                # https://docs.microsoft.com/en-us/azure/azure-resource-manager/templates/parameter-files#parameter-file
+                parameters[item_key] = value
+            elif isinstance(value, str):
+                parameters[item_key] = {
+                    "value": value,
+                }
+            else:
+                # assume the value is convertible to str
+                parameters[item_key] = {
+                    "value": str(value),
+                }
         generated_parameters["parameters"] = parameters
     dump_arguments: dict = dict()
     if is_pretty:

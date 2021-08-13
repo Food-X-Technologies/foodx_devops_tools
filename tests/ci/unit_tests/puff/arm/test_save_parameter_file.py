@@ -56,6 +56,45 @@ class TestSaveParameterFile:
         return self._check_basic_content(this_file)
 
     @pytest.mark.asyncio
+    async def test_reference_clean(self, tmp_path_factory):
+        data = {
+            "p1": "v1",
+            "p2": "v2",
+            "p3": {
+                "reference": {
+                    "keyVault": {"id": "idv"},
+                    "secretName": "sn",
+                }
+            },
+        }
+        content = await self._do_create_test(data, tmp_path_factory)
+        assert "p1" in content["parameters"]
+        assert "p2" in content["parameters"]
+        assert content["parameters"]["p1"]["value"] == "v1"
+        assert content["parameters"]["p2"]["value"] == "v2"
+        assert (
+            content["parameters"]["p3"]["reference"]["keyVault"]["id"] == "idv"
+        )
+        assert content["parameters"]["p3"]["reference"]["secretName"] == "sn"
+
+    @pytest.mark.asyncio
+    async def test_nonstring_clean(self, tmp_path_factory):
+        """all value parameters must be string"""
+        data = {
+            "p1": "v1",
+            "p2": "v2",
+            "p3": 3.14,
+            "p4": 10,
+        }
+        content = await self._do_create_test(data, tmp_path_factory)
+        assert "p1" in content["parameters"]
+        assert "p2" in content["parameters"]
+        assert content["parameters"]["p1"]["value"] == "v1"
+        assert content["parameters"]["p2"]["value"] == "v2"
+        assert content["parameters"]["p3"]["value"] == "3.14"
+        assert content["parameters"]["p4"]["value"] == "10"
+
+    @pytest.mark.asyncio
     async def test_none_parameters(self, tmp_path_factory):
         await self._do_create_test(None, tmp_path_factory)
 
@@ -116,7 +155,7 @@ class TestConcurrentTargets:
                     "$schema": "https://schema.management.azure.com/schemas/2019-04-01"
                     "/deploymentParameters.json#",
                     "contentVersion": "1.0.0.0",
-                    "parameters": {"av": 3.14},
+                    "parameters": {"av": {"value": "3.14"}},
                 },
                 "path": pathlib.Path("a"),
                 "parameters": {"av": 3.14},
@@ -126,7 +165,7 @@ class TestConcurrentTargets:
                     "$schema": "https://schema.management.azure.com/schemas/2019-04-01"
                     "/deploymentParameters.json#",
                     "contentVersion": "1.0.0.0",
-                    "parameters": {"bv": "something"},
+                    "parameters": {"bv": {"value": "something"}},
                 },
                 "path": pathlib.Path("b"),
                 "parameters": {"bv": "something"},
