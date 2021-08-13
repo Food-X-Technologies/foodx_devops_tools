@@ -80,6 +80,42 @@ class TestLinearizedRegions:
 
         assert result == expected_result
 
+    def test_empty_region(self):
+        mock_base = {
+            "this.stub": {
+                "k1": "bk1",
+                "regions": [
+                    {"r1": dict()},
+                ],
+            },
+        }
+        expected_result = {
+            "this.stub.r1": {
+                "k1": "bk1",
+            },
+        }
+        result = _linearize_regions(mock_base)
+
+        assert result == expected_result
+
+    def test_none_region(self):
+        mock_base = {
+            "this.stub": {
+                "k1": "bk1",
+                "regions": [
+                    {"r1": None},
+                ],
+            },
+        }
+        expected_result = {
+            "this.stub.r1": {
+                "k1": "bk1",
+            },
+        }
+        result = _linearize_regions(mock_base)
+
+        assert result == expected_result
+
     def test_no_regions(self):
         mock_base = {
             "this.stub": {

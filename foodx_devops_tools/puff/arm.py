@@ -172,6 +172,26 @@ def _linearize_name(base_data: dict, filename: str) -> dict:
     return linearized
 
 
+def _iterate_iterable(
+    cleaned: dict, base_key: str, this_data: dict, singular: str
+) -> dict:
+    linearized = dict()
+    for iterable_key, iterable_data in this_data.items():
+        if not iterable_key:
+            raise RuntimeError("Invalid empty {0} name".format(singular))
+
+        if iterable_data:
+            linearized[
+                "{0}.{1}".format(base_key, iterable_key)
+            ] = always_merger.merge(cleaned.copy(), iterable_data)
+        else:
+            linearized[
+                "{0}.{1}".format(base_key, iterable_key)
+            ] = cleaned.copy()
+
+    return linearized
+
+
 def _linearize_iterable(base_data: dict, plural: str, singular: str) -> dict:
     linearized = dict()
     for base_key, base_value in base_data.items():
@@ -180,15 +200,8 @@ def _linearize_iterable(base_data: dict, plural: str, singular: str) -> dict:
         )
         cleaned = _remove_keys(base_value, [plural])
         if this_data:
-            for iterable_key, iterable_data in this_data.items():
-                if not iterable_key:
-                    raise RuntimeError(
-                        "Invalid empty {0} name".format(singular)
-                    )
-
-                linearized[
-                    "{0}.{1}".format(base_key, iterable_key)
-                ] = always_merger.merge(cleaned.copy(), iterable_data)
+            iterated = _iterate_iterable(cleaned, base_key, this_data, singular)
+            linearized.update(iterated)
         else:
             linearized[base_key] = cleaned
 
@@ -218,15 +231,10 @@ def _linearize_regions(base_data: dict) -> dict:
         cleaned = _remove_keys(base_value, [plural])
         if this_data:
             for this_item in this_data:
-                for iterable_key, iterable_data in this_item.items():
-                    if not iterable_key:
-                        raise RuntimeError(
-                            "Invalid empty {0} name".format(singular)
-                        )
-
-                    linearized[
-                        "{0}.{1}".format(base_key, iterable_key)
-                    ] = always_merger.merge(cleaned.copy(), iterable_data)
+                iterated = _iterate_iterable(
+                    cleaned, base_key, this_item, singular
+                )
+                linearized.update(iterated)
         else:
             linearized[base_key] = cleaned
 

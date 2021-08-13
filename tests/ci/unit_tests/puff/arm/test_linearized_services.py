@@ -147,6 +147,46 @@ class TestLinearizedServices:
 
         assert result == expected_result
 
+    def test_empty_service(self):
+        mock_base = {
+            "some-file": {
+                "p1": "bp1",
+                "p2": "bp2",
+                "services": {
+                    "s1": dict(),
+                },
+            },
+        }
+        expected_result = {
+            "some-file.s1": {
+                "p1": "bp1",
+                "p2": "bp2",
+            },
+        }
+        result = _linearize_services(mock_base)
+
+        assert result == expected_result
+
+    def test_none_service(self):
+        mock_base = {
+            "some-file": {
+                "p1": "bp1",
+                "p2": "bp2",
+                "services": {
+                    "s1": None,
+                },
+            },
+        }
+        expected_result = {
+            "some-file.s1": {
+                "p1": "bp1",
+                "p2": "bp2",
+            },
+        }
+        result = _linearize_services(mock_base)
+
+        assert result == expected_result
+
     def test_no_services_no_environments(self):
         mock_base = {
             "some-file": {

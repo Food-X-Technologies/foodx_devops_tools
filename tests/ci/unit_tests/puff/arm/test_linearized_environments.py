@@ -209,3 +209,21 @@ class TestLinearizedEnvironments:
         result = _linearize_environments(mock_base)
 
         assert result == expected_result
+
+    def test_none_environments(self):
+        mock_base = {
+            "this.stub": {
+                "k1": "k1",
+                "environments": {
+                    "e1": None,
+                },
+            },
+        }
+        expected_result = {
+            "this.stub.e1": {
+                "k1": "k1",
+            },
+        }
+        result = _linearize_environments(mock_base)
+
+        assert result == expected_result
