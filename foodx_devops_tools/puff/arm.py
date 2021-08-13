@@ -181,13 +181,12 @@ def _iterate_iterable(
             raise RuntimeError("Invalid empty {0} name".format(singular))
 
         if iterable_data:
-            linearized[
-                "{0}.{1}".format(base_key, iterable_key)
-            ] = always_merger.merge(cleaned.copy(), iterable_data)
+            this_value = always_merger.merge(cleaned.copy(), iterable_data)
         else:
-            linearized[
-                "{0}.{1}".format(base_key, iterable_key)
-            ] = cleaned.copy()
+            this_value = cleaned.copy()
+
+        this_value[singular] = iterable_key
+        linearized["{0}.{1}".format(base_key, iterable_key)] = this_value
 
     return linearized
 
