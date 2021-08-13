@@ -117,13 +117,7 @@ async def _save_parameter_file(
                 # the dict SHOULD be an ARM template parameter reference:
                 # https://docs.microsoft.com/en-us/azure/azure-resource-manager/templates/parameter-files#parameter-file
                 parameters[item_key] = value
-            elif isinstance(value, bool):
-                # NOTE: this clause MUST precede the (str,int,float) clause,
-                # presumably because bool is an instance of int.
-                parameters[item_key] = {
-                    "value": "true" if value else "false",
-                }
-            elif isinstance(value, (str, int, float)):
+            elif isinstance(value, (bool, float, int, str)):
                 parameters[item_key] = {
                     "value": value,
                 }
