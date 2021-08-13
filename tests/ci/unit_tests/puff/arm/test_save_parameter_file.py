@@ -85,14 +85,18 @@ class TestSaveParameterFile:
             "p2": "v2",
             "p3": 3.14,
             "p4": 10,
+            "p5": False,
+            "p6": [1, 2, 3],
         }
         content = await self._do_create_test(data, tmp_path_factory)
         assert "p1" in content["parameters"]
         assert "p2" in content["parameters"]
         assert content["parameters"]["p1"]["value"] == "v1"
         assert content["parameters"]["p2"]["value"] == "v2"
-        assert content["parameters"]["p3"]["value"] == "3.14"
-        assert content["parameters"]["p4"]["value"] == "10"
+        assert content["parameters"]["p3"]["value"] == 3.14
+        assert content["parameters"]["p4"]["value"] == 10
+        assert content["parameters"]["p5"]["value"] == "false"
+        assert content["parameters"]["p6"]["value"] == "[1, 2, 3]"
 
     @pytest.mark.asyncio
     async def test_none_parameters(self, tmp_path_factory):
