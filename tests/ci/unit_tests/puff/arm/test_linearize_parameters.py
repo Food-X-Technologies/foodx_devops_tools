@@ -21,6 +21,7 @@ class TestLinearizeParameters:
         }
         expected_result = {
             "this.stub.e1": {
+                "environment": "e1",
                 "p1": "bp1",
                 "k2": "bk2",
             },
@@ -46,6 +47,8 @@ class TestLinearizeParameters:
         }
         expected_result = {
             "this.stub.e1.r1": {
+                "environment": "e1",
+                "region": "r1",
                 "p1": "e1p1",
                 "k2": "bk2",
             },
@@ -71,6 +74,8 @@ class TestLinearizeParameters:
         }
         expected_result = {
             "this.stub.e1.r1": {
+                "environment": "e1",
+                "region": "r1",
                 "p1": "e1p1",
                 "k2": "bk2",
             },
@@ -94,6 +99,8 @@ class TestLinearizeParameters:
         }
         expected_result = {
             "this.stub.e1.r1": {
+                "environment": "e1",
+                "region": "r1",
                 "p1": "e1p1",
             },
         }
@@ -116,6 +123,8 @@ class TestLinearizeParameters:
         }
         expected_result = {
             "this.stub.e1.r1": {
+                "environment": "e1",
+                "region": "r1",
                 "p1": "e1p1",
             },
         }
@@ -137,6 +146,8 @@ class TestLinearizeParameters:
         """
         expected_result = {
             "this.stub.e1.r1": {
+                "environment": "e1",
+                "region": "r1",
                 "p1": "e1p1",
                 "p2": "e1p2",
                 "p3": {

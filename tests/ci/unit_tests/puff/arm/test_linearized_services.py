@@ -35,6 +35,7 @@ class TestLinearizedServices:
         }
         expected_result = {
             "some-file.s1": {
+                "service": "s1",
                 "p1": "bp1",
                 "p2": "s1p2",
                 "environments": {
@@ -66,10 +67,12 @@ class TestLinearizedServices:
         }
         expected_result = {
             "some-file.s1": {
+                "service": "s1",
                 "p1": "bp1",
                 "p2": "s1p2",
             },
             "some-file.s2": {
+                "service": "s2",
                 "p1": "bp1",
                 "p2": "s2p2",
             },
@@ -78,7 +81,7 @@ class TestLinearizedServices:
 
         assert result == expected_result
 
-    def test_services_environments(self):
+    def test_services_environments2(self):
         mock_base = {
             "some-file": {
                 "p1": "bp1",
@@ -103,6 +106,7 @@ class TestLinearizedServices:
         }
         expected_result = {
             "some-file.s1": {
+                "service": "s1",
                 "p1": "bp1",
                 "p2": "s1p2",
                 "environments": {
@@ -159,6 +163,7 @@ class TestLinearizedServices:
         }
         expected_result = {
             "some-file.s1": {
+                "service": "s1",
                 "p1": "bp1",
                 "p2": "bp2",
             },
@@ -179,6 +184,7 @@ class TestLinearizedServices:
         }
         expected_result = {
             "some-file.s1": {
+                "service": "s1",
                 "p1": "bp1",
                 "p2": "bp2",
             },
@@ -231,6 +237,7 @@ class TestLinearizedServices:
         }
         expected_result = {
             "some-file.s1": {
+                "service": "s1",
                 "p2": "s1p2",
                 "environments": {
                     "e1": {

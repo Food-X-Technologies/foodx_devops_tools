@@ -21,9 +21,11 @@ class TestLinearizedRegions:
         }
         expected_result = {
             "this.stub.r1": {
+                "region": "r1",
                 "k1": "e1r1k1",
             },
             "this.stub.r2": {
+                "region": "r2",
                 "k1": "bk1",
                 "k2": "e1r2k2",
             },
@@ -50,9 +52,11 @@ class TestLinearizedRegions:
         }
         expected_result = {
             "stub1.r1": {
+                "region": "r1",
                 "k1": "e1r1k1",
             },
             "stub1.r2": {
+                "region": "r2",
                 "k1": "stub1.k1",
                 "k2": "e1r2k2",
             },
@@ -91,6 +95,7 @@ class TestLinearizedRegions:
         }
         expected_result = {
             "this.stub.r1": {
+                "region": "r1",
                 "k1": "bk1",
             },
         }
@@ -109,6 +114,7 @@ class TestLinearizedRegions:
         }
         expected_result = {
             "this.stub.r1": {
+                "region": "r1",
                 "k1": "bk1",
             },
         }
@@ -142,9 +148,11 @@ class TestLinearizedRegions:
         }
         expected_result = {
             "this.stub.r1": {
+                "region": "r1",
                 "k1": "e1r1k1",
             },
             "this.stub.r2": {
+                "region": "r2",
                 "k2": "e1r2k2",
             },
         }

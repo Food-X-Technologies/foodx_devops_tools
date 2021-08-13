@@ -27,6 +27,7 @@ class TestLinearizedEnvironments:
         }
         expected_result = {
             "this.stub.e1": {
+                "environment": "e1",
                 "p1": "bp1",
                 "k1": "e1k1",
                 "k2": "bk2",
@@ -58,11 +59,13 @@ class TestLinearizedEnvironments:
         }
         expected_result = {
             "stub1.e1": {
+                "environment": "e1",
                 "p1": "stub1.p1",
                 "k1": "e1k1",
                 "k2": "stub1.k2",
             },
             "stub1.e2": {
+                "environment": "e2",
                 "p1": "stub1.p1",
                 "k1": "e2k1",
                 "k2": "stub1.k2",
@@ -97,6 +100,7 @@ class TestLinearizedEnvironments:
         }
         expected_result = {
             "stub1.e1": {
+                "environment": "e1",
                 "p1": "stub1.p1",
                 "k1": "e1k1",
                 "k2": "stub1.k2",
@@ -146,6 +150,7 @@ class TestLinearizedEnvironments:
         }
         expected_result = {
             "this.stub.e1": {
+                "environment": "e1",
                 "p1": "bp1",
                 "k1": "e1k1",
                 "k2": "bk2",
@@ -199,6 +204,7 @@ class TestLinearizedEnvironments:
         }
         expected_result = {
             "this.stub.e1": {
+                "environment": "e1",
                 "k1": "e1k1",
                 "regions": [
                     {"r1": {"k1": "e1r1k1"}},
@@ -221,6 +227,7 @@ class TestLinearizedEnvironments:
         }
         expected_result = {
             "this.stub.e1": {
+                "environment": "e1",
                 "k1": "k1",
             },
         }
