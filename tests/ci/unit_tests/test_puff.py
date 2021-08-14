@@ -133,5 +133,5 @@ class TestMain:
             result = click_runner.invoke(_main, [str(temp_dir)])
 
             assert result.exit_code == ExitState.UNKNOWN.value
-            assert "Unexpected error" in result.output
+            assert "Puff failed with unexpected error" in result.output
             assert error_message in result.output
