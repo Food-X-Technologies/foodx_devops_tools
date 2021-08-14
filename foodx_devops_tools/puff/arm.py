@@ -248,6 +248,17 @@ def _linearize_environments(base_data: dict) -> dict:
     return _linearize_iterable(base_data, plural, singular)
 
 
+def _merge_list_of_dict(this_data: typing.List[dict]) -> dict:
+    result: dict = dict()
+    for item in this_data:
+        for k, v in item.items():
+            if k in result:
+                result[k].update(v)
+            else:
+                result[k] = v
+    return result
+
+
 def _linearize_regions(base_data: dict) -> dict:
     plural = "regions"
     singular = "region"
@@ -259,12 +270,13 @@ def _linearize_regions(base_data: dict) -> dict:
             else list()
         )
         cleaned = _remove_keys(base_value, [plural])
+        # special handling of the region list unique to regions
         if this_data:
-            for this_item in this_data:
-                iterated = _iterate_iterable(
-                    cleaned, base_key, this_item, singular
-                )
-                linearized.update(iterated)
+            merged_list = _merge_list_of_dict(this_data)
+            iterated = _iterate_iterable(
+                cleaned, base_key, merged_list, singular
+            )
+            linearized.update(iterated)
         else:
             linearized[base_key] = cleaned
 

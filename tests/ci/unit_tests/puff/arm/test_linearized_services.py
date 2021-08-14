@@ -249,3 +249,99 @@ class TestLinearizedServices:
         result = _linearize_services(mock_base)
 
         assert result == expected_result
+
+    def test_complex1_clean(self):
+        mock_base = {
+            "filestub": {
+                "p1": "bp1",
+                "bp2": "bp2",
+                "environments": {
+                    "e1": {
+                        "p1": "e1p1",
+                        "e1p2": "e1p2",
+                        "regions": [
+                            {
+                                "r1": {
+                                    "e1r1p2": "e1r1p2",
+                                },
+                            }
+                        ],
+                    },
+                },
+                "services": {
+                    "s1": {
+                        "s1p2": "s1p2",
+                        "environments": {
+                            "e1": {
+                                "s1e1p2": "s1e1p2",
+                                "regions": [
+                                    {
+                                        "r1": {
+                                            "p1": "s1e1r1p1",
+                                        },
+                                    },
+                                ],
+                            },
+                        },
+                    },
+                    "s2": {
+                        "s2p2": "s2p2",
+                        "environments": {
+                            "e1": {
+                                "s2e1p2": "s2e1p2",
+                                "regions": [
+                                    {
+                                        "r1": {
+                                            "p1": "s2e1r1p1",
+                                        },
+                                    },
+                                ],
+                            },
+                        },
+                    },
+                },
+            },
+        }
+        expected_result = {
+            "filestub.s1": {
+                "service": "s1",
+                "environments": {
+                    "e1": {
+                        "p1": "e1p1",
+                        "e1p2": "e1p2",
+                        "s1e1p2": "s1e1p2",
+                        "regions": [
+                            {"r1": {"e1r1p2": "e1r1p2"}},
+                            {"r1": {"p1": "s1e1r1p1"}},
+                        ],
+                    },
+                },
+                "p1": "bp1",
+                "bp2": "bp2",
+                "s1p2": "s1p2",
+            },
+            "filestub.s2": {
+                "service": "s2",
+                "environments": {
+                    "e1": {
+                        "p1": "e1p1",
+                        "e1p2": "e1p2",
+                        "s2e1p2": "s2e1p2",
+                        "regions": [
+                            {"r1": {"e1r1p2": "e1r1p2"}},
+                            {
+                                "r1": {
+                                    "p1": "s2e1r1p1",
+                                },
+                            },
+                        ],
+                    },
+                },
+                "p1": "bp1",
+                "bp2": "bp2",
+                "s2p2": "s2p2",
+            },
+        }
+        result = _linearize_services(mock_base)
+
+        assert result == expected_result

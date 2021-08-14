@@ -12,6 +12,7 @@ import pytest
 from foodx_devops_tools.puff.arm import (
     _delete_parameter_file,
     _merge_default_name,
+    _merge_list_of_dict,
     _remove_keys,
 )
 
@@ -81,5 +82,31 @@ class TestMergeDefaultName:
         }
 
         result = _merge_default_name(mock_base)
+
+        assert result == expected_value
+
+
+class TestMergeListOfDict:
+    def test_clean(self):
+        data = [
+            {"r1": {"k1": "e1r1k1"}},
+            {"r1": {"k2": "e2r1k2"}},
+            {"r1": {"k3": "e3r1k3"}},
+            {"r2": {"k4": "e1r2k2"}},
+            {"r2": {"k5": "e2r2k3"}},
+        ]
+        expected_value = {
+            "r1": {
+                "k1": "e1r1k1",
+                "k2": "e2r1k2",
+                "k3": "e3r1k3",
+            },
+            "r2": {
+                "k4": "e1r2k2",
+                "k5": "e2r2k3",
+            },
+        }
+
+        result = _merge_list_of_dict(data)
 
         assert result == expected_value
