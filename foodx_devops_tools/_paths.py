@@ -19,6 +19,7 @@ PIPELINE_CONFIG_FILES = {
     "release_states.yml",
     "deployments.yml",
     "frames.yml",
+    "puff_map.yml",
     "subscriptions.yml",
     "systems.yml",
     "tenants.yml",

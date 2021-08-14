@@ -12,8 +12,14 @@ import sys
 import typing
 
 import click
-import click_log  # type: ignore
 
+from foodx_devops_tools._declarations import (
+    DEFAULT_CONSOLE_LOGGING_ENABLED,
+    DEFAULT_FILE_LOGGING_DISABLED,
+    DEFAULT_LOG_LEVEL,
+    VALID_LOG_LEVELS,
+)
+from foodx_devops_tools._logging import LoggingState
 from foodx_devops_tools._paths import (
     ConfigurationPathsError,
     acquire_configuration_paths,
@@ -39,6 +45,8 @@ from ._deployment import (
 from ._state import ExitState
 
 log = logging.getLogger(__name__)
+
+DEFAULT_LOG_FILE = pathlib.Path("deploy_me.log")
 
 
 class DeploymentConfigurationError(Exception):
@@ -80,7 +88,6 @@ async def _gather_main(
 
 
 @click.command()
-@click_log.simple_verbosity_option(log)
 @click.version_option(acquire_version())
 @click.argument(
     "client_config",
@@ -117,6 +124,27 @@ eg.
     type=str,
 )
 @click.option(
+    "--log-enable-console",
+    "enable_console_log",
+    default=DEFAULT_CONSOLE_LOGGING_ENABLED,
+    help="Log to console.",
+    is_flag=True,
+)
+@click.option(
+    "--log-disable-file",
+    "disable_file_log",
+    default=DEFAULT_FILE_LOGGING_DISABLED,
+    help="Disable file logging.",
+    is_flag=True,
+)
+@click.option(
+    "--log-level",
+    "log_level",
+    default=DEFAULT_LOG_LEVEL,
+    help="Select logging level to apply to all enabled log sinks.",
+    type=click.Choice(VALID_LOG_LEVELS, case_sensitive=False),
+)
+@click.option(
     "--validation",
     default=False,
     help="Force deployments to be a validation deployment, regardless of any "
@@ -125,6 +153,9 @@ eg.
 )
 def deploy_me(
     client_config: pathlib.Path,
+    disable_file_log: bool,
+    enable_console_log: bool,
+    log_level: str,
     system_config: pathlib.Path,
     git_ref: typing.Optional[str],
     pipeline_id: str,
@@ -138,6 +169,15 @@ def deploy_me(
                    and deployment configuration.
     """
     try:
+        # currently no need to change logging configuration at run time,
+        # so no need to preserve the object.
+        LoggingState(
+            disable_file_logging=disable_file_log,
+            enable_console_logging=enable_console_log,
+            log_level_text=log_level,
+            default_log_file=DEFAULT_LOG_FILE,
+        )
+
         configuration_paths = acquire_configuration_paths(
             client_config, system_config
         )

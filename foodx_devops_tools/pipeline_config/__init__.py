@@ -29,6 +29,12 @@ from .pipeline import (  # noqa: F401
     PipelineConfigurationError,
     PipelineConfigurationPaths,
 )
+from .puff_map import (  # noqa: F401
+    PuffMap,
+    PuffMapDefinitionsError,
+    PuffMapGeneratedFiles,
+    load_puff_map,
+)
 from .release_states import (  # noqa: F401
     ReleaseStatesDefinition,
     ReleaseStatesDefinitionError,

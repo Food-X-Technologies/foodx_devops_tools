@@ -131,6 +131,7 @@ async def _save_parameter_file(
     if is_pretty:
         dump_arguments = {"sort_keys": True, "indent": 2}
     async with aiofiles.open(target_path, mode="w") as f:
+        log.info("saving parameter file, {0}".format(target_path))
         await f.write(json.dumps(generated_parameters, **dump_arguments))
 
 
