@@ -411,3 +411,152 @@ class TestLinearizeParameters:
         result = _linearize_parameters(mock_base, "filestub")
 
         assert result == expected_result
+
+    def test_complex4_clean(self):
+        mock_base = {
+            "p1": "bp1",
+            "bp2": "bp2",
+            "environments": {
+                "e1": {
+                    "p1": "e1p1",
+                    "e1p2": "e1p2",
+                    "regions": [
+                        {
+                            # None region specified.
+                            "r1": None,
+                        }
+                    ],
+                },
+            },
+            "services": {
+                "s1": {
+                    "s1p2": "s1p2",
+                    "environments": {
+                        "e1": {
+                            "s1e1p2": "s1e1p2",
+                            "regions": [
+                                {
+                                    "r1": {
+                                        "p1": "s1e1r1p1",
+                                    },
+                                }
+                            ],
+                        },
+                    },
+                },
+                "s2": {
+                    "s2p2": "s2p2",
+                    "environments": {
+                        "e1": {
+                            "s2e1p2": "s2e1p2",
+                            "regions": [
+                                {
+                                    "r1": {
+                                        "p1": "s2e1r1p1",
+                                    },
+                                }
+                            ],
+                        },
+                    },
+                },
+            },
+        }
+        expected_result = {
+            "filestub.s1.e1.r1": {
+                "service": "s1",
+                "environment": "e1",
+                "region": "r1",
+                "p1": "s1e1r1p1",
+                "bp2": "bp2",
+                "e1p2": "e1p2",
+                "s1p2": "s1p2",
+                "s1e1p2": "s1e1p2",
+            },
+            "filestub.s2.e1.r1": {
+                "service": "s2",
+                "environment": "e1",
+                "region": "r1",
+                "p1": "s2e1r1p1",
+                "bp2": "bp2",
+                "e1p2": "e1p2",
+                "s2p2": "s2p2",
+                "s2e1p2": "s2e1p2",
+            },
+        }
+        result = _linearize_parameters(mock_base, "filestub")
+
+        assert result == expected_result
+
+    def test_complex5_clean(self):
+        mock_base = {
+            "p1": "bp1",
+            "bp2": "bp2",
+            "environments": {
+                "e1": {
+                    "p1": "e1p1",
+                    "e1p2": "e1p2",
+                    "regions": [
+                        {
+                            "r1": {
+                                "p1": "s1e1r1p1",
+                            },
+                        }
+                    ],
+                },
+            },
+            "services": {
+                "s1": {
+                    "s1p2": "s1p2",
+                    "environments": {
+                        "e1": {
+                            "s1e1p2": "s1e1p2",
+                            "regions": [
+                                {
+                                    "r1": None,
+                                }
+                            ],
+                        },
+                    },
+                },
+                "s2": {
+                    "s2p2": "s2p2",
+                    "environments": {
+                        "e1": {
+                            "s2e1p2": "s2e1p2",
+                            "regions": [
+                                {
+                                    "r1": {
+                                        "p1": "s2e1r1p1",
+                                    },
+                                }
+                            ],
+                        },
+                    },
+                },
+            },
+        }
+        expected_result = {
+            "filestub.s1.e1.r1": {
+                "service": "s1",
+                "environment": "e1",
+                "region": "r1",
+                "p1": "s1e1r1p1",
+                "bp2": "bp2",
+                "e1p2": "e1p2",
+                "s1p2": "s1p2",
+                "s1e1p2": "s1e1p2",
+            },
+            "filestub.s2.e1.r1": {
+                "service": "s2",
+                "environment": "e1",
+                "region": "r1",
+                "p1": "s2e1r1p1",
+                "bp2": "bp2",
+                "e1p2": "e1p2",
+                "s2p2": "s2p2",
+                "s2e1p2": "s2e1p2",
+            },
+        }
+        result = _linearize_parameters(mock_base, "filestub")
+
+        assert result == expected_result

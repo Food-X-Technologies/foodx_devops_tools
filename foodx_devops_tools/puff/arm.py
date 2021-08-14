@@ -251,11 +251,14 @@ def _linearize_environments(base_data: dict) -> dict:
 def _merge_list_of_dict(this_data: typing.List[dict]) -> dict:
     result: dict = dict()
     for item in this_data:
-        for k, v in item.items():
-            if k in result:
-                result[k].update(v)
-            else:
-                result[k] = v
+        if isinstance(item, dict):
+            for k, v in item.items():
+                if k in result:
+                    result[k].update(v if v is not None else dict())
+                else:
+                    result[k] = v if v is not None else dict()
+        else:
+            log.error("ignoring non-dict list entry, {0}".format(str(item)))
     return result
 
 
