@@ -87,6 +87,10 @@ class TestSaveParameterFile:
             "p4": 10,
             "p5": False,
             "p6": [1, 2, 3],
+            "p7": {
+                "reference": {"keyVault": {"id": "ivd"}, "secretName": "sn"}
+            },
+            "p8": {"value": {"k1": "kv1", "k2": "kv2"}},
         }
         content = await self._do_create_test(data, tmp_path_factory)
         assert "p1" in content["parameters"]
@@ -96,7 +100,15 @@ class TestSaveParameterFile:
         assert content["parameters"]["p3"]["value"] == 3.14
         assert content["parameters"]["p4"]["value"] == 10
         assert content["parameters"]["p5"]["value"] is False
-        assert content["parameters"]["p6"]["value"] == "[1, 2, 3]"
+        assert content["parameters"]["p6"]["value"] == [1, 2, 3]
+        assert content["parameters"]["p7"]["reference"] == {
+            "keyVault": {"id": "ivd"},
+            "secretName": "sn",
+        }
+        assert content["parameters"]["p8"]["value"] == {
+            "k1": "kv1",
+            "k2": "kv2",
+        }
 
     @pytest.mark.asyncio
     async def test_none_parameters(self, tmp_path_factory):
