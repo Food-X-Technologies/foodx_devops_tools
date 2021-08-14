@@ -203,3 +203,24 @@ class TestLinearizedRegions:
         result = _linearize_regions(mock_base)
 
         assert result == expected_result
+
+    def test_none_regions(self):
+        mock_base = {
+            "this.stub": {
+                "k1": "bk1",
+                "regions": [
+                    None,
+                    {"r2": {"k2": "e1r2k2"}},
+                ],
+            },
+        }
+        expected_result = {
+            "this.stub.r2": {
+                "region": "r2",
+                "k1": "bk1",
+                "k2": "e1r2k2",
+            },
+        }
+        result = _linearize_regions(mock_base)
+
+        assert result == expected_result

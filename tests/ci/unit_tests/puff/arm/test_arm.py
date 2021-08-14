@@ -110,3 +110,61 @@ class TestMergeListOfDict:
         result = _merge_list_of_dict(data)
 
         assert result == expected_value
+
+    def test_none_empty_subsequent_entries(self):
+        data = [
+            {"r1": {"k1": "e1r1k1"}},
+            {"r1": None},
+            {"r1": {"k3": "e3r1k3"}},
+            {"r2": {"k4": "e1r2k2"}},
+            {"r2": dict()},
+        ]
+        expected_value = {
+            "r1": {
+                "k1": "e1r1k1",
+                "k3": "e3r1k3",
+            },
+            "r2": {
+                "k4": "e1r2k2",
+            },
+        }
+
+        result = _merge_list_of_dict(data)
+
+        assert result == expected_value
+
+    def test_none_empty_initial_entries(self):
+        data = [
+            {"r1": None},
+            {"r1": {"k2": "e2r1k2"}},
+            {"r1": {"k3": "e3r1k3"}},
+            {"r2": dict()},
+            {"r2": {"k5": "e2r2k3"}},
+        ]
+        expected_value = {
+            "r1": {
+                "k2": "e2r1k2",
+                "k3": "e3r1k3",
+            },
+            "r2": {
+                "k5": "e2r2k3",
+            },
+        }
+
+        result = _merge_list_of_dict(data)
+
+        assert result == expected_value
+
+    def test_none_empty_only_entries(self):
+        data = [
+            {"r1": None},
+            {"r2": dict()},
+        ]
+        expected_value = {
+            "r1": dict(),
+            "r2": dict(),
+        }
+
+        result = _merge_list_of_dict(data)
+
+        assert result == expected_value
