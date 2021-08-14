@@ -170,3 +170,36 @@ class TestLinearizedRegions:
         result = _linearize_regions(mock_base)
 
         assert result == expected_result
+
+    def test_merged_regions(self):
+        mock_base = {
+            "this.stub": {
+                "k1": "bk1",
+                "regions": [
+                    # regions merged from other iterables (services or
+                    # environments).
+                    {"r1": {"k1": "e1r1k1"}},
+                    {"r1": {"k2": "e2r1k2"}},
+                    {"r1": {"k3": "e3r1k3"}},
+                    {"r2": {"k4": "e1r2k2"}},
+                    {"r2": {"k5": "e2r2k3"}},
+                ],
+            },
+        }
+        expected_result = {
+            "this.stub.r1": {
+                "region": "r1",
+                "k1": "e1r1k1",
+                "k2": "e2r1k2",
+                "k3": "e3r1k3",
+            },
+            "this.stub.r2": {
+                "region": "r2",
+                "k1": "bk1",
+                "k4": "e1r2k2",
+                "k5": "e2r2k3",
+            },
+        }
+        result = _linearize_regions(mock_base)
+
+        assert result == expected_result
