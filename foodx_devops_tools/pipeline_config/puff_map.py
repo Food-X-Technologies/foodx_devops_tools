@@ -25,7 +25,8 @@ class PuffMapDefinitionsError(Exception):
     """Problem parsing puff map definitions."""
 
 
-PuffMapSubscriptions = typing.Dict[str, pathlib.Path]
+PuffMapPaths = typing.List[pathlib.Path]
+PuffMapSubscriptions = typing.Dict[str, PuffMapPaths]
 PuffMapReleaseStates = typing.Dict[str, PuffMapSubscriptions]
 
 
