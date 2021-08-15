@@ -98,7 +98,7 @@ MOCK_RESULTS = {
                     "a1": {
                         "arm_parameters_files": {
                             "r1": {
-                                "sub1": "some/puff_map/path",
+                                "sub1": ["some/puff_map/path"],
                             },
                         },
                     },

@@ -30,7 +30,8 @@ puff_map:
           a1:
             arm_parameters_files:
               r1:
-                sub1: some/path/puff1.json
+                sub1: 
+                  - some/path/puff1.json
 """
 
     result = apply_puffmap_test(file_text)
@@ -52,4 +53,4 @@ puff_map:
     )
     assert result_map.frames["f1"].applications["a1"].arm_parameters_files[
         "r1"
-    ]["sub1"] == pathlib.Path("some/path/puff1.json")
+    ]["sub1"] == [pathlib.Path("some/path/puff1.json")]
