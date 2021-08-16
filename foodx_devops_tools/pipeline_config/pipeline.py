@@ -8,6 +8,7 @@
 """Manage pipeline configuration files collectively."""
 
 import dataclasses
+import logging
 import pathlib
 import re
 import typing
@@ -29,6 +30,8 @@ from .systems import ValueType as SystemsData
 from .systems import load_systems
 from .tenants import ValueType as TenantsData
 from .tenants import load_tenants
+
+log = logging.getLogger(__name__)
 
 DEPLOYMENT_NAME_REGEX = (
     r"^(?P<system>[a-z0-9]+)"
@@ -115,67 +118,112 @@ class PipelineConfiguration(pydantic.BaseModel):
                     for x in data.release_states
                 ]
             ):
-                raise PipelineConfigurationError(
-                    "Bad release state in client, {0}".format(name)
+                message = "Bad release state in client, {0}".format(name)
+                log.error(
+                    "{0}, {1}, {2}".format(
+                        message,
+                        str(loaded_data["release_states"]),
+                        str(data.release_states),
+                    )
                 )
+                raise PipelineConfigurationError(message)
 
             if data.system not in loaded_data["systems"]:
-                raise PipelineConfigurationError(
-                    "Bad system in client, {0}".format(name)
+                message = "Bad system in client, {0}".format(name)
+                log.error(
+                    "{0}, {1}, {2}".format(
+                        message,
+                        str(loaded_data["release_states"]),
+                        str(data.release_states),
+                    )
                 )
+                raise PipelineConfigurationError(message)
         return loaded_data
 
     @pydantic.root_validator()
     def check_deployments(cls: pydantic.BaseModel, loaded_data: dict) -> dict:
-        """Validate loaded deployment data."""
+        """Cross-check loaded deployment data."""
         deployment_names = set(loaded_data["deployments"].keys())
         this_re = re.compile(DEPLOYMENT_NAME_REGEX)
         for this_name in deployment_names:
             result = this_re.match(this_name)
 
             if not result:
-                raise PipelineConfigurationError(
-                    "Bad deployment tuple, {0}".format(this_name)
-                )
+                message = "Bad deployment tuple, {0}".format(this_name)
+                log.error("{0}, {1}".format(message, DEPLOYMENT_NAME_REGEX))
+                raise PipelineConfigurationError(message)
 
             this_client = result.group("client")
             if this_client not in loaded_data["clients"]:
-                raise PipelineConfigurationError(
-                    "Bad client in deployment tuple, {0}".format(this_client)
+                message = "Bad client in deployment tuple, {0}".format(
+                    this_client
                 )
+                log.error(
+                    "{0}, {1}, {2}".format(
+                        message, this_name, str(loaded_data["clients"])
+                    )
+                )
+                raise PipelineConfigurationError(message)
 
             this_release_state = result.group("release_state")
             if this_release_state not in loaded_data["release_states"]:
-                raise PipelineConfigurationError(
-                    "Bad release state in deployment tuple, {0}".format(
-                        this_release_state
+                message = "Bad release state in deployment tuple, {0}".format(
+                    this_release_state
+                )
+                log.error(
+                    "{0}, {1}, {2}".format(
+                        message, this_name, str(loaded_data["release_states"])
                     )
                 )
+                raise PipelineConfigurationError(message)
 
             this_system = result.group("system")
             if this_system not in loaded_data["systems"]:
-                raise PipelineConfigurationError(
-                    "Bad system in deployment tuple, {0}".format(this_system)
+                message = "Bad system in deployment tuple, {0}".format(
+                    this_system
                 )
+                log.error(
+                    "{0}, {1}, {2}".format(
+                        message, this_name, str(loaded_data["systems"])
+                    )
+                )
+                raise PipelineConfigurationError(message)
 
             this_subscriptions = loaded_data["deployments"][
                 this_name
             ].subscriptions
             for subscription_name in this_subscriptions.keys():
                 if subscription_name not in loaded_data["subscriptions"]:
-                    raise PipelineConfigurationError(
-                        "Bad subscription in deployment, {0}".format(this_name)
+                    message = "Bad subscription in deployment, {0}".format(
+                        this_name
                     )
+                    log.error(
+                        "{0}, {1}, {2}, {3}".format(
+                            message,
+                            this_name,
+                            str(this_subscriptions.keys()),
+                            str(loaded_data["subscriptions"]),
+                        )
+                    )
+                    raise PipelineConfigurationError(message)
         return loaded_data
 
     @pydantic.root_validator()
     def check_subscriptions(cls: pydantic.BaseModel, loaded_data: dict) -> dict:
         """Validate subscriptions data."""
-        for name, data in loaded_data["subscriptions"].items():
-            if data.tenant not in loaded_data["tenants"]:
-                raise PipelineConfigurationError(
-                    "Bad tenant in subscription, {0}".format(name)
+        bad_tenants = [
+            "{0}.{1}".format(name, data.tenant)
+            for name, data in loaded_data["subscriptions"].items()
+            if data.tenant not in loaded_data["tenants"]
+        ]
+        if any(bad_tenants):
+            message = "Bad tenant(s) in subscription"
+            log.error(
+                "{0}, {1}, {2}".format(
+                    message, str(bad_tenants), str(loaded_data["tenants"])
                 )
+            )
+            raise PipelineConfigurationError(message)
         return loaded_data
 
     @pydantic.root_validator()
@@ -183,25 +231,48 @@ class PipelineConfiguration(pydantic.BaseModel):
         cls: pydantic.BaseModel, loaded_data: dict
     ) -> dict:
         """
-        Validate frames, puff map data.
+        Cross-check frames, puff map data.
 
-        Any application deployment steps defined in a frame must be defined
-        in the puff map.
+        * The identified frames must be the same.
+        * The identified applications must be the same.
+        * Any application deployment steps defined in a frame must be defined
+          in the puff map.
+        * Release states and subscriptions must be valid.
         """
         if set(loaded_data["frames"].frames.keys()) != set(
             loaded_data["puff_map"].frames.keys()
         ):
-            raise PipelineConfigurationError(
-                "Frame definitions mismatch between frames and puff map"
+            message = "Frame definitions mismatch between frames and puff map"
+            log.error(
+                "{0}, {1}, {2}".format(
+                    message,
+                    str(set(loaded_data["frames"].frames.keys())),
+                    str(set(loaded_data["puff_map"].frames.keys())),
+                )
             )
+            raise PipelineConfigurationError(message)
         for this_frame, frame_data in loaded_data["frames"].frames.items():
             if set(frame_data.applications.keys()) != set(
                 loaded_data["puff_map"].frames[this_frame].applications.keys()
             ):
-                raise PipelineConfigurationError(
-                    "Application definitions mismatch between frames and "
-                    "puff map"
+                message = (
+                    "Application definitions mismatch between frames "
+                    "and puff map"
                 )
+                log.error(
+                    "{0}, {1}, {2}".format(
+                        message,
+                        str(set(frame_data.applications.keys())),
+                        str(
+                            set(
+                                loaded_data["puff_map"]
+                                .frames[this_frame]
+                                .applications.keys()
+                            )
+                        ),
+                    )
+                )
+                raise PipelineConfigurationError(message)
             for (
                 this_application,
                 application_data,
@@ -217,9 +288,15 @@ class PipelineConfiguration(pydantic.BaseModel):
                         for x in pm_app_data.arm_parameters_files.keys()
                     ]
                 ):
-                    raise PipelineConfigurationError(
-                        "Bad release state in puff map"
+                    message = "Bad release state in puff map"
+                    log.error(
+                        "{0}, {1}, {2}".format(
+                            message,
+                            str(loaded_data["release_states"]),
+                            str(pm_app_data.arm_parameters_files.keys()),
+                        )
                     )
+                    raise PipelineConfigurationError(message)
                 for (
                     this_state,
                     state_data,
@@ -230,14 +307,28 @@ class PipelineConfiguration(pydantic.BaseModel):
                             for x in state_data.keys()
                         ]
                     ):
-                        raise PipelineConfigurationError(
-                            "Bad subscription in puff map"
+                        message = "Bad subscription in puff map"
+                        log.error(
+                            "{0}, {1}, {2}".format(
+                                message,
+                                str(loaded_data["subscriptions"].keys()),
+                                str(state_data.keys()),
+                            )
                         )
+                        raise PipelineConfigurationError(message)
                     for subscription_data in state_data.values():
                         frame_step_names = {x.name for x in application_data}
                         if frame_step_names != set(subscription_data.keys()):
-                            raise PipelineConfigurationError(
-                                "Application step name mismatch between frames "
-                                "and puff map"
+                            message = (
+                                "Application step name mismatch between "
+                                "frames and puff map"
                             )
+                            log.error(
+                                "{0}, {1}, {2}".format(
+                                    message,
+                                    str(frame_step_names),
+                                    str(set(subscription_data.keys())),
+                                )
+                            )
+                            raise PipelineConfigurationError(message)
         return loaded_data
