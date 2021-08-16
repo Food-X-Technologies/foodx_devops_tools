@@ -53,10 +53,12 @@ frames:
     f1:
       applications:
         a1: 
-          - resource_group: a1_group
+          - name: a1l1
+            resource_group: a1_group
             mode: Incremental
         a2:
-          - resource_group: a2_group
+          - name: a1l1
+            resource_group: a2_group
             mode: Complete
             arm_file: something.json
       folder: some/path

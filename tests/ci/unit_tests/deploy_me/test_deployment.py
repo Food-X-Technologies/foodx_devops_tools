@@ -51,14 +51,16 @@ class TestDeployFrame:
                 "applications": {
                     "a1": [
                         {
-                            "resource_group": "rg1",
                             "mode": "Incremental",
+                            "name": "a1l1",
+                            "resource_group": "rg1",
                         }
                     ],
                     "a2": [
                         {
                             "resource_group": "rg2",
                             "mode": "Complete",
+                            "name": "a2l1",
                             "arm_file": "something.json",
                         }
                     ],
