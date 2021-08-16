@@ -247,7 +247,7 @@ class TestPipelineConfiguration:
         mock_loads(mock_results)
 
         with pytest.raises(
-            PipelineConfigurationError, match=r"Bad tenant in subscription"
+            PipelineConfigurationError, match=r"Bad tenant\(s\) in subscription"
         ):
             PipelineConfiguration.from_files(MOCK_PATHS)
 
