@@ -177,3 +177,67 @@ class PipelineConfiguration(pydantic.BaseModel):
                     "Bad tenant in subscription, {0}".format(name)
                 )
         return loaded_data
+
+    @pydantic.root_validator()
+    def check_frames_puff_map(
+        cls: pydantic.BaseModel, loaded_data: dict
+    ) -> dict:
+        """
+        Validate frames, puff map data.
+
+        Any application deployment steps defined in a frame must be defined
+        in the puff map.
+        """
+        if set(loaded_data["frames"].frames.keys()) != set(
+            loaded_data["puff_map"].frames.keys()
+        ):
+            raise PipelineConfigurationError(
+                "Frame definitions mismatch between frames and puff map"
+            )
+        for this_frame, frame_data in loaded_data["frames"].frames.items():
+            if set(frame_data.applications.keys()) != set(
+                loaded_data["puff_map"].frames[this_frame].applications.keys()
+            ):
+                raise PipelineConfigurationError(
+                    "Application definitions mismatch between frames and "
+                    "puff map"
+                )
+            for (
+                this_application,
+                application_data,
+            ) in frame_data.applications.items():
+                pm_app_data = (
+                    loaded_data["puff_map"]
+                    .frames[this_frame]
+                    .applications[this_application]
+                )
+                if any(
+                    [
+                        x not in loaded_data["release_states"]
+                        for x in pm_app_data.arm_parameters_files.keys()
+                    ]
+                ):
+                    raise PipelineConfigurationError(
+                        "Bad release state in puff map"
+                    )
+                for (
+                    this_state,
+                    state_data,
+                ) in pm_app_data.arm_parameters_files.items():
+                    if any(
+                        [
+                            x not in loaded_data["subscriptions"].keys()
+                            for x in state_data.keys()
+                        ]
+                    ):
+                        raise PipelineConfigurationError(
+                            "Bad subscription in puff map"
+                        )
+                    for subscription_data in state_data.values():
+                        frame_step_names = {x.name for x in application_data}
+                        if frame_step_names != set(subscription_data.keys()):
+                            raise PipelineConfigurationError(
+                                "Application step name mismatch between frames "
+                                "and puff map"
+                            )
+        return loaded_data

@@ -31,11 +31,13 @@ frames:
     f1:
       applications:
         a1: 
-          - resource_group: a1_group
+          - name: a1l1
             mode: Incremental
+            resource_group: a1_group
         a2:
-          - resource_group: a2_group
+          - name: a2l1
             mode: Complete
+            resource_group: a2_group
       folder: some/path
 """
 
@@ -57,6 +59,7 @@ frames:
     assert result_frames.frames["f1"].triggers is None
     assert result_frames.frames["f1"].applications["a2"][0].arm_file is None
     assert result_frames.frames["f1"].applications["a2"][0].puff_file is None
+    assert result_frames.frames["f1"].applications["a2"][0].name == "a2l1"
     assert result_frames.triggers is None
 
 
@@ -67,12 +70,15 @@ frames:
     f1:
       applications:
         a1: 
-          - resource_group: a1_group
+          - name: a1l1
             mode: Incremental
+            resource_group: a1_group
+            
         a2:
-          - resource_group: a2_group
-            mode: Complete
+          - name: a2l1
             arm_file: something.json
+            mode: Complete
+            resource_group: a2_group
       folder: some/path
 """
 
@@ -95,10 +101,12 @@ frames:
     f1:
       applications:
         a1: 
-          - resource_group: a1_group
+          - name: a1l1
+            resource_group: a1_group
             mode: Incremental
         a2:
-          - resource_group: a2_group
+          - name: a2l1
+            resource_group: a2_group
             mode: Complete
             arm_file: something.json
       folder: some/path
@@ -119,10 +127,12 @@ frames:
     f1:
       applications:
         a1: 
-          - resource_group: a1_group
+          - name: a1l1
+            resource_group: a1_group
             mode: Incremental
         a2:
-          - resource_group: a2_group
+          - name: a2l1
+            resource_group: a2_group
             mode: Complete
             arm_file: something.json
       folder: some/path
@@ -147,10 +157,12 @@ frames:
     f1:
       applications:
         a1: 
-          - resource_group: a1_group
+          - name: a1l1
+            resource_group: a1_group
             mode: Incremental
         a2:
-          - resource_group: a2_group
+          - name: a2l1
+            resource_group: a2_group
             mode: Complete
             puff_file: something.yml
       folder: some/path
@@ -171,19 +183,23 @@ frames:
     f1:
       applications:
         a1:
-          - resource_group: f1a1
+          - name: a1l1
+            resource_group: f1a1
             mode: Complete
         a2:
-          - resource_group: f1a2
+          - name: a2l1
+            resource_group: f1a2
             mode: Incremental
       folder: some/f1-path
     f2:
       applications:
         a3:
-          - resource_group: f2a3
+          - name: a3l1
+            resource_group: f2a3
             mode: Complete
         a4:
-          - resource_group: f2a4
+          - name: a4l1
+            resource_group: f2a4
             mode: Incremental
       depends_on:
         - f1
@@ -206,28 +222,34 @@ frames:
     f1:
       applications:
         a1:
-          - resource_group: f1a1
+          - name: a1l1
+            resource_group: f1a1
             mode: Complete
         a2:
-          - resource_group: f1a2
+          - name: a2l1
+            resource_group: f1a2
             mode: Complete
       folder: some/f1-path
     f3:
       applications:
         a5:
-          - resource_group: f3a5
+          - name: a5l1
+            resource_group: f3a5
             mode: Complete
         a6:
-          - resource_group: f3a6
+          - name: a6l1
+            resource_group: f3a6
             mode: Complete
       folder: some/f3-path
     f2:
       applications:
         a3:
-          - resource_group: f2a3
+          - name: a3l1
+            resource_group: f2a3
             mode: Complete
         a4:
-          - resource_group: f2a4
+          - name: a4l1
+            resource_group: f2a4
             mode: Complete
       folder: some/f2-path
 """
@@ -276,6 +298,50 @@ frames:
       depends_on:
         - bad_value
       folder: some/f2-path
+"""
+
+    with pytest.raises(
+        FrameDefinitionsError, match=r"Error validating frames definition"
+    ):
+        apply_applications_test(file_text)
+
+
+def test_missing_name_raises(apply_applications_test):
+    file_text = """---
+frames:
+  frames:
+    f1:
+      applications:
+        a1: 
+          - name: a1l1
+            mode: Incremental
+            resource_group: a1_group
+        a2:
+          - mode: Complete
+            resource_group: a2_group
+      folder: some/path
+"""
+
+    with pytest.raises(
+        FrameDefinitionsError, match=r"Error validating frames definition"
+    ):
+        apply_applications_test(file_text)
+
+
+def test_missing_mode_raises(apply_applications_test):
+    file_text = """---
+frames:
+  frames:
+    f1:
+      applications:
+        a1: 
+          - name: a1l1
+            mode: Incremental
+            resource_group: a1_group
+        a2:
+          - name: a2l1
+            resource_group: a2_group
+      folder: some/path
 """
 
     with pytest.raises(

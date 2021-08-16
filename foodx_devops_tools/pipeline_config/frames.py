@@ -48,6 +48,7 @@ class ApplicationDeploymentDefinition(pydantic.BaseModel):
     """Application resource group deployment definition."""
 
     mode: DeploymentMode
+    name: str
 
     arm_file: typing.Optional[pathlib.Path]
     puff_file: typing.Optional[pathlib.Path]

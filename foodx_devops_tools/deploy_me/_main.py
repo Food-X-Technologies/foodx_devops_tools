@@ -216,7 +216,7 @@ def deploy_me(
         else:
             click.echo(
                 click.style(
-                    "FAILED: Deployment failed. Check log for " "details.",
+                    "FAILED: Deployment failed. Check log for details.",
                     fg="red",
                 )
             )
