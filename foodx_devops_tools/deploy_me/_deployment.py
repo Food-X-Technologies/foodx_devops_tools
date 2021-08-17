@@ -182,6 +182,13 @@ def _construct_fqdn(
     return ".".join([leaf_name, subd_state, client, domain_root])
 
 
+def _mangle_validation_resource_group(current_name: str, suffix: str) -> str:
+    this_suffix = re.sub(r"[_.]", "-", suffix)
+    mangled_name = f"{current_name}-{this_suffix}"
+
+    return mangled_name
+
+
 async def deploy_application(
     application_data: ApplicationDeploymentSteps,
     deployment_data: FlattenedDeployment,
@@ -245,6 +252,17 @@ async def deploy_application(
             log.debug(str(deployment_data.data))
             if enable_validation:
                 log.info("validation deployment enabled")
+                deployment_arguments[
+                    "resource_group_name"
+                ] = _mangle_validation_resource_group(
+                    deployment_arguments["resource_group_name"],
+                    deployment_data.context.pipeline_id,
+                )
+                log.info(
+                    "validation resource group name, {0}".format(
+                        deployment_arguments["resource_group_name"]
+                    )
+                )
                 await validate_resource_group(**deployment_arguments)
             else:
                 log.info("deployment enabled")

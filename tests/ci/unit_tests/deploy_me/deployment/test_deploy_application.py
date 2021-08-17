@@ -95,7 +95,7 @@ class TestValidation(DeploymentChecks):
 
         mock_deploy.assert_not_called()
         expected_parameters: dict = {
-            "resource_group_name": "a1_group",
+            "resource_group_name": "a1_group-123456",
             "arm_template_path": pathlib.Path("some/path/a1.json"),
             "arm_parameters_path": pathlib.Path("some/path/some/puff_map/path"),
             "location": "l1",
@@ -114,7 +114,7 @@ class TestValidation(DeploymentChecks):
 
         mock_deploy.assert_not_called()
         expected_parameters: dict = {
-            "resource_group_name": "a1-f1-c1",
+            "resource_group_name": "a1-f1-c1-123456",
             "arm_template_path": pathlib.Path("some/path/a1.json"),
             "arm_parameters_path": pathlib.Path("some/path/some/puff_map/path"),
             "location": "l1",
