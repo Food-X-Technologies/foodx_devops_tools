@@ -152,6 +152,23 @@ class DeploymentContext:
         """Set system name property."""
         self.__system = v
 
+    def __str__(self: Y) -> str:
+        """Convert object to str for logging purposes."""
+        return str(
+            {
+                "commit_sha": self.commit_sha,
+                "pipeline_id": self.pipeline_id,
+                "release_id": self.release_id,
+                "release_state": self.release_state,
+                "application_name": self.__application_name,
+                "azure_subscription_name": self.__azure_subscription_name,
+                "azure_tenant_name": self.__azure_tenant_name,
+                "client": self.__client,
+                "frame_name": self.__frame_name,
+                "system": self.__system,
+            }
+        )
+
 
 X = typing.TypeVar("X", bound="DeployDataView")
 
@@ -219,6 +236,21 @@ class DeployDataView:
     def puff_map(self: X, value: PuffMap) -> None:
         """Set puff map property."""
         self.__puff_map = value
+
+    def __str__(self: X) -> str:
+        """Convert object to str for logging purposes."""
+        return str(
+            {
+                "ado_service_connection": self.ado_service_connection,
+                "azure_subscription_name": self.azure_subscription_name,
+                "azure_tenant_name": self.azure_tenant_name,
+                "deployment_tuple": self.deployment_tuple,
+                "location_primary": self.location_primary,
+                "release_state": self.release_state,
+                "location_secondary": self.__location_secondary,
+                "iteration_context": self.iteration_context,
+            }
+        )
 
 
 W = typing.TypeVar("W", bound="FlattenedDeployment")

@@ -301,9 +301,6 @@ async def deploy_frame(
 
     Frame applications are deployed concurrently (in parallel).
     """
-    log.debug(
-        "deployment data, {0}".format(str(dataclasses.asdict(deployment_data)))
-    )
     this_context = str(deployment_data.data.iteration_context)
 
     await frame_status.initialize(this_context)
