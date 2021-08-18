@@ -13,7 +13,7 @@ import logging
 import typing
 
 from ..deployment import DeploymentTuple
-from .pipeline import PipelineConfiguration
+from .pipeline import PipelineConfiguration, PuffMap
 
 log = logging.getLogger(__name__)
 
@@ -22,7 +22,20 @@ class PipelineViewError(Exception):
     """Problem with view data."""
 
 
-@dataclasses.dataclass
+Z = typing.TypeVar("Z", bound="IterationContext")
+
+
+class IterationContext(typing.List[str]):
+    """Record the iteration path."""
+
+    def __str__(self: Z) -> str:
+        """Convert the iteration path to a structured string."""
+        return ".".join(self)
+
+
+Y = typing.TypeVar("Y", bound="DeploymentContext")
+
+
 class DeploymentContext:
     """Deployment context data expected to be applied to resource tags."""
 
@@ -33,15 +46,133 @@ class DeploymentContext:
 
     # these data must be provided at deployment time because they are more
     # deeply context sensitive.
-    application_name: typing.Optional[str] = None
-    azure_subscription_name: typing.Optional[str] = None
-    azure_tenant_name: typing.Optional[str] = None
-    client: typing.Optional[str] = None
-    frame_name: typing.Optional[str] = None
-    system: typing.Optional[str] = None
+    __application_name: typing.Optional[str] = None
+    __azure_subscription_name: typing.Optional[str] = None
+    __azure_tenant_name: typing.Optional[str] = None
+    __client: typing.Optional[str] = None
+    __frame_name: typing.Optional[str] = None
+    __system: typing.Optional[str] = None
+
+    def __init__(
+        self: Y,
+        commit_sha: str,
+        pipeline_id: str,
+        release_id: str,
+        release_state: str,
+    ) -> None:
+        """Construct ``DeploymentContext`` object."""
+        self.commit_sha = commit_sha
+        self.pipeline_id = pipeline_id
+        self.release_id = release_id
+        self.release_state = release_state
+
+    @property
+    def application_name(self: Y) -> str:
+        """Get application name property."""
+        if self.__application_name:
+            return self.__application_name
+        else:
+            raise PipelineViewError(
+                "application name not specified in deployment data"
+            )
+
+    @application_name.setter
+    def application_name(self: Y, v: str) -> None:
+        """Set application name property."""
+        self.__application_name = v
+
+    @property
+    def azure_subscription_name(self: Y) -> str:
+        """Get azure subscription name property."""
+        if self.__azure_subscription_name:
+            return self.__azure_subscription_name
+        else:
+            raise PipelineViewError(
+                "azure subscription name not specified in deployment data"
+            )
+
+    @azure_subscription_name.setter
+    def azure_subscription_name(self: Y, v: str) -> None:
+        """Set azure subscription name property."""
+        self.__azure_subscription_name = v
+
+    @property
+    def azure_tenant_name(self: Y) -> str:
+        """Get azure tenant name property."""
+        if self.__azure_tenant_name:
+            return self.__azure_tenant_name
+        else:
+            raise PipelineViewError(
+                "azure tenant name not specified in deployment data"
+            )
+
+    @azure_tenant_name.setter
+    def azure_tenant_name(self: Y, v: str) -> None:
+        """Set azure tenant name property."""
+        self.__azure_tenant_name = v
+
+    @property
+    def client(self: Y) -> str:
+        """Get client name property."""
+        if self.__client:
+            return self.__client
+        else:
+            raise PipelineViewError("client not specified in deployment data")
+
+    @client.setter
+    def client(self: Y, v: str) -> None:
+        """Set client name property."""
+        self.__client = v
+
+    @property
+    def frame_name(self: Y) -> str:
+        """Get frame name property."""
+        if self.__frame_name:
+            return self.__frame_name
+        else:
+            raise PipelineViewError(
+                "frame name not specified in deployment data"
+            )
+
+    @frame_name.setter
+    def frame_name(self: Y, v: str) -> None:
+        """Set frame name property."""
+        self.__frame_name = v
+
+    @property
+    def system(self: Y) -> str:
+        """Get system name property."""
+        if self.__system:
+            return self.__system
+        else:
+            raise PipelineViewError("system not specified in deployment data")
+
+    @system.setter
+    def system(self: Y, v: str) -> None:
+        """Set system name property."""
+        self.__system = v
+
+    def __str__(self: Y) -> str:
+        """Convert object to str for logging purposes."""
+        return str(
+            {
+                "commit_sha": self.commit_sha,
+                "pipeline_id": self.pipeline_id,
+                "release_id": self.release_id,
+                "release_state": self.release_state,
+                "application_name": self.__application_name,
+                "azure_subscription_name": self.__azure_subscription_name,
+                "azure_tenant_name": self.__azure_tenant_name,
+                "client": self.__client,
+                "frame_name": self.__frame_name,
+                "system": self.__system,
+            }
+        )
 
 
-@dataclasses.dataclass
+X = typing.TypeVar("X", bound="DeployDataView")
+
+
 class DeployDataView:
     """Data critical to a resource deployment."""
 
@@ -52,7 +183,77 @@ class DeployDataView:
     location_primary: str
     release_state: str
 
-    location_secondary: typing.Optional[str] = None
+    __location_secondary: typing.Optional[str] = None
+
+    iteration_context: IterationContext
+    __puff_map: typing.Optional[PuffMap] = None
+
+    def __init__(
+        self: X,
+        ado_service_connection: str,
+        azure_subscription_name: str,
+        azure_tenant_name: str,
+        deployment_tuple: str,
+        location_primary: str,
+        release_state: str,
+        location_secondary: typing.Optional[str] = None,
+    ) -> None:
+        """Construct ``DeployDataView`` object."""
+        self.ado_service_connection = ado_service_connection
+        self.azure_subscription_name = azure_subscription_name
+        self.azure_tenant_name = azure_tenant_name
+        self.deployment_tuple = deployment_tuple
+        self.location_primary = location_primary
+        self.release_state = release_state
+        self.__location_secondary = location_secondary
+
+        self.iteration_context = IterationContext()
+
+    @property
+    def location_secondary(self: X) -> str:
+        """Get location secondary property."""
+        if self.__location_secondary:
+            return self.__location_secondary
+        else:
+            raise PipelineViewError(
+                "location secondary not specified in " "deployment data"
+            )
+
+    @location_secondary.setter
+    def location_secondary(self: X, v: str) -> None:
+        """Set location secondary property."""
+        self.__location_secondary = v
+
+    @property
+    def puff_map(self: X) -> PuffMap:
+        """Get puff map property."""
+        if self.__puff_map:
+            return self.__puff_map
+        else:
+            raise PipelineViewError("puff map not specified in deployment data")
+
+    @puff_map.setter
+    def puff_map(self: X, value: PuffMap) -> None:
+        """Set puff map property."""
+        self.__puff_map = value
+
+    def __str__(self: X) -> str:
+        """Convert object to str for logging purposes."""
+        return str(
+            {
+                "ado_service_connection": self.ado_service_connection,
+                "azure_subscription_name": self.azure_subscription_name,
+                "azure_tenant_name": self.azure_tenant_name,
+                "deployment_tuple": self.deployment_tuple,
+                "location_primary": self.location_primary,
+                "release_state": self.release_state,
+                "location_secondary": self.__location_secondary,
+                "iteration_context": self.iteration_context,
+            }
+        )
+
+
+W = typing.TypeVar("W", bound="FlattenedDeployment")
 
 
 @dataclasses.dataclass
@@ -61,6 +262,36 @@ class FlattenedDeployment:
 
     context: DeploymentContext
     data: DeployDataView
+
+    def copy_add_frame(self: W, frame_name: str) -> W:
+        """
+        Deep copy this object and add frame name data.
+
+        Args:
+            frame_name: Frame name data to add.
+
+        Returns:
+            Copied and updated object.
+        """
+        x = copy.deepcopy(self)
+        x.context.frame_name = frame_name
+        x.data.iteration_context.append(frame_name)
+        return x
+
+    def copy_add_application(self: W, application_name: str) -> W:
+        """
+        Deep copy this object and add application name data.
+
+        Args:
+            application_name: Application name data to add.
+
+        Returns:
+            Copied and updated object.
+        """
+        x = copy.deepcopy(self)
+        x.context.application_name = application_name
+        x.data.iteration_context.append(application_name)
+        return x
 
 
 V = typing.TypeVar("V", bound="SubscriptionView")

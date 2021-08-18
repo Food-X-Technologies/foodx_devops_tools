@@ -40,7 +40,7 @@ def apply_pipeline_config_test(mocker):
 
 @pytest.fixture
 def mock_pipeline_config():
-    def _apply(mock_data=MOCK_RESULTS.copy()) -> PipelineConfiguration:
+    def _apply(mock_data=copy.deepcopy(MOCK_RESULTS)) -> PipelineConfiguration:
         return PipelineConfiguration.parse_obj(mock_data)
 
     return _apply

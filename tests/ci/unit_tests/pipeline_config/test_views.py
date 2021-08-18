@@ -12,11 +12,53 @@ import pytest
 from foodx_devops_tools.pipeline_config.views import (
     DeploymentTuple,
     DeploymentView,
+    FlattenedDeployment,
+    IterationContext,
     PipelineViewError,
     ReleaseView,
     SubscriptionView,
 )
 from tests.ci.support.pipeline_config import MOCK_CONTEXT
+
+
+class TestIterationContext:
+    def test_clean(self):
+        under_test = IterationContext()
+        under_test.append("one")
+        under_test.append("two")
+
+        assert str(under_test) == "one.two"
+
+    def test_empty(self):
+        under_test = IterationContext()
+
+        assert str(under_test) == ""
+
+
+class TestFlattenedDeployment:
+    def test_copy_add_frame(self, mock_flattened_deployment):
+        expected_frame = "f1"
+        under_test = mock_flattened_deployment[0]
+
+        assert expected_frame not in under_test.data.iteration_context
+
+        result = under_test.copy_add_frame(expected_frame)
+
+        assert id(result) != id(under_test)
+        assert expected_frame in result.data.iteration_context
+        assert result.context.frame_name == expected_frame
+
+    def test_copy_add_application(self, mock_flattened_deployment):
+        expected_name = "a1"
+        under_test = mock_flattened_deployment[0]
+
+        assert expected_name not in under_test.data.iteration_context
+
+        result = under_test.copy_add_application(expected_name)
+
+        assert id(result) != id(under_test)
+        assert expected_name in result.data.iteration_context
+        assert result.context.application_name == expected_name
 
 
 class TestSubscriptionView:
