@@ -15,6 +15,9 @@ import re
 import typing
 
 from foodx_devops_tools.azure.cloud.resource_group import (
+    AzureSubscriptionConfiguration,
+)
+from foodx_devops_tools.azure.cloud.resource_group import (
     deploy as deploy_resource_group,
 )
 from foodx_devops_tools.azure.cloud.resource_group import (
@@ -183,7 +186,7 @@ def _construct_fqdn(
 
 
 def _mangle_validation_resource_group(current_name: str, suffix: str) -> str:
-    this_suffix = re.sub(r"[_.]", "-", suffix)
+    this_suffix = re.sub(r"[_.+]", "-", suffix)
     mangled_name = f"{current_name}-{this_suffix}"
 
     return mangled_name
@@ -204,8 +207,8 @@ async def deploy_application(
     this_context = str(deployment_data.data.iteration_context)
 
     try:
+        log.info("starting application deployment, {0}".format(this_context))
         await application_status.initialize(this_context)
-        log.debug("application deployment, {0}".format(this_context))
 
         await application_status.write(
             this_context, DeploymentState.ResultType.in_progress
@@ -220,6 +223,10 @@ async def deploy_application(
         puff_parameter_data = puff_application_data.arm_parameters_files[
             deployment_data.context.release_state
         ][deployment_data.context.azure_subscription_name]
+
+        this_subscription = AzureSubscriptionConfiguration(
+            subscription_id=deployment_data.context.azure_subscription_name
+        )
         for this_step in application_data:
             resource_group = (
                 _construct_resource_group_name(
@@ -239,35 +246,48 @@ async def deploy_application(
             arm_parameters_path = (
                 frame_folder / puff_parameter_data[this_step.name]
             )
-            deployment_arguments: dict = {
-                "resource_group_name": resource_group,
-                "arm_template_path": arm_template_path,
-                "arm_parameters_path": arm_parameters_path,
-                "location": deployment_data.data.location_primary,
-                "mode": this_step.mode.value,
-                "subscription": deployment_data.context.azure_subscription_name,
-            }
 
-            log.debug(str(deployment_data.context))
-            log.debug(str(deployment_data.data))
+            log.debug(
+                "deployment_data.context, {0}, {1}".format(
+                    this_context, str(deployment_data.context)
+                )
+            )
+            log.debug(
+                "deployment_data.data, {0}, {1}".format(
+                    this_context, str(deployment_data.data)
+                )
+            )
             if enable_validation:
-                log.info("validation deployment enabled")
-                deployment_arguments[
-                    "resource_group_name"
-                ] = _mangle_validation_resource_group(
-                    deployment_arguments["resource_group_name"],
+                log.info(
+                    "validation deployment enabled, {0}".format(this_context)
+                )
+                resource_group = _mangle_validation_resource_group(
+                    resource_group,
                     deployment_data.context.pipeline_id,
                 )
                 log.info(
-                    "validation resource group name, {0}".format(
-                        deployment_arguments["resource_group_name"]
-                    )
+                    "validation resource group name, {0}".format(resource_group)
                 )
-                await validate_resource_group(**deployment_arguments)
+                await validate_resource_group(
+                    resource_group,
+                    arm_template_path,
+                    arm_parameters_path,
+                    deployment_data.data.location_primary,
+                    this_step.mode.value,
+                    this_subscription,
+                )
             else:
-                log.info("deployment enabled")
-                await deploy_resource_group(**deployment_arguments)
+                log.info("deployment enabled, {0}".format(this_context))
+                await deploy_resource_group(
+                    resource_group,
+                    arm_template_path,
+                    arm_parameters_path,
+                    deployment_data.data.location_primary,
+                    this_step.mode.value,
+                    this_subscription,
+                )
 
+        log.info("application deployment succeeded, {0}".format(this_context))
         await application_status.write(
             this_context, DeploymentState.ResultType.success
         )
@@ -281,13 +301,17 @@ async def deploy_application(
         )
         raise
     except Exception as e:
-        message = str(e)
-        log.error(message)
+        message = "application deployment failed, {0}, {1}, {2}".format(
+            this_context, type(e), str(e)
+        )
         await application_status.write(
             this_context,
             DeploymentState.ResultType.failed,
             message,
         )
+        log.exception(message)
+
+    log.info("application deployment completed, {0}".format(this_context))
 
 
 async def deploy_frame(
@@ -302,9 +326,9 @@ async def deploy_frame(
     Frame applications are deployed concurrently (in parallel).
     """
     this_context = str(deployment_data.data.iteration_context)
+    log.info("starting frame deployment, {0}".format(this_context))
 
     await frame_status.initialize(this_context)
-    log.debug("frame deployment, {0}".format(this_context))
 
     application_status = DeploymentStatus()
     await asyncio.gather(
@@ -319,9 +343,6 @@ async def deploy_frame(
             for application_name, application_data in frame_data.applications.items()  # noqa: E501
         ],
         return_exceptions=False,
-    )
-    log.debug(
-        "deployment data, {0}".format(str(dataclasses.asdict(deployment_data)))
     )
 
     results = [await frame_status.read(x) for x in await frame_status.names()]
@@ -355,9 +376,6 @@ async def do_deploy(
             for frame_name, frame_data in this_frames.frames.items()
         ],
         return_exceptions=False,
-    )
-    log.debug(
-        "deployment data, {0}".format(str(dataclasses.asdict(deployment_data)))
     )
 
     results = [

@@ -88,8 +88,8 @@ async def check_exists(
         raise
     except Exception as e:
         raise ResourceGroupError(
-            "Problem acquiring resource group data, {0}".format(
-                resource_group_name
+            "Problem acquiring resource group data, {0}, {1}, {2}".format(
+                resource_group_name, type(e), str(e)
             )
         ) from e
 
@@ -184,6 +184,7 @@ async def deploy(
         mode: Deployment mode; "Complete" or "Incremental".
         subscription: Target subscription/tenant for deployment.
     """
+    result = None
     try:
         await create(resource_group_name, location, subscription)
         this_command = [
@@ -206,14 +207,33 @@ async def deploy(
                 resource_group_name, subscription.subscription_id
             )
         )
-    except CommandError:
+    except CommandError as e:
         log.error(
-            "resource group deployment failed, {0} ({1})".format(
-                resource_group_name, subscription.subscription_id
+            "resource group deployment failed, {0} ({1}), {2}".format(
+                resource_group_name, subscription.subscription_id, str(e)
             )
         )
-        log.debug("resource group deployment stdout, {0}".format(result.out))
-        log.debug("resource group deployment stderr, {0}".format(result.error))
+        if result:
+            log.debug(
+                "resource group deployment stdout, {0} ({1}), {2}".format(
+                    resource_group_name,
+                    subscription.subscription_id,
+                    result.out,
+                )
+            )
+            log.debug(
+                "resource group deployment stderr, {0} ({1}), {2}".format(
+                    resource_group_name,
+                    subscription.subscription_id,
+                    result.error,
+                )
+            )
+        else:
+            log.error(
+                "unexpected error, {0} ({1}), {2}".format(
+                    resource_group_name, subscription.subscription_id, str(e)
+                )
+            )
         raise
 
 
@@ -236,7 +256,9 @@ async def delete_when_done(
     yield
 
     # don't block for deletion event.
-    await asyncio.shield(delete(resource_group_name, subscription))
+    await asyncio.shield(
+        asyncio.create_task(delete(resource_group_name, subscription))
+    )
 
 
 async def validate(
@@ -259,6 +281,7 @@ async def validate(
         subscription: Target subscription/tenant for deployment.
 
     """
+    result = None
     async with delete_when_done(resource_group_name, subscription):
         try:
             await create(resource_group_name, location, subscription)
@@ -283,17 +306,24 @@ async def validate(
                     resource_group_name, subscription.subscription_id
                 )
             )
-        except CommandError:
+        except CommandError as e:
             log.error(
                 "Resource group deployment validation failed, "
                 "{0} ({1})".format(
                     resource_group_name, subscription.subscription_id
                 )
             )
-            log.debug(
-                "resource group validation stdout, {0}".format(result.out)
-            )
-            log.debug(
-                "resource group validation stderr, {0}".format(result.error)
-            )
+            if result:
+                log.debug(
+                    "resource group validation stdout, {0}".format(result.out)
+                )
+                log.debug(
+                    "resource group validation stderr, {0}".format(result.error)
+                )
+            else:
+                log.error(
+                    "unexpected error validating resource group, "
+                    "{0}, {1}".format(resource_group_name, str(e))
+                )
+
             raise

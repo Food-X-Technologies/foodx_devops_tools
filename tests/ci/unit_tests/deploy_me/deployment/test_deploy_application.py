@@ -11,6 +11,7 @@ import pathlib
 import pytest
 
 from foodx_devops_tools.deploy_me._deployment import (
+    AzureSubscriptionConfiguration,
     DeploymentStatus,
     deploy_application,
 )
@@ -94,15 +95,14 @@ class TestValidation(DeploymentChecks):
         )
 
         mock_deploy.assert_not_called()
-        expected_parameters: dict = {
-            "resource_group_name": "a1_group-123456",
-            "arm_template_path": pathlib.Path("some/path/a1.json"),
-            "arm_parameters_path": pathlib.Path("some/path/some/puff_map/path"),
-            "location": "l1",
-            "mode": "Incremental",
-            "subscription": "sub1",
-        }
-        mock_validate.assert_called_once_with(**expected_parameters)
+        mock_validate.assert_called_once_with(
+            "a1_group-123456",
+            pathlib.Path("some/path/a1.json"),
+            pathlib.Path("some/path/some/puff_map/path"),
+            "l1",
+            "Incremental",
+            AzureSubscriptionConfiguration(subscription_id="sub1"),
+        )
 
     @pytest.mark.asyncio
     async def test_auto_resource_group(self, prep_data):
@@ -113,15 +113,14 @@ class TestValidation(DeploymentChecks):
         )
 
         mock_deploy.assert_not_called()
-        expected_parameters: dict = {
-            "resource_group_name": "a1-f1-c1-123456",
-            "arm_template_path": pathlib.Path("some/path/a1.json"),
-            "arm_parameters_path": pathlib.Path("some/path/some/puff_map/path"),
-            "location": "l1",
-            "mode": "Incremental",
-            "subscription": "sub1",
-        }
-        mock_validate.assert_called_once_with(**expected_parameters)
+        mock_validate.assert_called_once_with(
+            "a1-f1-c1-123456",
+            pathlib.Path("some/path/a1.json"),
+            pathlib.Path("some/path/some/puff_map/path"),
+            "l1",
+            "Incremental",
+            AzureSubscriptionConfiguration(subscription_id="sub1"),
+        )
 
 
 class TestDeployment(DeploymentChecks):
@@ -134,15 +133,14 @@ class TestDeployment(DeploymentChecks):
         )
 
         mock_validate.assert_not_called()
-        expected_parameters: dict = {
-            "resource_group_name": "a1_group",
-            "arm_template_path": pathlib.Path("some/path/a1.json"),
-            "arm_parameters_path": pathlib.Path("some/path/some/puff_map/path"),
-            "location": "l1",
-            "mode": "Incremental",
-            "subscription": "sub1",
-        }
-        mock_deploy.assert_called_once_with(**expected_parameters)
+        mock_deploy.assert_called_once_with(
+            "a1_group",
+            pathlib.Path("some/path/a1.json"),
+            pathlib.Path("some/path/some/puff_map/path"),
+            "l1",
+            "Incremental",
+            AzureSubscriptionConfiguration(subscription_id="sub1"),
+        )
 
     @pytest.mark.asyncio
     async def test_auto_resource_group(self, prep_data):
@@ -153,12 +151,11 @@ class TestDeployment(DeploymentChecks):
         )
 
         mock_validate.assert_not_called()
-        expected_parameters: dict = {
-            "resource_group_name": "a1-f1-c1",
-            "arm_template_path": pathlib.Path("some/path/a1.json"),
-            "arm_parameters_path": pathlib.Path("some/path/some/puff_map/path"),
-            "location": "l1",
-            "mode": "Incremental",
-            "subscription": "sub1",
-        }
-        mock_deploy.assert_called_once_with(**expected_parameters)
+        mock_deploy.assert_called_once_with(
+            "a1-f1-c1",
+            pathlib.Path("some/path/a1.json"),
+            pathlib.Path("some/path/some/puff_map/path"),
+            "l1",
+            "Incremental",
+            AzureSubscriptionConfiguration(subscription_id="sub1"),
+        )
