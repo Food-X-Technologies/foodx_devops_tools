@@ -4,7 +4,7 @@
 #
 #  You should have received a copy of the MIT License along with
 #  foodx_devops_tools. If not, see <https://opensource.org/licenses/MIT>.
-
+import copy
 import enum
 import logging
 
@@ -13,6 +13,7 @@ import pytest
 from foodx_devops_tools.deploy_me._deployment import DeploymentState
 from foodx_devops_tools.deploy_me._main import (
     ConfigurationPathsError,
+    PipelineCliOptions,
     _get_sha,
     acquire_configuration_paths,
     do_deploy,
@@ -109,6 +110,12 @@ class TestGetSha:
 
 
 class TestDeployMe:
+    EXPECTED_DEFAULT_OPTIONS = PipelineCliOptions(
+        enable_validation=False,
+        monitor_sleep_seconds=30,
+        wait_timeout_seconds=(15 * 60),
+    )
+
     class MockReleaseState(enum.Enum):
         r1 = enum.auto()
 
@@ -134,8 +141,12 @@ class TestDeployMe:
         assert result.exit_code == 0
         mock_deploy.assert_has_calls(
             [
-                mocker.call(mocker.ANY, mocker.ANY, False),
-                mocker.call(mocker.ANY, mocker.ANY, False),
+                mocker.call(
+                    mocker.ANY, mocker.ANY, self.EXPECTED_DEFAULT_OPTIONS
+                ),
+                mocker.call(
+                    mocker.ANY, mocker.ANY, self.EXPECTED_DEFAULT_OPTIONS
+                ),
             ]
         )
 
@@ -164,8 +175,12 @@ class TestDeployMe:
         assert result.exit_code == 0
         mock_deploy.assert_has_calls(
             [
-                mocker.call(mocker.ANY, mocker.ANY, False),
-                mocker.call(mocker.ANY, mocker.ANY, False),
+                mocker.call(
+                    mocker.ANY, mocker.ANY, self.EXPECTED_DEFAULT_OPTIONS
+                ),
+                mocker.call(
+                    mocker.ANY, mocker.ANY, self.EXPECTED_DEFAULT_OPTIONS
+                ),
             ]
         )
 
@@ -189,12 +204,6 @@ class TestDeployMe:
                 code=DeploymentState.ResultType.success
             ),
         )
-        # mock_deploy = mocker.patch(
-        #     "foodx_devops_tools.deploy_me._main.asyncio.run"
-        # )
-        # mock_deploy = mock_async_method(
-        #     "foodx_devops_tools.deploy_me._main.asyncio.run"
-        # )
         with split_directories(CLEAN_SPLIT.copy()) as (
             client_config,
             system_config,
@@ -233,9 +242,81 @@ class TestDeployMe:
         )
 
         assert result.exit_code == 0
+        expected_options = copy.deepcopy(self.EXPECTED_DEFAULT_OPTIONS)
+        expected_options.enable_validation = True
         mock_deploy.assert_has_calls(
             [
-                mocker.call(mocker.ANY, mocker.ANY, True),
-                mocker.call(mocker.ANY, mocker.ANY, True),
+                mocker.call(mocker.ANY, mocker.ANY, expected_options),
+                mocker.call(mocker.ANY, mocker.ANY, expected_options),
+            ]
+        )
+
+    def test_monitor_sleep(
+        self,
+        click_runner,
+        caplog,
+        mock_async_method,
+        mock_getsha,
+        mocker,
+    ):
+        mock_input = [
+            "--monitor-sleep",
+            "120",
+        ]
+
+        result, mock_deploy = self._run_test(
+            mock_input,
+            caplog,
+            click_runner,
+            mock_async_method,
+            mock_getsha,
+            mocker,
+        )
+
+        assert result.exit_code == 0
+        expected_options = PipelineCliOptions(
+            enable_validation=False,
+            monitor_sleep_seconds=120,
+            wait_timeout_seconds=(15 * 60),
+        )
+        mock_deploy.assert_has_calls(
+            [
+                mocker.call(mocker.ANY, mocker.ANY, expected_options),
+                mocker.call(mocker.ANY, mocker.ANY, expected_options),
+            ]
+        )
+
+    def test_wait_timeout(
+        self,
+        click_runner,
+        caplog,
+        mock_async_method,
+        mock_getsha,
+        mocker,
+    ):
+        mock_input = [
+            "--wait-timeout",
+            "30",
+        ]
+
+        result, mock_deploy = self._run_test(
+            mock_input,
+            caplog,
+            click_runner,
+            mock_async_method,
+            mock_getsha,
+            mocker,
+        )
+
+        assert result.exit_code == 0
+        expected_options = PipelineCliOptions(
+            enable_validation=False,
+            monitor_sleep_seconds=30,
+            wait_timeout_seconds=(30 * 60),
+        )
+        mock_deploy.assert_has_calls(
+            [
+                mocker.call(mocker.ANY, mocker.ANY, expected_options),
+                mocker.call(mocker.ANY, mocker.ANY, expected_options),
             ]
         )

@@ -6,13 +6,12 @@
 #  foodx_devops_tools. If not, see <https://opensource.org/licenses/MIT>.
 
 import asyncio
-import copy
-import dataclasses
-import enum
 import logging
 import pathlib
 import re
 import typing
+
+import click
 
 from foodx_devops_tools.azure.cloud.resource_group import (
     AzureSubscriptionConfiguration,
@@ -30,112 +29,15 @@ from foodx_devops_tools.pipeline_config import (
     SingularFrameDefinition,
 )
 
+from ._dependency_monitor import process_dependencies
+from ._state import PipelineCliOptions
+from ._status import DeploymentState, DeploymentStatus
+
 log = logging.getLogger(__name__)
 
 SUBSCRIPTION_NAME_REGEX = (
     r"(?P<system>[a-z0-9]+)_(?P<client>[a-z0-9]+)_(?P<state>[a-z0-9]+)"
 )
-
-
-class DeploymentError(Exception):
-    """Problem executing deployment."""
-
-
-@dataclasses.dataclass
-class DeploymentState:
-    """Signal state of a deployment."""
-
-    @enum.unique
-    class ResultType(enum.Enum):
-        """Deployment state enumeration."""
-
-        cancelled = enum.auto()
-        failed = enum.auto()
-        in_progress = enum.auto()
-        pending = enum.auto()
-        success = enum.auto()
-
-    code: ResultType
-    message: typing.Optional[str] = None
-
-
-T = typing.TypeVar("T", bound="DeploymentStatus")
-
-
-class DeploymentStatus:
-    """Coordinate reporting of asynchronous deployment status."""
-
-    __lock: asyncio.Lock
-    __status: typing.Dict[str, DeploymentState]
-
-    def __init__(self: T) -> None:
-        """Construct ``DeploymentStatus`` object."""
-        self.__lock = asyncio.Lock()
-        self.__status = dict()
-
-    async def initialize(self: T, name: str) -> None:
-        """
-        Register a new deployment name to record status against.
-
-        Args:
-            name: Name of deployment.
-
-        """
-        if name in self.__status:
-            log.warning(
-                "Re-initializing existing status entry, {0}".format(name)
-            )
-        async with self.__lock:
-            self.__status[name] = DeploymentState(
-                code=DeploymentState.ResultType.pending
-            )
-
-    async def write(
-        self: T,
-        name: str,
-        code: DeploymentState.ResultType,
-        message: typing.Optional[str] = None,
-    ) -> None:
-        """
-        Write deployment state for specified deployment name.
-
-        Args:
-            name: Name of deployment.
-            code: Status code to record.
-            message: Status message (optional).
-        """
-        async with self.__lock:
-            self.__status[name].code = code
-            self.__status[name].message = message
-
-    async def read(self: T, name: str) -> DeploymentState:
-        """
-        Read deployment state for specified deployment name.
-
-        Args:
-            name: Name of deployment.
-
-        Returns:
-            Read state.
-        Raises:
-            KeyError: If name does not exist.
-        """
-        async with self.__lock:
-            result = copy.deepcopy(self.__status[name])
-
-        return result
-
-    async def names(self: T) -> typing.Set[str]:
-        """
-        Read the name registered for deployment monitoring.
-
-        Returns:
-            Set of deployment names registered.
-        """
-        async with self.__lock:
-            result = set(self.__status.keys())
-
-        return result
 
 
 def assess_results(results: typing.List[DeploymentState]) -> DeploymentState:
@@ -150,7 +52,6 @@ def assess_results(results: typing.List[DeploymentState]) -> DeploymentState:
     """
     if all([x.code == DeploymentState.ResultType.success for x in results]):
         this_result = DeploymentState(code=DeploymentState.ResultType.success)
-        messages = list()
     else:
         messages = [
             x.message
@@ -207,7 +108,9 @@ async def deploy_application(
     this_context = str(deployment_data.data.iteration_context)
 
     try:
-        log.info("starting application deployment, {0}".format(this_context))
+        message = "starting application deployment, {0}".format(this_context)
+        log.info(message)
+        click.echo(message)
         await application_status.initialize(this_context)
 
         await application_status.write(
@@ -318,26 +221,41 @@ async def deploy_frame(
     frame_data: SingularFrameDefinition,
     deployment_data: FlattenedDeployment,
     frame_status: DeploymentStatus,
-    enable_validation: bool,
+    pipeline_parameters: PipelineCliOptions,
 ) -> None:
     """
     Deploy the applications of a frame.
 
     Frame applications are deployed concurrently (in parallel).
+
+    Raises:
+        DeploymentCancelledError: If any dependencies fail preventing
+                                  completion.
     """
     this_context = str(deployment_data.data.iteration_context)
-    log.info("starting frame deployment, {0}".format(this_context))
+    message = "starting frame deployment, {0}".format(this_context)
+    log.info(message)
+    click.echo(message)
 
     await frame_status.initialize(this_context)
+    # application status will show as "pending" until deployment activates.
+    application_status = DeploymentStatus(this_context)
+    await application_status.start_monitor()
 
-    application_status = DeploymentStatus()
+    await process_dependencies(
+        deployment_data.data.iteration_context,
+        frame_data,
+        frame_status,
+        pipeline_parameters,
+    )
+
     await asyncio.gather(
         *[
             deploy_application(
                 application_data,
                 deployment_data.copy_add_application(application_name),
                 application_status,
-                enable_validation,
+                pipeline_parameters.enable_validation,
                 frame_data.folder,
             )
             for application_name, application_data in frame_data.applications.items()  # noqa: E501
@@ -355,15 +273,19 @@ async def deploy_frame(
 async def do_deploy(
     configuration: PipelineConfiguration,
     deployment_data: FlattenedDeployment,
-    enable_validation: bool,
+    pipeline_parameters: PipelineCliOptions,
 ) -> DeploymentState:
     """Deploy the frames in a flattened deployment configuration."""
     this_frames = configuration.frames
-    frame_deployment_status = DeploymentStatus()
     deployment_data.data.iteration_context.append(
         deployment_data.data.deployment_tuple
     )
     deployment_data.data.puff_map = configuration.puff_map
+
+    frame_deployment_status = DeploymentStatus(
+        str(deployment_data.data.iteration_context)
+    )
+    await frame_deployment_status.start_monitor()
 
     await asyncio.gather(
         *[
@@ -371,7 +293,7 @@ async def do_deploy(
                 frame_data,
                 deployment_data.copy_add_frame(frame_name),
                 frame_deployment_status,
-                enable_validation,
+                pipeline_parameters,
             )
             for frame_name, frame_data in this_frames.frames.items()
         ],
