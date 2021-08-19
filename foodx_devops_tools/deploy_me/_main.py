@@ -42,7 +42,7 @@ from ._deployment import (
     assess_results,
     do_deploy,
 )
-from ._state import ExitState
+from ._state import ExitState, PipelineCliOptions
 
 log = logging.getLogger(__name__)
 
@@ -69,13 +69,13 @@ def _get_sha() -> str:
 
 async def _gather_main(
     configuration: PipelineConfiguration,
-    enable_validation: bool,
     deployment_iterations: typing.List[FlattenedDeployment],
+    pipeline_parameters: PipelineCliOptions,
 ) -> typing.List[DeploymentState]:
     """Deploy each deployment iteration asynchronously."""
     results = await asyncio.gather(
         *[
-            do_deploy(configuration, x, enable_validation)
+            do_deploy(configuration, x, pipeline_parameters)
             for x in deployment_iterations
         ],
         return_exceptions=False,
@@ -145,21 +145,38 @@ eg.
     type=click.Choice(VALID_LOG_LEVELS, case_sensitive=False),
 )
 @click.option(
+    "--monitor-sleep",
+    default=30,
+    help="Sleep time in seconds between frame dependency status polls.",
+    show_default=True,
+    type=int,
+)
+@click.option(
     "--validation",
     default=False,
     help="Force deployments to be a validation deployment, regardless of any "
     "specified deployment mode in configuration.",
     is_flag=True,
 )
+@click.option(
+    "--wait-timeout",
+    default=15,
+    help="Maximum wait time in minutes for frame dependency completion. Frame "
+    "fails if the timeout is exceeded.",
+    show_default=True,
+    type=int,
+)
 def deploy_me(
     client_config: pathlib.Path,
     disable_file_log: bool,
     enable_console_log: bool,
     log_level: str,
+    monitor_sleep: int,
     system_config: pathlib.Path,
     git_ref: typing.Optional[str],
     pipeline_id: str,
     validation: bool,
+    wait_timeout: int,
 ) -> None:
     """
     Deploy system resources.
@@ -178,6 +195,11 @@ def deploy_me(
             default_log_file=DEFAULT_LOG_FILE,
         )
 
+        pipeline_parameters = PipelineCliOptions(
+            enable_validation=validation,
+            monitor_sleep_seconds=monitor_sleep,
+            wait_timeout_seconds=(60 * wait_timeout),
+        )
         configuration_paths = acquire_configuration_paths(
             client_config, system_config
         )
@@ -206,7 +228,9 @@ def deploy_me(
         log.debug(str(deployment_iterations))
 
         results = asyncio.run(
-            _gather_main(this_configuration, validation, deployment_iterations)
+            _gather_main(
+                this_configuration, deployment_iterations, pipeline_parameters
+            )
         )
         condensed_result = assess_results(results)
         if condensed_result.code == DeploymentState.ResultType.success:

@@ -15,9 +15,16 @@ from foodx_devops_tools.deploy_me._deployment import (
     DeploymentStatus,
     deploy_application,
 )
-from foodx_devops_tools.pipeline_config import PipelineConfiguration
+from foodx_devops_tools.pipeline_config import (
+    IterationContext,
+    PipelineConfiguration,
+)
 from foodx_devops_tools.pipeline_config.puff_map import PuffMapGeneratedFiles
 from tests.ci.support.pipeline_config import MOCK_RESULTS
+
+MOCK_ITERATION_CONTEXT = IterationContext()
+MOCK_ITERATION_CONTEXT.append("some")
+MOCK_ITERATION_CONTEXT.append("context")
 
 mock_pipeline_config = PipelineConfiguration.parse_obj(MOCK_RESULTS)
 MOCK_APPLICATION_DATA = mock_pipeline_config.frames.frames["f1"].applications[
@@ -55,7 +62,7 @@ class DeploymentChecks:
     ):
         mock_validate, mock_deploy, deployment_data, app_data = prep_data
 
-        this_status = DeploymentStatus()
+        this_status = DeploymentStatus(MOCK_ITERATION_CONTEXT)
         await deploy_application(
             app_data,
             deployment_data,
@@ -73,7 +80,7 @@ class DeploymentChecks:
 
         updated = copy.deepcopy(app_data)
         updated[0].resource_group = None
-        this_status = DeploymentStatus()
+        this_status = DeploymentStatus(MOCK_ITERATION_CONTEXT)
         await deploy_application(
             updated,
             deployment_data,
