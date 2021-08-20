@@ -34,7 +34,7 @@ from foodx_devops_tools.release_flow import (
     identify_release_id,
     identify_release_state,
 )
-from foodx_devops_tools.utilities import run_command
+from foodx_devops_tools.utilities import get_sha
 
 from ._deployment import (
     DeploymentState,
@@ -51,20 +51,6 @@ DEFAULT_LOG_FILE = pathlib.Path("deploy_me.log")
 
 class DeploymentConfigurationError(Exception):
     """Problem acquiring deployment configuration."""
-
-
-def _get_sha() -> str:
-    """Get the git commit SHA of HEAD."""
-    result = run_command(
-        ["git", "rev-parse", "HEAD"], text=True, capture_output=True
-    )
-
-    if result.returncode != 0:
-        raise RuntimeError("Git commit SHA acquisition failed")
-    else:
-        this_sha = result.stdout[0:10]
-
-    return this_sha
 
 
 async def _gather_main(
@@ -215,7 +201,7 @@ def deploy_me(
                 "--git-ref is mandatory (for now)"
             )
 
-        commit_sha = _get_sha()
+        commit_sha = get_sha()
         base_context = DeploymentContext(
             commit_sha=commit_sha,
             pipeline_id=pipeline_id,
