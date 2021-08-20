@@ -16,7 +16,7 @@ from foodx_devops_tools.azure.cloud.resource import (
     check_exists,
     list_resources,
 )
-from foodx_devops_tools.utility import CapturedStreams
+from foodx_devops_tools.utilities import CapturedStreams
 
 MOCKING_PATHS = {
     "json_loads": "foodx_devops_tools.azure.cloud.resource.json.loads",

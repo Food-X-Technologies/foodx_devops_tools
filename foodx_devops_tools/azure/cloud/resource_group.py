@@ -15,7 +15,8 @@ import pathlib
 import re
 import typing
 
-from foodx_devops_tools.utility import CommandError, run_async_command
+from foodx_devops_tools.utilities import run_async_command
+from foodx_devops_tools.utilities.exceptions import CommandError
 
 from .model import AzureSubscriptionConfiguration
 

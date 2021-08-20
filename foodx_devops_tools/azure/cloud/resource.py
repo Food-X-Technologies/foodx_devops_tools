@@ -12,7 +12,7 @@ import json
 import logging
 import typing
 
-from foodx_devops_tools.utility import run_async_command
+from foodx_devops_tools.utilities import run_async_command
 
 from .model import AzureSubscriptionConfiguration
 

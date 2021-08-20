@@ -34,7 +34,7 @@ from foodx_devops_tools.release_flow import (
     identify_release_id,
     identify_release_state,
 )
-from foodx_devops_tools.utility import run_command
+from foodx_devops_tools.utilities import run_command
 
 from ._deployment import (
     DeploymentState,
