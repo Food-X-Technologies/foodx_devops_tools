@@ -7,9 +7,9 @@
 
 import pytest
 
-from foodx_devops_tools.pipeline_config import (
+from foodx_devops_tools.pipeline_config import load_release_states
+from foodx_devops_tools.pipeline_config.exceptions import (
     ReleaseStatesDefinitionError,
-    load_release_states,
 )
 
 

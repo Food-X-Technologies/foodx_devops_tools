@@ -5,11 +5,10 @@
 #  You should have received a copy of the MIT License along with
 #  foodx_devops_tools. If not, see <https://opensource.org/licenses/MIT>.
 
-from foodx_devops_tools.validate_configuration import (
-    ExitState,
+from foodx_devops_tools.pipeline_config.exceptions import (
     PipelineConfigurationError,
-    _main,
 )
+from foodx_devops_tools.validate_configuration import ExitState, _main
 from tests.ci.support.click_runner import (  # noqa: F401
     click_runner,
     isolated_filesystem,

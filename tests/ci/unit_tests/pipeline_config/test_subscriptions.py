@@ -7,9 +7,9 @@
 
 import pytest
 
-from foodx_devops_tools.pipeline_config import (
+from foodx_devops_tools.pipeline_config import load_subscriptions
+from foodx_devops_tools.pipeline_config.exceptions import (
     SubscriptionsDefinitionError,
-    load_subscriptions,
 )
 
 

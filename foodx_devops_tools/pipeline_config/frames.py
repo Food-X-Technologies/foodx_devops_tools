@@ -14,17 +14,13 @@ import typing
 
 import pydantic
 
+from ._exceptions import FrameDefinitionsError
 from ._loader import load_configuration
 
 log = logging.getLogger(__name__)
 
 ENTITY_NAME = "frames"
 ENTITY_SINGULAR = "frame"
-
-
-class FrameDefinitionsError(Exception):
-    """Problem loading frame definitions."""
-
 
 DependencyDeclarations = typing.List[str]
 GlobPathDeclarations = typing.List[str]

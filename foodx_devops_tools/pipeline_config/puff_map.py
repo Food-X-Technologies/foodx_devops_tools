@@ -13,17 +13,13 @@ import typing
 
 import pydantic
 
+from ._exceptions import PuffMapDefinitionsError
 from ._loader import load_configuration
 
 log = logging.getLogger(__name__)
 
 ENTITY_NAME = "puff_map"
 ENTITY_SINGULAR = "puff_map"
-
-
-class PuffMapDefinitionsError(Exception):
-    """Problem parsing puff map definitions."""
-
 
 PuffMapPaths = typing.Dict[str, pathlib.Path]
 PuffMapSubscriptions = typing.Dict[str, PuffMapPaths]

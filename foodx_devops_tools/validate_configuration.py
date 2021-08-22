@@ -17,11 +17,11 @@ import click
 from ._paths import ConfigurationPathsError, acquire_configuration_paths
 from ._version import acquire_version
 from .console import report_failure, report_success
-from .pipeline_config import (
+from .pipeline_config import PipelineConfiguration
+from .pipeline_config.exceptions import (
     ClientsDefinitionError,
     DeploymentsDefinitionError,
     FrameDefinitionsError,
-    PipelineConfiguration,
     PipelineConfigurationError,
     PipelineViewError,
     ReleaseStatesDefinitionError,

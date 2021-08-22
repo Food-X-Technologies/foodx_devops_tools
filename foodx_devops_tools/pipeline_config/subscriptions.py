@@ -12,13 +12,10 @@ import typing
 
 import pydantic
 
+from ._exceptions import SubscriptionsDefinitionError
 from ._loader import load_configuration
 
 ENTITY_NAME = "subscriptions"
-
-
-class SubscriptionsDefinitionError(Exception):
-    """Problem loading subscription definitions."""
 
 
 class SingularSubscriptionDefinition(pydantic.BaseModel):

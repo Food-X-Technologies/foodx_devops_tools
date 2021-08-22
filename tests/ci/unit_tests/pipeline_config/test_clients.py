@@ -7,10 +7,8 @@
 
 import pytest
 
-from foodx_devops_tools.pipeline_config import (
-    ClientsDefinitionError,
-    load_clients,
-)
+from foodx_devops_tools.pipeline_config import load_clients
+from foodx_devops_tools.pipeline_config.exceptions import ClientsDefinitionError
 
 
 @pytest.fixture

@@ -7,9 +7,9 @@
 
 import pytest
 
-from foodx_devops_tools.pipeline_config import (
+from foodx_devops_tools.pipeline_config import load_deployments
+from foodx_devops_tools.pipeline_config.exceptions import (
     DeploymentsDefinitionError,
-    load_deployments,
 )
 
 

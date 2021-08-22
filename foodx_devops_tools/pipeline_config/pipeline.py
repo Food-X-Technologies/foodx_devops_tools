@@ -15,6 +15,7 @@ import typing
 
 import pydantic
 
+from ._exceptions import PipelineConfigurationError
 from .clients import ValueType as ClientsData
 from .clients import load_clients
 from .deployments import ValueType as DeploymentsData
@@ -40,10 +41,6 @@ DEPLOYMENT_NAME_REGEX = (
     r"[_-]"
     r"(?P<release_state>[a-z0-9]+)$"
 )
-
-
-class PipelineConfigurationError(Exception):
-    """Problem occurred loading pipeline configuration."""
 
 
 @dataclasses.dataclass()

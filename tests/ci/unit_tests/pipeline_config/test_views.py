@@ -9,12 +9,11 @@ import copy
 
 import pytest
 
+from foodx_devops_tools.pipeline_config.exceptions import PipelineViewError
 from foodx_devops_tools.pipeline_config.views import (
     DeploymentTuple,
     DeploymentView,
-    FlattenedDeployment,
     IterationContext,
-    PipelineViewError,
     ReleaseView,
     SubscriptionView,
 )

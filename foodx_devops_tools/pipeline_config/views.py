@@ -13,14 +13,10 @@ import logging
 import typing
 
 from ..deployment import DeploymentTuple
+from ._exceptions import PipelineViewError
 from .pipeline import PipelineConfiguration, PuffMap
 
 log = logging.getLogger(__name__)
-
-
-class PipelineViewError(Exception):
-    """Problem with view data."""
-
 
 Z = typing.TypeVar("Z", bound="IterationContext")
 
