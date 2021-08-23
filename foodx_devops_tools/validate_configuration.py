@@ -8,6 +8,7 @@
 
 """Validation pipeline configuration data."""
 
+import asyncio
 import enum
 import pathlib
 import sys
@@ -17,7 +18,7 @@ import click
 from ._paths import ConfigurationPathsError, acquire_configuration_paths
 from ._version import acquire_version
 from .console import report_failure, report_success
-from .pipeline_config import PipelineConfiguration
+from .pipeline_config import PipelineConfiguration, do_path_check
 from .pipeline_config.exceptions import (
     ClientsDefinitionError,
     DeploymentsDefinitionError,
@@ -51,19 +52,43 @@ class ExitState(enum.Enum):
     "system_config",
     type=click.Path(dir_okay=True, file_okay=False, path_type=pathlib.Path),
 )
-def _main(client_config: pathlib.Path, system_config: pathlib.Path) -> None:
-    """Validate pipeline configuration files.
+@click.option(
+    "--check-paths",
+    default=False,
+    help="Check paths in configuration for file or directory existence.",
+    is_flag=True,
+)
+def _main(
+    client_config: pathlib.Path, system_config: pathlib.Path, check_paths: bool
+) -> None:
+    """
+    Validate pipeline configuration files.
 
-    Exits non-zero if validation fails.
+    Exits non-zero if validation fails. Without the ``--check-paths`` option
+    the utility loads the configuration to check for self-consistency of the
+    data. In this case the release state does not need to be known.
 
-    CONFIGURATION_DIR is the path to the directory where pipeline configuration
-    files are located.
+    With the ``--check-paths`` option, the utility iterates over the release
+    states configured for the client to check that all arm template and arm
+    templates paramater files are in the expected locations unless the
+    ``--git-ref`` option is also specified. In this case the check path tests
+    only apply to the release state implied by the git ref.
+
+    CLIENT_CONFIG:  The path to the directory where client configuration
+                    files are located.
+    SYSTEM_CONFIG:  The path to the directory where system configuration
+                    files are located.
     """
     try:
         configuration_paths = acquire_configuration_paths(
             client_config, system_config
         )
-        PipelineConfiguration.from_files(configuration_paths)
+        pipeline_configuration = PipelineConfiguration.from_files(
+            configuration_paths
+        )
+
+        if check_paths:
+            asyncio.run(do_path_check(pipeline_configuration))
 
         report_success("pipeline configuration validated")
     except ConfigurationPathsError as e:

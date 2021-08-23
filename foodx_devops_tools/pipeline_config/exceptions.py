@@ -10,6 +10,7 @@
 from ._exceptions import (  # noqa: F401
     ClientsDefinitionError,
     DeploymentsDefinitionError,
+    FolderPathError,
     FrameDefinitionsError,
     PipelineConfigurationError,
     PipelineViewError,

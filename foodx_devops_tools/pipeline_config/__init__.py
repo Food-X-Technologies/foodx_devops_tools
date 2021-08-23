@@ -7,12 +7,15 @@
 
 """File I/O for pipeline configuration metadata."""
 
+from ._checks import do_path_check  # noqa: F401
 from .clients import ClientsDefinition, load_clients  # noqa: F401
 from .deployments import DeploymentsDefinition, load_deployments  # noqa: F401
 from .frames import (  # noqa: F401
     ApplicationDeploymentSteps,
     FramesDefinition,
     SingularFrameDefinition,
+    StructuredName,
+    StructuredPathCollection,
     load_frames,
 )
 from .pipeline import (  # noqa: F401

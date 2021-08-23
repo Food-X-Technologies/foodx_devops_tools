@@ -16,6 +16,10 @@ class FrameDefinitionsError(Exception):
     """Problem loading frame definitions."""
 
 
+class FolderPathError(Exception):
+    """Problem acquiring frame folder path."""
+
+
 class PipelineConfigurationError(Exception):
     """Problem occurred loading pipeline configuration."""
 
