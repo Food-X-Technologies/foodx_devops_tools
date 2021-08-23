@@ -14,9 +14,7 @@ from foodx_devops_tools.deploy_me._deployment import DeploymentState
 from foodx_devops_tools.deploy_me._main import (
     ConfigurationPathsError,
     PipelineCliOptions,
-    _get_sha,
     acquire_configuration_paths,
-    do_deploy,
 )
 from foodx_devops_tools.deploy_me_entry import deploy_me
 from foodx_devops_tools.pipeline_config import PipelineConfigurationPaths
@@ -71,42 +69,14 @@ class TestAcquireConfigurationPaths:
 
 
 @pytest.fixture()
-def mock_gitsha_result(mocker):
-    def _apply(returncode: int, output: str = ""):
-        mock_result = mocker.MagicMock()
-        mock_result.returncode = returncode
-        mock_result.stdout = output
-        this_mock = mocker.patch(
-            "foodx_devops_tools.deploy_me._main.run_command",
-            return_value=mock_result,
-        )
-        return this_mock
-
-    return _apply
-
-
-@pytest.fixture()
 def mock_getsha(mocker):
     def _apply(output: str = ""):
         mocker.patch(
-            "foodx_devops_tools.deploy_me._main._get_sha",
+            "foodx_devops_tools.deploy_me._main.get_sha",
             return_value=output,
         )
 
     return _apply
-
-
-class TestGetSha:
-    def test_clean(self, mock_gitsha_result):
-        mock_gitsha_result(0, output="abc123")
-        result = _get_sha()
-
-        assert result == "abc123"
-
-    def test_error_raises(self, mock_gitsha_result):
-        mock_gitsha_result(1)
-        with pytest.raises(RuntimeError):
-            _get_sha()
 
 
 class TestDeployMe:

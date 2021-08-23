@@ -24,7 +24,7 @@ from foodx_devops_tools.azure.cloud.resource_group import (
 from foodx_devops_tools.azure.cloud.resource_group import (
     create as create_resource_group,
 )
-from foodx_devops_tools.utility import CapturedStreams
+from foodx_devops_tools.utilities import CapturedStreams
 
 MOCK_SUBSCRIPTION = AzureSubscriptionConfiguration(
     subscription_id="123-abc", tenant_id="abc-123"

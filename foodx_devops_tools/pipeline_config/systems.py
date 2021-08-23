@@ -12,14 +12,10 @@ import typing
 
 import pydantic
 
+from ._exceptions import SystemsDefinitionError
 from ._loader import load_configuration
 
 ENTITY_NAME = "systems"
-
-
-class SystemsDefinitionError(Exception):
-    """Problem loading system definitions."""
-
 
 T = typing.TypeVar("T", bound="SystemsDefinition")
 

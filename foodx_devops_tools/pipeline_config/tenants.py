@@ -12,13 +12,10 @@ import typing
 
 import pydantic
 
+from ._exceptions import TenantsDefinitionError
 from ._loader import load_configuration
 
 ENTITY_NAME = "tenants"
-
-
-class TenantsDefinitionError(Exception):
-    """Problem loading tenant definitions."""
 
 
 class SingularTenantDefinition(pydantic.BaseModel):

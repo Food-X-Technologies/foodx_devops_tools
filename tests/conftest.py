@@ -63,9 +63,13 @@ def mock_flattened_deployment(mock_pipeline_config):
 @pytest.fixture()
 def mock_async_method(mocker):
     def _apply(
-        path_to_mock: str, return_value: typing.Optional[typing.Any] = None
+        path_to_mock: str,
+        return_value: typing.Optional[typing.Any] = None,
+        side_effect: typing.Optional[typing.Any] = None,
     ):
-        async_mock = unittest.mock.AsyncMock(return_value=return_value)
+        async_mock = unittest.mock.AsyncMock(
+            return_value=return_value, side_effect=side_effect
+        )
         this_mock = mocker.patch(path_to_mock, side_effect=async_mock)
 
         return this_mock

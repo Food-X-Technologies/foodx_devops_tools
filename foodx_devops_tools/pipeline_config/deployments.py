@@ -12,13 +12,10 @@ import typing
 
 import pydantic
 
+from ._exceptions import DeploymentsDefinitionError
 from ._loader import load_configuration
 
 ENTITY_NAME = "deployments"
-
-
-class DeploymentsDefinitionError(Exception):
-    """Problem loading deployment definitions."""
 
 
 class DeploymentLocations(pydantic.BaseModel):

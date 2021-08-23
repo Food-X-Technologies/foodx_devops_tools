@@ -7,10 +7,8 @@
 
 import pytest
 
-from foodx_devops_tools.pipeline_config import (
-    TenantsDefinitionError,
-    load_tenants,
-)
+from foodx_devops_tools.pipeline_config import load_tenants
+from foodx_devops_tools.pipeline_config.exceptions import TenantsDefinitionError
 
 
 @pytest.fixture

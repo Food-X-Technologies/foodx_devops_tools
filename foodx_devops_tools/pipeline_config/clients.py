@@ -12,14 +12,10 @@ import typing
 
 import pydantic
 
+from ._exceptions import ClientsDefinitionError
 from ._loader import load_configuration
 
 ENTITY_NAME = "clients"
-
-
-class ClientsDefinitionError(Exception):
-    """Problem loading client definitions."""
-
 
 ReleaseStatesValueType = typing.List[str]
 

@@ -12,14 +12,10 @@ import typing
 
 import pydantic
 
+from ._exceptions import ReleaseStatesDefinitionError
 from ._loader import load_configuration
 
 ENTITY_NAME = "release_states"
-
-
-class ReleaseStatesDefinitionError(Exception):
-    """Problem loading release state definitions."""
-
 
 T = typing.TypeVar("T", bound="ReleaseStatesDefinition")
 

@@ -11,7 +11,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from foodx_devops_tools.utility import (
+from foodx_devops_tools.utilities import (
     CapturedStreams,
     run_async_command,
     run_command,
@@ -20,7 +20,9 @@ from foodx_devops_tools.utility import (
 
 class TestRunCommand:
     def test_simple(self, mocker):
-        mock_run = mocker.patch("foodx_devops_tools.utility.subprocess.run")
+        mock_run = mocker.patch(
+            "foodx_devops_tools.utilities.command.subprocess.run"
+        )
         command = ["something", "--option"]
 
         result = run_command(command)
@@ -40,7 +42,8 @@ class TestRunAsyncCommand:
             expected_output.error.encode(),
         )
         mock_run = mocker.patch(
-            "foodx_devops_tools.utility.asyncio.create_subprocess_exec",
+            "foodx_devops_tools.utilities.command.asyncio"
+            ".create_subprocess_exec",
             side_effect=async_mock,
         )
         command = ["something", "--option"]

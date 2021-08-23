@@ -20,9 +20,11 @@ from foodx_devops_tools.pipeline_config import (
     ClientsDefinition,
     DeploymentsDefinition,
     PipelineConfiguration,
-    PipelineConfigurationError,
     PipelineConfigurationPaths,
     SubscriptionsDefinition,
+)
+from foodx_devops_tools.pipeline_config.exceptions import (
+    PipelineConfigurationError,
 )
 from tests.ci.support.pipeline_config import (
     CLEAN_SPLIT,

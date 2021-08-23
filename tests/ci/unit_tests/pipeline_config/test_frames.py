@@ -9,10 +9,8 @@ import pathlib
 
 import pytest
 
-from foodx_devops_tools.pipeline_config import (
-    FrameDefinitionsError,
-    load_frames,
-)
+from foodx_devops_tools.pipeline_config import StructuredName, load_frames
+from foodx_devops_tools.pipeline_config.exceptions import FrameDefinitionsError
 
 
 @pytest.fixture
@@ -348,3 +346,121 @@ frames:
         FrameDefinitionsError, match=r"Error validating frames definition"
     ):
         apply_applications_test(file_text)
+
+
+class TestArmFiles:
+    def test_default(self, apply_applications_test):
+        file_text = """---
+frames:
+  frames:
+    f1:
+      applications:
+        a1: 
+          - name: a1l1
+            mode: Incremental
+      folder: some/path
+"""
+
+        under_test = apply_applications_test(file_text)
+        result = under_test.frames.arm_file_paths()
+
+        assert result == {
+            StructuredName(["f1", "a1", "a1l1"]): pathlib.Path(
+                "some/path/a1.json"
+            )
+        }
+
+    def test_explicit(self, apply_applications_test):
+        file_text = """---
+frames:
+  frames:
+    f1:
+      applications:
+        a1: 
+          - name: a1l1
+            mode: Incremental
+            arm_file: arm_file.json
+      folder: some/path
+"""
+
+        under_test = apply_applications_test(file_text)
+        result = under_test.frames.arm_file_paths()
+
+        assert result == {
+            StructuredName(["f1", "a1", "a1l1"]): pathlib.Path(
+                "some/path/arm_file.json"
+            )
+        }
+
+    def test_mixed(self, apply_applications_test):
+        file_text = """---
+frames:
+  frames:
+    f1:
+      applications:
+        a1: 
+          - name: a1l1
+            mode: Incremental
+        a2: 
+          - name: a2l1
+            mode: Incremental
+            arm_file: arm_file.json
+      folder: some/path
+"""
+
+        under_test = apply_applications_test(file_text)
+        result = under_test.frames.arm_file_paths()
+
+        assert result == {
+            StructuredName(["f1", "a1", "a1l1"]): pathlib.Path(
+                "some/path/a1.json"
+            ),
+            StructuredName(["f1", "a2", "a2l1"]): pathlib.Path(
+                "some/path/arm_file.json"
+            ),
+        }
+
+
+class TestFrameFolders:
+    def test_single(self, apply_applications_test):
+        file_text = """---
+frames:
+  frames:
+    f1:
+      applications:
+        a1: 
+          - name: a1l1
+            mode: Incremental
+      folder: some/path
+"""
+
+        under_test = apply_applications_test(file_text)
+        result = under_test.frames.frame_folders()
+
+        assert result == {StructuredName(["f1"]): pathlib.Path("some/path")}
+
+    def test_multiple(self, apply_applications_test):
+        file_text = """---
+frames:
+  frames:
+    f1:
+      applications:
+        a1: 
+          - name: a1l1
+            mode: Incremental
+      folder: some/path
+    f2:
+      applications:
+        a1: 
+          - name: a1l1
+            mode: Incremental
+      folder: f2/path
+"""
+
+        under_test = apply_applications_test(file_text)
+        result = under_test.frames.frame_folders()
+
+        assert result == {
+            StructuredName(["f1"]): pathlib.Path("some/path"),
+            StructuredName(["f2"]): pathlib.Path("f2/path"),
+        }

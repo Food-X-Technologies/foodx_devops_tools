@@ -12,9 +12,11 @@ import pytest
 from foodx_devops_tools.pipeline_config import (
     FramesDefinition,
     PipelineConfiguration,
-    PipelineConfigurationError,
     PuffMapGeneratedFiles,
     ReleaseStatesDefinition,
+)
+from foodx_devops_tools.pipeline_config.exceptions import (
+    PipelineConfigurationError,
 )
 from tests.ci.support.pipeline_config import MOCK_PATHS
 

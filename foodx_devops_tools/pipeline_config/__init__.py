@@ -7,58 +7,39 @@
 
 """File I/O for pipeline configuration metadata."""
 
-from .clients import (  # noqa: F401
-    ClientsDefinition,
-    ClientsDefinitionError,
-    load_clients,
-)
-from .deployments import (  # noqa: F401
-    DeploymentsDefinition,
-    DeploymentsDefinitionError,
-    load_deployments,
-)
+from ._checks import do_path_check  # noqa: F401
+from .clients import ClientsDefinition, load_clients  # noqa: F401
+from .deployments import DeploymentsDefinition, load_deployments  # noqa: F401
 from .frames import (  # noqa: F401
     ApplicationDeploymentSteps,
-    FrameDefinitionsError,
     FramesDefinition,
     SingularFrameDefinition,
+    StructuredName,
+    StructuredPathCollection,
     load_frames,
 )
 from .pipeline import (  # noqa: F401
     PipelineConfiguration,
-    PipelineConfigurationError,
     PipelineConfigurationPaths,
 )
 from .puff_map import (  # noqa: F401
     PuffMap,
-    PuffMapDefinitionsError,
     PuffMapGeneratedFiles,
     load_puff_map,
 )
 from .release_states import (  # noqa: F401
     ReleaseStatesDefinition,
-    ReleaseStatesDefinitionError,
     load_release_states,
 )
 from .subscriptions import (  # noqa: F401
     SubscriptionsDefinition,
-    SubscriptionsDefinitionError,
     load_subscriptions,
 )
-from .systems import (  # noqa: F401
-    SystemsDefinition,
-    SystemsDefinitionError,
-    load_systems,
-)
-from .tenants import (  # noqa: F401
-    TenantsDefinition,
-    TenantsDefinitionError,
-    load_tenants,
-)
+from .systems import SystemsDefinition, load_systems  # noqa: F401
+from .tenants import TenantsDefinition, load_tenants  # noqa: F401
 from .views import (  # noqa: F401
     DeploymentContext,
     FlattenedDeployment,
     IterationContext,
-    PipelineViewError,
     ReleaseView,
 )

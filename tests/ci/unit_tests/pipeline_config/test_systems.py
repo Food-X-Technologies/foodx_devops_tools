@@ -7,10 +7,8 @@
 
 import pytest
 
-from foodx_devops_tools.pipeline_config import (
-    SystemsDefinitionError,
-    load_systems,
-)
+from foodx_devops_tools.pipeline_config import load_systems
+from foodx_devops_tools.pipeline_config.exceptions import SystemsDefinitionError
 
 
 @pytest.fixture
