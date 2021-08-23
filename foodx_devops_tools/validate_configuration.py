@@ -91,6 +91,9 @@ def _main(
             asyncio.run(do_path_check(pipeline_configuration))
 
         report_success("pipeline configuration validated")
+    except FileNotFoundError as e:
+        report_failure(str(e))
+        sys.exit(ExitState.BAD_CONFIGURATION_PATHS.value)
     except ConfigurationPathsError as e:
         report_failure(str(e))
         sys.exit(ExitState.BAD_CONFIGURATION_PATHS.value)
