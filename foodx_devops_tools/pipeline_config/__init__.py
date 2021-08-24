@@ -31,6 +31,10 @@ from .release_states import (  # noqa: F401
     ReleaseStatesDefinition,
     load_release_states,
 )
+from .service_principals import (  # noqa: F401
+    ServicePrincipals,
+    load_service_principals,
+)
 from .subscriptions import (  # noqa: F401
     SubscriptionsDefinition,
     load_subscriptions,
