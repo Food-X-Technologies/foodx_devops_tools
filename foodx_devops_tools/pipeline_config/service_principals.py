@@ -89,7 +89,7 @@ def _decrypt_vault(
 
 
 @contextlib.contextmanager
-def managed_file(
+def managed_file_decrypt(
     encrypted_file_path: pathlib.Path, decrypt_token: str
 ) -> typing.Generator[typing.TextIO, None, None]:
     """
@@ -133,7 +133,9 @@ def load_service_principals(
 ) -> ServicePrincipals:
     """Load service principal secrets from a string."""
     yaml = ruamel.yaml.YAML(typ="safe")
-    with managed_file(encrypted_file_path, decrypt_token) as decrypted_stream:
+    with managed_file_decrypt(
+        encrypted_file_path, decrypt_token
+    ) as decrypted_stream:
         yaml_data = yaml.load(decrypted_stream)
 
     this_object = ServicePrincipals.parse_obj(yaml_data)

@@ -72,6 +72,7 @@ class ExitState(enum.Enum):
     "log_level",
     default=DEFAULT_LOG_LEVEL,
     help="Select logging level to apply to all enabled log sinks.",
+    show_default=True,
     type=click.Choice(VALID_LOG_LEVELS, case_sensitive=False),
 )
 @click.option(

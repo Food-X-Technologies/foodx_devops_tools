@@ -6,6 +6,7 @@
 #  foodx_devops_tools. If not, see <https://opensource.org/licenses/MIT>.
 
 import contextlib
+import os
 import pathlib
 import tempfile
 
@@ -15,6 +16,7 @@ from foodx_devops_tools.pipeline_config import (
     DeploymentContext,
     PipelineConfigurationPaths,
 )
+from foodx_devops_tools.pipeline_config.service_principals import _encrypt_vault
 
 MOCK_CONTEXT = DeploymentContext(
     commit_sha="abc123",
@@ -29,6 +31,7 @@ CLEAN_SPLIT = {
         "deployments",
         "frames",
         "puff_map",
+        "service_principals",
     },
     "system": {
         "release_states",
@@ -48,8 +51,11 @@ NOT_SPLIT = {
         "deployments",
         "frames",
         "puff_map",
+        "service_principals",
     },
 }
+
+MOCK_SECRET = "verysecret"
 
 MOCK_RESULTS = {
     "clients": {
@@ -110,6 +116,9 @@ MOCK_RESULTS = {
         },
     },
     "release_states": ["r1", "r2"],
+    "service_principals": {
+        "sub1": {"id": "12345", "secret": "verysecret", "name": "sp_name"},
+    },
     "subscriptions": {
         "sub1": {
             "ado_service_connection": "some-name",
@@ -128,6 +137,7 @@ MOCK_PATHS = PipelineConfigurationPaths(
         "deployments": pathlib.Path("deployment/path"),
         "frames": pathlib.Path("frame/path"),
         "puff_map": pathlib.Path("puff_map/path"),
+        "service_principals": pathlib.Path("service_principal/path"),
         "subscriptions": pathlib.Path("subscription/path"),
         "systems": pathlib.Path("system/path"),
         "tenants": pathlib.Path("tenant/path"),
@@ -136,7 +146,7 @@ MOCK_PATHS = PipelineConfigurationPaths(
 
 
 @contextlib.contextmanager
-def split_directories(split: dict):
+def split_directories(split: dict, decrypt_token: str = MOCK_SECRET):
     """Generate configuration files split across two directories."""
     yaml = ruamel.yaml.YAML(typ="safe")
     with tempfile.TemporaryDirectory() as dir1:
@@ -149,8 +159,30 @@ def split_directories(split: dict):
             }
             for key, files in split.items():
                 for this_file in files:
-                    file_path = paths[key] / "{0}.yml".format(this_file)
-                    with file_path.open(mode="w") as f:
-                        yaml.dump({this_file: MOCK_RESULTS[this_file]}, f)
+                    if this_file != "service_principals":
+                        file_path = paths[key] / "{0}.yml".format(this_file)
+                        with file_path.open(mode="w") as f:
+                            yaml.dump({this_file: MOCK_RESULTS[this_file]}, f)
+                    else:
+                        # service_principals requires special handling due to
+                        # encryption
+                        file_path = paths[key] / "{0}.yml".format(this_file)
+                        with file_path.open(mode="w") as f:
+                            yaml.dump({this_file: MOCK_RESULTS[this_file]}, f)
+
+                        encrypted_file_path = paths[key] / "{0}.vault".format(
+                            this_file
+                        )
+                        password_file_path = pathlib.Path(
+                            str(encrypted_file_path) + ".password"
+                        )
+                        with password_file_path.open(mode="w") as f:
+                            f.write(decrypt_token)
+                        _encrypt_vault(
+                            encrypted_file_path, password_file_path, file_path
+                        )
+
+                        os.remove(password_file_path)
+                        os.remove(file_path)
 
             yield pd1, pd2

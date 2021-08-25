@@ -17,7 +17,7 @@ from foodx_devops_tools.pipeline_config import load_service_principals
 from foodx_devops_tools.pipeline_config.service_principals import (
     _decrypt_vault,
     _encrypt_vault,
-    managed_file,
+    managed_file_decrypt,
 )
 
 
@@ -78,7 +78,9 @@ class TestManagedFile:
                 assert not expected_plain_file.exists()
                 assert not expected_password_file.exists()
 
-                with managed_file(encrypted_file_path, decrypt_token) as f:
+                with managed_file_decrypt(
+                    encrypted_file_path, decrypt_token
+                ) as f:
                     # plain text file has been created
                     assert expected_plain_file.is_file()
 
@@ -110,7 +112,7 @@ service_principals:
 """
         mock_stream = io.StringIO(initial_value=file_text)
         mock_context = mocker.patch(
-            "foodx_devops_tools.pipeline_config.service_principals.managed_file"
+            "foodx_devops_tools.pipeline_config.service_principals.managed_file_decrypt"
         )
         mock_context.return_value.__enter__.return_value = mock_stream
 

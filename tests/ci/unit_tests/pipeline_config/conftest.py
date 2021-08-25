@@ -21,6 +21,7 @@ from foodx_devops_tools.pipeline_config import (
     PipelineConfiguration,
     PuffMapGeneratedFiles,
     ReleaseStatesDefinition,
+    ServicePrincipals,
     SubscriptionsDefinition,
     SystemsDefinition,
     TenantsDefinition,
@@ -61,6 +62,12 @@ def mock_loads(mocker):
             "foodx_devops_tools.pipeline_config.pipeline.load_release_states",
             return_value=ReleaseStatesDefinition.parse_obj(
                 {"release_states": mock_data.release_states}
+            ),
+        )
+        mocker.patch(
+            "foodx_devops_tools.pipeline_config.pipeline.load_service_principals",
+            return_value=ServicePrincipals.parse_obj(
+                {"service_principals": mock_data.service_principals}
             ),
         )
         mocker.patch(

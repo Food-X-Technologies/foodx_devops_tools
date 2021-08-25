@@ -4,6 +4,7 @@
 #
 #  You should have received a copy of the MIT License along with
 #  foodx_devops_tools. If not, see <https://opensource.org/licenses/MIT>.
+
 import copy
 import enum
 import logging
@@ -19,7 +20,11 @@ from foodx_devops_tools.deploy_me._main import (
 from foodx_devops_tools.deploy_me_entry import deploy_me
 from foodx_devops_tools.pipeline_config import PipelineConfigurationPaths
 from tests.ci.support.click_runner import click_runner  # noqa: F401
-from tests.ci.support.pipeline_config import CLEAN_SPLIT, split_directories
+from tests.ci.support.pipeline_config import (
+    CLEAN_SPLIT,
+    MOCK_SECRET,
+    split_directories,
+)
 
 
 class TestAcquireConfigurationPaths:
@@ -36,6 +41,7 @@ class TestAcquireConfigurationPaths:
                 frames=client_config / "frames.yml",
                 puff_map=client_config / "puff_map.yml",
                 release_states=system_config / "release_states.yml",
+                service_principals=client_config / "service_principals.vault",
                 subscriptions=system_config / "subscriptions.yml",
                 systems=system_config / "systems.yml",
                 tenants=system_config / "tenants.yml",
@@ -50,6 +56,7 @@ class TestAcquireConfigurationPaths:
                 "frames",
                 "puff_map",
                 "release_states",
+                "service_principals",
             },
             "system": {
                 "release_states",
@@ -181,12 +188,15 @@ class TestDeployMe:
             mock_input += [
                 str(client_config),
                 str(system_config),
+                "-",
                 # --git-ref is mandatory, for now
                 "--git-ref",
                 "refs/heads/main",
             ]
             with caplog.at_level(logging.DEBUG):
-                result = click_runner.invoke(deploy_me, mock_input)
+                result = click_runner.invoke(
+                    deploy_me, mock_input, input=MOCK_SECRET
+                )
 
         return result, mock_deploy
 
