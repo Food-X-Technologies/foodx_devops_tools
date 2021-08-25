@@ -32,6 +32,10 @@ class ReleaseStatesDefinitionError(Exception):
     """Problem loading release state definitions."""
 
 
+class ServicePrincipalsError(Exception):
+    """Problem loading service principal secrets."""
+
+
 class SubscriptionsDefinitionError(Exception):
     """Problem loading subscription definitions."""
 
