@@ -31,10 +31,13 @@ class PrincipalConfiguration(pydantic.BaseModel):
     name: str
 
 
+ValueType = typing.Dict[str, PrincipalConfiguration]
+
+
 class ServicePrincipals(pydantic.BaseModel):
     """Define a collection of service principal id's and keys."""
 
-    service_principals: typing.Dict[str, PrincipalConfiguration]
+    service_principals: ValueType
 
 
 def _encrypt_vault(
