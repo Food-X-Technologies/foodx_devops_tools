@@ -13,28 +13,12 @@ import pathlib
 import tempfile
 import typing
 
-import pytest
-
-from foodx_devops_tools.pipeline_config import (
-    ServicePrincipals,
-    load_service_principals,
-)
+from foodx_devops_tools.pipeline_config import load_service_principals
 from foodx_devops_tools.pipeline_config.service_principals import (
     _decrypt_vault,
     _encrypt_vault,
     managed_file,
 )
-
-
-@pytest.fixture
-def apply_service_principals_test(apply_pipeline_config_test):
-    def _apply(mock_content: str) -> ServicePrincipals:
-        result = apply_pipeline_config_test(
-            mock_content, load_service_principals
-        )
-        return result
-
-    return _apply
 
 
 @contextlib.contextmanager
@@ -58,6 +42,7 @@ def encrypted_file(
         )
 
         os.remove(unencrypted_file_path)
+        os.remove(password_file_path)
 
         assert encrypted_file_path.is_file()
         with encrypted_file_path.open("r") as f:
@@ -65,7 +50,7 @@ def encrypted_file(
 
         assert encrypted_content.startswith("$ANSIBLE_VAULT;1.1;AES256")
 
-        yield encrypted_file_path, password_file_path
+        yield encrypted_file_path
 
 
 class TestManagedFile:
@@ -79,17 +64,21 @@ class TestManagedFile:
         name: principal-name1
         secret: verysecret
     """
-            with encrypted_file(file_text, "somesecret") as (
-                encrypted_file_path,
-                password_file_path,
+            decrypt_token = "somesecret"
+            with encrypted_file(file_text, decrypt_token) as (
+                encrypted_file_path
             ):
                 expected_plain_file = pathlib.Path(
                     str(encrypted_file_path) + ".yml"
                 )
-                # plain text file does not exist
+                expected_password_file = pathlib.Path(
+                    str(encrypted_file_path) + ".password"
+                )
+                # temporary files do not exist
                 assert not expected_plain_file.exists()
+                assert not expected_password_file.exists()
 
-                with managed_file(encrypted_file_path, password_file_path) as f:
+                with managed_file(encrypted_file_path, decrypt_token) as f:
                     # plain text file has been created
                     assert expected_plain_file.is_file()
 
@@ -97,8 +86,9 @@ class TestManagedFile:
 
                     assert content == file_text
 
-                # plain text file has been erased
+                # temporary files have been erased
                 assert not expected_plain_file.exists()
+                assert not expected_password_file.exists()
 
 
 class TestLoadServicePrincipals:
@@ -148,13 +138,9 @@ service_principals:
     name: principal-name2
     secret: verysecret
 """
-        with encrypted_file(file_text, "somesecret") as (
-            encrypted_file_path,
-            password_file_path,
-        ):
-            result = load_service_principals(
-                encrypted_file_path, password_file_path
-            )
+        decrypt_token = "somesecret"
+        with encrypted_file(file_text, decrypt_token) as (encrypted_file_path):
+            result = load_service_principals(encrypted_file_path, decrypt_token)
 
         assert len(result.service_principals) == 2
         assert result.service_principals["sub1_name"].id == "12345-id"

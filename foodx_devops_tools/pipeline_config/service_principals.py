@@ -90,7 +90,7 @@ def _decrypt_vault(
 
 @contextlib.contextmanager
 def managed_file(
-    encrypted_file_path: pathlib.Path, password_file_path: pathlib.Path
+    encrypted_file_path: pathlib.Path, decrypt_token: str
 ) -> typing.Generator[typing.TextIO, None, None]:
     """
     Manage the decryption of an Ansible vault within a context.
@@ -100,14 +100,18 @@ def managed_file(
 
     Args:
         encrypted_file_path: Path to encrypted file.
-        password_file_path: Path to password file.
+        decrypt_token: Token for decrypting Ansible vault.
 
     Yields:
         File stream object of decrypted file.
     """
     decrypted_path = pathlib.Path(str(encrypted_file_path) + ".yml")
+    password_file_path = pathlib.Path(str(encrypted_file_path) + ".password")
     try:
+        with password_file_path.open(mode="w") as f:
+            f.write(decrypt_token)
         _decrypt_vault(encrypted_file_path, decrypted_path, password_file_path)
+        os.remove(password_file_path)
 
         with decrypted_path.open(mode="r") as f:
             yield f
@@ -120,16 +124,16 @@ def managed_file(
     finally:
         if decrypted_path.exists():
             os.remove(decrypted_path)
+        if password_file_path.exists():
+            os.remove(password_file_path)
 
 
 def load_service_principals(
-    encrypted_file_path: pathlib.Path, password_file_path: pathlib.Path
+    encrypted_file_path: pathlib.Path, decrypt_token: str
 ) -> ServicePrincipals:
     """Load service principal secrets from a string."""
     yaml = ruamel.yaml.YAML(typ="safe")
-    with managed_file(
-        encrypted_file_path, password_file_path
-    ) as decrypted_stream:
+    with managed_file(encrypted_file_path, decrypt_token) as decrypted_stream:
         yaml_data = yaml.load(decrypted_stream)
 
     this_object = ServicePrincipals.parse_obj(yaml_data)
