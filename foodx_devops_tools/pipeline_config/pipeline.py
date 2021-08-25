@@ -25,6 +25,8 @@ from .frames import load_frames
 from .puff_map import PuffMap, load_puff_map
 from .release_states import ValueType as ReleaseStatesData
 from .release_states import load_release_states
+from .service_principals import ValueType as ServicePrincipalsData
+from .service_principals import load_service_principals
 from .subscriptions import ValueType as SubscriptionsData
 from .subscriptions import load_subscriptions
 from .systems import ValueType as SystemsData
@@ -52,6 +54,7 @@ class PipelineConfigurationPaths:
     deployments: pathlib.Path
     frames: pathlib.Path
     puff_map: pathlib.Path
+    service_principals: pathlib.Path
     subscriptions: pathlib.Path
     systems: pathlib.Path
     tenants: pathlib.Path
@@ -68,12 +71,19 @@ class PipelineConfiguration(pydantic.BaseModel):
     deployments: DeploymentsData
     frames: FramesData
     puff_map: PuffMap
+    service_principals: typing.Optional[ServicePrincipalsData]
     subscriptions: SubscriptionsData
     systems: SystemsData
     tenants: TenantsData
 
+    decrypt_token: typing.Optional[str] = None
+
     @classmethod
-    def from_files(cls: typing.Type[T], paths: PipelineConfigurationPaths) -> T:
+    def from_files(
+        cls: typing.Type[T],
+        paths: PipelineConfigurationPaths,
+        decrypt_token: typing.Optional[str],
+    ) -> T:
         """
         Load pipeline configuration from collection of files.
 
@@ -91,6 +101,19 @@ class PipelineConfiguration(pydantic.BaseModel):
         subscription_config = load_subscriptions(paths.subscriptions)
         system_config = load_systems(paths.systems)
         tenant_config = load_tenants(paths.tenants)
+
+        service_principals_config = None
+        if decrypt_token:
+            service_principals_config = load_service_principals(
+                paths.service_principals, decrypt_token
+            )
+        else:
+            if not paths.service_principals.is_file():
+                raise FileNotFoundError(
+                    "Missing service principals vault "
+                    "file, {0}".format(paths.service_principals)
+                )
+
         kwargs = {
             "clients": client_config.clients,
             "release_states": release_state_config.release_states,
@@ -100,7 +123,13 @@ class PipelineConfiguration(pydantic.BaseModel):
             "subscriptions": subscription_config.subscriptions,
             "systems": system_config.systems,
             "tenants": tenant_config.tenants,
+            "decrypt_token": decrypt_token,
         }
+        if service_principals_config:
+            kwargs[
+                "service_principals"
+            ] = service_principals_config.service_principals
+
         new_object = cls(**kwargs)
 
         return new_object
@@ -203,6 +232,23 @@ class PipelineConfiguration(pydantic.BaseModel):
                         )
                     )
                     raise PipelineConfigurationError(message)
+        return loaded_data
+
+    @pydantic.root_validator()
+    def check_service_principals(
+        cls: pydantic.BaseModel, loaded_data: dict
+    ) -> dict:
+        """Validate service principal data."""
+        if loaded_data["service_principals"]:
+            bad_subscriptions = [
+                "{0}".format(name)
+                for name in loaded_data["service_principals"].keys()
+                if name not in loaded_data["subscriptions"].keys()
+            ]
+            if any(bad_subscriptions):
+                message = "Bad subscription(s) in service_principals"
+                log.error("{0}, {1}".format(message, str(bad_subscriptions)))
+                raise PipelineConfigurationError(message)
         return loaded_data
 
     @pydantic.root_validator()

@@ -20,6 +20,7 @@ PIPELINE_CONFIG_FILES = {
     "deployments.yml",
     "frames.yml",
     "puff_map.yml",
+    "service_principals.vault",
     "subscriptions.yml",
     "systems.yml",
     "tenants.yml",
@@ -51,8 +52,7 @@ def acquire_configuration_paths(
         )
 
     path_arguments = {
-        x.name.strip(".yml"): x
-        for x in set(client_files).union(set(system_files))
+        x.stem: x for x in set(client_files).union(set(system_files))
     }
     result = PipelineConfigurationPaths(**path_arguments)
     return result

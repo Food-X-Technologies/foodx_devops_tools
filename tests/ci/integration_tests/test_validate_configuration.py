@@ -17,7 +17,7 @@ from tests.ci.support.click_runner import (  # noqa: F401
 )
 from tests.ci.support.pipeline_config import (
     CLEAN_SPLIT,
-    NOT_SPLIT,
+    MOCK_SECRET,
     split_directories,
 )
 
@@ -74,6 +74,10 @@ frames:
 release_states:
   - r1
 """,
+        "bad": "",
+    },
+    "service_principals.vault": {
+        "good": """""",
         "bad": "",
     },
     "subscriptions.yml": {
@@ -134,7 +138,9 @@ def test_good_exits_clean(click_runner):
             [
                 str(client_config),
                 str(system_config),
+                "-",
             ],
+            input=MOCK_SECRET,
         )
 
         if result.exit_code != 0:

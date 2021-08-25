@@ -34,7 +34,7 @@ from foodx_devops_tools.release_flow import (
     identify_release_id,
     identify_release_state,
 )
-from foodx_devops_tools.utilities import get_sha
+from foodx_devops_tools.utilities import acquire_token, get_sha
 
 from ._deployment import (
     DeploymentState,
@@ -83,6 +83,10 @@ async def _gather_main(
     "system_config",
     type=click.Path(dir_okay=True, file_okay=False, path_type=pathlib.Path),
 )
+@click.argument(
+    "password_file",
+    type=click.File(mode="r"),
+)
 @click.option(
     "--git-ref",
     default=None,
@@ -94,19 +98,6 @@ eg.
     ``${GITHUB_REF}`` for Github Actions.
     ``${CI_COMMIT_REF_NAME}`` for Gitlab-CI.
 """,
-    type=str,
-)
-@click.option(
-    "--pipeline-id",
-    default="000+local",
-    help="""The pipeline ID. Should be considered mandatory for a CI/CD
- pipeline (optional for developers running locally).
-
-eg.
-
-    ``$(Build.BuildNumber)`` for Azure DevOps Pipelines.
-    ``${GITHUB_RUN_NUMBER}`` for Github Actions.
-    ``${CI_PIPELINE_ID}`` for Gitlab-CI.""",
     type=str,
 )
 @click.option(
@@ -128,6 +119,7 @@ eg.
     "log_level",
     default=DEFAULT_LOG_LEVEL,
     help="Select logging level to apply to all enabled log sinks.",
+    show_default=True,
     type=click.Choice(VALID_LOG_LEVELS, case_sensitive=False),
 )
 @click.option(
@@ -136,6 +128,19 @@ eg.
     help="Sleep time in seconds between frame dependency status polls.",
     show_default=True,
     type=int,
+)
+@click.option(
+    "--pipeline-id",
+    default="000+local",
+    help="""The pipeline ID. Should be considered mandatory for a CI/CD
+ pipeline (optional for developers running locally).
+
+eg.
+
+    ``$(Build.BuildNumber)`` for Azure DevOps Pipelines.
+    ``${GITHUB_RUN_NUMBER}`` for Github Actions.
+    ``${CI_PIPELINE_ID}`` for Gitlab-CI.""",
+    type=str,
 )
 @click.option(
     "--validation",
@@ -154,11 +159,12 @@ eg.
 )
 def deploy_me(
     client_config: pathlib.Path,
+    system_config: pathlib.Path,
+    password_file: typing.IO,
     disable_file_log: bool,
     enable_console_log: bool,
     log_level: str,
     monitor_sleep: int,
-    system_config: pathlib.Path,
     git_ref: typing.Optional[str],
     pipeline_id: str,
     validation: bool,
@@ -170,6 +176,8 @@ def deploy_me(
     CLIENT_CONFIG  The client specific configuration directory.
     SYSTEM_CONFIG  The directory containing all non-client related pipeline
                    and deployment configuration.
+    PASSWORD_FILE:  The path to a file where the service principal decryption
+                    password is stored, or "-" for stdin.
     """
     try:
         # currently no need to change logging configuration at run time,
@@ -189,8 +197,9 @@ def deploy_me(
         configuration_paths = acquire_configuration_paths(
             client_config, system_config
         )
+        decrypt_token = acquire_token(password_file)
         this_configuration = PipelineConfiguration.from_files(
-            configuration_paths
+            configuration_paths, decrypt_token
         )
 
         if git_ref:

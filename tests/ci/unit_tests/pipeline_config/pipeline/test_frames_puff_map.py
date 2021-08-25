@@ -13,12 +13,11 @@ from foodx_devops_tools.pipeline_config import (
     FramesDefinition,
     PipelineConfiguration,
     PuffMapGeneratedFiles,
-    ReleaseStatesDefinition,
 )
 from foodx_devops_tools.pipeline_config.exceptions import (
     PipelineConfigurationError,
 )
-from tests.ci.support.pipeline_config import MOCK_PATHS
+from tests.ci.support.pipeline_config import MOCK_PATHS, MOCK_SECRET
 
 log = logging.getLogger(__name__)
 
@@ -84,7 +83,7 @@ def test_mismatched_frames_raises1(mock_loads, mock_results):
         PipelineConfigurationError,
         match=r"Frame definitions mismatch between frames and puff map",
     ):
-        PipelineConfiguration.from_files(MOCK_PATHS)
+        PipelineConfiguration.from_files(MOCK_PATHS, MOCK_SECRET)
 
 
 def test_mismatched_frames_raises2(mock_loads, mock_results):
@@ -147,7 +146,7 @@ def test_mismatched_frames_raises2(mock_loads, mock_results):
         PipelineConfigurationError,
         match=r"Frame definitions mismatch between frames and puff map",
     ):
-        PipelineConfiguration.from_files(MOCK_PATHS)
+        PipelineConfiguration.from_files(MOCK_PATHS, MOCK_SECRET)
 
 
 def test_mismatched_applications_raises1(mock_loads, mock_results):
@@ -208,7 +207,7 @@ def test_mismatched_applications_raises1(mock_loads, mock_results):
         match=r"Application definitions mismatch between frames and puff "
         r"map",
     ):
-        PipelineConfiguration.from_files(MOCK_PATHS)
+        PipelineConfiguration.from_files(MOCK_PATHS, MOCK_SECRET)
 
 
 def test_mismatched_applications_raises2(mock_loads, mock_results):
@@ -267,7 +266,7 @@ def test_mismatched_applications_raises2(mock_loads, mock_results):
         match=r"Application definitions mismatch between frames and puff "
         r"map",
     ):
-        PipelineConfiguration.from_files(MOCK_PATHS)
+        PipelineConfiguration.from_files(MOCK_PATHS, MOCK_SECRET)
 
 
 def test_bad_puff_map_release_state_raises(mock_loads, mock_results):
@@ -317,7 +316,7 @@ def test_bad_puff_map_release_state_raises(mock_loads, mock_results):
     with pytest.raises(
         PipelineConfigurationError, match=r"Bad release state in puff map"
     ):
-        PipelineConfiguration.from_files(MOCK_PATHS)
+        PipelineConfiguration.from_files(MOCK_PATHS, MOCK_SECRET)
 
 
 def test_bad_puff_map_subscription_raises(mock_loads, mock_results):
@@ -367,7 +366,7 @@ def test_bad_puff_map_subscription_raises(mock_loads, mock_results):
     with pytest.raises(
         PipelineConfigurationError, match=r"Bad subscription in puff map"
     ):
-        PipelineConfiguration.from_files(MOCK_PATHS)
+        PipelineConfiguration.from_files(MOCK_PATHS, MOCK_SECRET)
 
 
 def test_missing_application_step_raises1(mock_loads, mock_results):
@@ -423,7 +422,7 @@ def test_missing_application_step_raises1(mock_loads, mock_results):
         PipelineConfigurationError,
         match=r"Application step name mismatch between frames and puff map",
     ):
-        PipelineConfiguration.from_files(MOCK_PATHS)
+        PipelineConfiguration.from_files(MOCK_PATHS, MOCK_SECRET)
 
 
 def test_missing_application_step_raises2(mock_loads, mock_results):
@@ -475,4 +474,4 @@ def test_missing_application_step_raises2(mock_loads, mock_results):
         PipelineConfigurationError,
         match=r"Application step name mismatch between frames and puff map",
     ):
-        PipelineConfiguration.from_files(MOCK_PATHS)
+        PipelineConfiguration.from_files(MOCK_PATHS, MOCK_SECRET)

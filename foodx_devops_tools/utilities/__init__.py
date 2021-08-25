@@ -14,3 +14,4 @@ from .command import (  # noqa: F401
     run_command,
 )
 from .git import get_sha  # noqa: F401
+from .io import acquire_token  # noqa: F401

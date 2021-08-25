@@ -16,7 +16,7 @@ from foodx_devops_tools.pipeline_config._checks import (
     _file_exists,
     do_path_check,
 )
-from tests.ci.support.pipeline_config import MOCK_PATHS
+from tests.ci.support.pipeline_config import MOCK_PATHS, MOCK_SECRET
 
 log = logging.getLogger(__name__)
 
@@ -51,7 +51,7 @@ class TestDoPathCheck:
             return_value=True,
         )
         mock_loads(mock_results)
-        mock_config = PipelineConfiguration.from_files(MOCK_PATHS)
+        mock_config = PipelineConfiguration.from_files(MOCK_PATHS, MOCK_SECRET)
 
         await do_path_check(mock_config)
 
@@ -64,7 +64,7 @@ class TestDoPathCheck:
             side_effect=[True, False],
         )
         mock_loads(mock_results)
-        mock_config = PipelineConfiguration.from_files(MOCK_PATHS)
+        mock_config = PipelineConfiguration.from_files(MOCK_PATHS, MOCK_SECRET)
 
         with pytest.raises(
             FileNotFoundError, match=r"files missing from " r"deployment"
@@ -80,7 +80,7 @@ class TestDoPathCheck:
             side_effect=[False, False],
         )
         mock_loads(mock_results)
-        mock_config = PipelineConfiguration.from_files(MOCK_PATHS)
+        mock_config = PipelineConfiguration.from_files(MOCK_PATHS, MOCK_SECRET)
 
         with pytest.raises(
             FileNotFoundError, match=r"files missing from " r"deployment"
@@ -100,7 +100,7 @@ class TestDoPathCheck:
             return_value=True,
         )
         mock_loads(mock_results)
-        mock_config = PipelineConfiguration.from_files(MOCK_PATHS)
+        mock_config = PipelineConfiguration.from_files(MOCK_PATHS, MOCK_SECRET)
 
         with pytest.raises(RuntimeError):
             await do_path_check(mock_config)

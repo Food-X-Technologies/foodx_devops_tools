@@ -15,6 +15,7 @@ from tests.ci.support.click_runner import (  # noqa: F401
 )
 from tests.ci.support.pipeline_config import (
     CLEAN_SPLIT,
+    MOCK_SECRET,
     NOT_SPLIT,
     split_directories,
 )
@@ -28,9 +29,25 @@ class TestMain:
         ):
             result = click_runner.invoke(
                 _main,
+                [str(client_config), str(system_config), "-"],
+                input=MOCK_SECRET,
+            )
+
+            assert result.exit_code == 0
+
+    def test_missing_input_ignored(self, click_runner):
+        """--disable-sp option doesn't read from stdin."""
+        with split_directories(NOT_SPLIT.copy()) as (
+            client_config,
+            system_config,
+        ):
+            result = click_runner.invoke(
+                _main,
                 [
                     str(client_config),
                     str(system_config),
+                    "-",
+                    "--disable-sp",
                 ],
             )
 
@@ -46,7 +63,9 @@ class TestMain:
                 [
                     str(client_config),
                     str(system_config),
+                    "-",
                 ],
+                input=MOCK_SECRET,
             )
 
             assert result.exit_code == 0
@@ -69,7 +88,9 @@ class TestMain:
                 [
                     str(client_config),
                     str(system_config),
+                    "-",
                 ],
+                input=MOCK_SECRET,
             )
 
             assert result.exit_code == ExitState.MISSING_GITREF.value
@@ -92,7 +113,9 @@ class TestMain:
                 [
                     str(client_config),
                     str(system_config),
+                    "-",
                 ],
+                input=MOCK_SECRET,
             )
 
             assert result.exit_code == ExitState.UNKNOWN.value

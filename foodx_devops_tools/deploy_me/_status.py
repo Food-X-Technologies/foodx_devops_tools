@@ -132,7 +132,7 @@ class DeploymentStatus:
         while not completed:
             status = {n: await self.read(n) for n in await self.names()}
             if not status:
-                message = "status is empty, {0}".format(
+                message = "nothing to report, {0}".format(
                     self.__iteration_context
                 )
                 log.info(message)
@@ -146,19 +146,35 @@ class DeploymentStatus:
                     log.info(message)
                     click.echo(click.style(message, fg=this_colour))
                 if all(
-                    x
-                    in [
-                        DeploymentState.ResultType.success,
-                        DeploymentState.ResultType.failed,
-                        DeploymentState.ResultType.cancelled,
+                    [
+                        x
+                        in [
+                            DeploymentState.ResultType.success,
+                        ]
+                        for x in status.values()
                     ]
-                    for x in status.values()
                 ):
                     completed = True
                     log.info(
                         "all deployments succeeded for context, {0}".format(
                             self.__iteration_context
                         )
+                    )
+                elif all(
+                    [
+                        x
+                        in [
+                            DeploymentState.ResultType.success,
+                            DeploymentState.ResultType.failed,
+                            DeploymentState.ResultType.cancelled,
+                        ]
+                        for x in status.values()
+                    ]
+                ):
+                    completed = True
+                    log.info(
+                        "all deployments completed with some failures for "
+                        "context, {0}".format(self.__iteration_context)
                     )
 
             if not completed:
