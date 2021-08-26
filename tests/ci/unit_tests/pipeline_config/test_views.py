@@ -85,7 +85,7 @@ class TestSubscriptionView:
 
         result = under_test.deploy_data
 
-        assert [x.azure_service_principal_id for x in result] == [
+        assert [x.azure_credentials.userid for x in result] == [
             "12345",
             "12345",
         ]
