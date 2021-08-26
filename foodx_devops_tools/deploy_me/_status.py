@@ -51,7 +51,7 @@ class DeploymentStatus:
 
     STATE_COLOURS = {
         DeploymentState.ResultType.pending: "white",
-        DeploymentState.ResultType.in_progress: "orange",
+        DeploymentState.ResultType.in_progress: "cyan",
         DeploymentState.ResultType.cancelled: "yellow",
         DeploymentState.ResultType.failed: "red",
         DeploymentState.ResultType.success: "green",

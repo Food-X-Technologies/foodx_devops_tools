@@ -14,5 +14,6 @@ Exports:
 * ResourceGroupError
 """
 
+from .auth import AzureAuthenticationError  # noqa: F401
 from .resource import ResourceError  # noqa: F401
 from .resource_group import ResourceGroupError  # noqa: F401

@@ -12,6 +12,8 @@ import dataclasses
 import logging
 import typing
 
+from foodx_devops_tools.azure.cloud import AzureCredentials
+
 from ..deployment import DeploymentTuple
 from ._exceptions import PipelineViewError
 from .pipeline import PipelineConfiguration, PuffMap
@@ -172,9 +174,7 @@ X = typing.TypeVar("X", bound="DeployDataView")
 class DeployDataView:
     """Data critical to a resource deployment."""
 
-    ado_service_connection: str
-    azure_subscription_name: str
-    azure_tenant_name: str
+    azure_credentials: AzureCredentials
     deployment_tuple: str
     location_primary: str
     release_state: str
@@ -186,18 +186,14 @@ class DeployDataView:
 
     def __init__(
         self: X,
-        ado_service_connection: str,
-        azure_subscription_name: str,
-        azure_tenant_name: str,
+        azure_credentials: AzureCredentials,
         deployment_tuple: str,
         location_primary: str,
         release_state: str,
         location_secondary: typing.Optional[str] = None,
     ) -> None:
         """Construct ``DeployDataView`` object."""
-        self.ado_service_connection = ado_service_connection
-        self.azure_subscription_name = azure_subscription_name
-        self.azure_tenant_name = azure_tenant_name
+        self.azure_credentials = azure_credentials
         self.deployment_tuple = deployment_tuple
         self.location_primary = location_primary
         self.release_state = release_state
@@ -237,9 +233,7 @@ class DeployDataView:
         """Convert object to str for logging purposes."""
         return str(
             {
-                "ado_service_connection": self.ado_service_connection,
-                "azure_subscription_name": self.azure_subscription_name,
-                "azure_tenant_name": self.azure_tenant_name,
+                "azure_credentials": self.azure_credentials,
                 "deployment_tuple": self.deployment_tuple,
                 "location_primary": self.location_primary,
                 "release_state": self.release_state,
@@ -322,13 +316,25 @@ class SubscriptionView:
                 str(self.deployment_view.deployment_tuple)
             ]
         )
+        this_service_principals = (
+            self.deployment_view.release_view.configuration.service_principals  # noqa E501
+        )
+        if not this_service_principals:
+            raise PipelineViewError("Missing service principal credentials")
+
+        this_tenants = self.deployment_view.release_view.configuration.tenants
         for this_locations in this_deployment.subscriptions[
             self.subscription_name
         ].locations:
+            this_credentials = AzureCredentials(
+                userid=this_service_principals[self.subscription_name].id,
+                secret=this_service_principals[self.subscription_name].secret,
+                name=this_service_principals[self.subscription_name].name,
+                subscription=base_data.azure_id,
+                tenant=this_tenants[base_data.tenant].azure_id,
+            )
             this_data: typing.Dict[str, typing.Any] = {
-                "ado_service_connection": base_data.ado_service_connection,
-                "azure_subscription_name": self.subscription_name,
-                "azure_tenant_name": base_data.tenant,
+                "azure_credentials": this_credentials,
                 "deployment_tuple": str(self.deployment_view.deployment_tuple),
                 "location_primary": this_locations.primary,
                 "location_secondary": None,

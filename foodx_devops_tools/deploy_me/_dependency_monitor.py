@@ -57,7 +57,7 @@ async def _status_wait(
             )
         )
         log.info(message)
-        click.echo(click.style(message))
+        click.echo(click.style(message, fg="cyan"))
         await frame_status.write(
             str(this_context), DeploymentState.ResultType.in_progress
         )
@@ -113,6 +113,7 @@ async def _status_wait(
                     this_context, dependency_context
                 )
                 log.info(message)
+                click.echo(click.style(message))
                 await asyncio.sleep(status_monitor_sleep_seconds)
         except KeyError:
             # we know the key is *supposed* to exist because it's defined in
