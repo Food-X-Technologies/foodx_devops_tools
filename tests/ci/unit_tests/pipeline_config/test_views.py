@@ -85,9 +85,9 @@ class TestSubscriptionView:
 
         result = under_test.deploy_data
 
-        assert [x.ado_service_connection for x in result] == [
-            "some-name",
-            "some-name",
+        assert [x.azure_service_principal_id for x in result] == [
+            "12345",
+            "12345",
         ]
         assert {x.location_primary for x in result} == {"l1", "l2"}
 

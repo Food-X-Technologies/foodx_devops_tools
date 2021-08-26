@@ -172,7 +172,8 @@ X = typing.TypeVar("X", bound="DeployDataView")
 class DeployDataView:
     """Data critical to a resource deployment."""
 
-    ado_service_connection: str
+    azure_service_principal_id: typing.Optional[str]
+    azure_service_principal_secret: typing.Optional[str]
     azure_subscription_name: str
     azure_tenant_name: str
     deployment_tuple: str
@@ -186,7 +187,8 @@ class DeployDataView:
 
     def __init__(
         self: X,
-        ado_service_connection: str,
+        azure_service_principal_id: typing.Optional[str],
+        azure_service_principal_secret: typing.Optional[str],
         azure_subscription_name: str,
         azure_tenant_name: str,
         deployment_tuple: str,
@@ -195,7 +197,8 @@ class DeployDataView:
         location_secondary: typing.Optional[str] = None,
     ) -> None:
         """Construct ``DeployDataView`` object."""
-        self.ado_service_connection = ado_service_connection
+        self.azure_service_principal_id = azure_service_principal_id
+        self.azure_service_principal_secret = azure_service_principal_secret
         self.azure_subscription_name = azure_subscription_name
         self.azure_tenant_name = azure_tenant_name
         self.deployment_tuple = deployment_tuple
@@ -237,7 +240,8 @@ class DeployDataView:
         """Convert object to str for logging purposes."""
         return str(
             {
-                "ado_service_connection": self.ado_service_connection,
+                "azure_service_principal_id": self.azure_service_principal_id,
+                "azure_service_principal_secret": self.azure_service_principal_secret,  # noqa: E501
                 "azure_subscription_name": self.azure_subscription_name,
                 "azure_tenant_name": self.azure_tenant_name,
                 "deployment_tuple": self.deployment_tuple,
@@ -325,8 +329,20 @@ class SubscriptionView:
         for this_locations in this_deployment.subscriptions[
             self.subscription_name
         ].locations:
+            this_service_principals = (
+                self.deployment_view.release_view.configuration.service_principals  # noqa E501
+            )
             this_data: typing.Dict[str, typing.Any] = {
-                "ado_service_connection": base_data.ado_service_connection,
+                "azure_service_principal_id": this_service_principals[
+                    self.subscription_name
+                ].id
+                if this_service_principals
+                else None,
+                "azure_service_principal_secret": this_service_principals[
+                    self.subscription_name
+                ].secret
+                if this_service_principals
+                else None,
                 "azure_subscription_name": self.subscription_name,
                 "azure_tenant_name": base_data.tenant,
                 "deployment_tuple": str(self.deployment_view.deployment_tuple),
