@@ -26,14 +26,17 @@ MOCK_CREDENTIALS = AzureCredentials(
 @pytest.mark.asyncio
 async def test_clean(mock_async_method, mocker):
     mock_return = mocker.MagicMock()
-    mock_return.out = "some output"
+    mock_return.out = """{
+  "some": "json output"
+}
+"""
 
     mock_run = mock_async_method(
         "foodx_devops_tools.azure.cloud.auth.run_async_command",
         return_value=mock_return,
     )
 
-    await login_service_principal(MOCK_CREDENTIALS)
+    result = await login_service_principal(MOCK_CREDENTIALS)
 
     mock_run.assert_called_once_with(
         [
@@ -49,15 +52,36 @@ async def test_clean(mock_async_method, mocker):
         ]
     )
 
+    assert result == {
+        "some": "json output",
+    }
+
 
 @pytest.mark.asyncio
-async def test_failed_raises(mocker):
+async def test_commanderror_raises(mocker):
     mock_return = mocker.MagicMock()
     mock_return.out = "some output"
 
     mocker.patch(
         "foodx_devops_tools.azure.cloud.auth.run_async_command",
         side_effect=CommandError(),
+    )
+
+    with pytest.raises(
+        AzureAuthenticationError,
+        match=r"^Service principal authentication failed",
+    ):
+        await login_service_principal(MOCK_CREDENTIALS)
+
+
+@pytest.mark.asyncio
+async def test_exception_raises(mocker):
+    mock_return = mocker.MagicMock()
+    mock_return.out = "some output"
+
+    mocker.patch(
+        "foodx_devops_tools.azure.cloud.auth.run_async_command",
+        side_effect=RuntimeError(),
     )
 
     with pytest.raises(
