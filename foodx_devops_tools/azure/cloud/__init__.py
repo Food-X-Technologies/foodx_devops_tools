@@ -19,5 +19,6 @@ Exports:
 * deploy_resource_group function
 """
 
+from .auth import AzureCredentials, login_service_principal  # noqa: F401
 from .model import AzureSubscriptionConfiguration  # noqa: F401
 from .resource_group import deploy as deploy_resource_group  # noqa: F401
