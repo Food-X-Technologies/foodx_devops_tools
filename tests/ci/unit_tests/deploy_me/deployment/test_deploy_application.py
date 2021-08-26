@@ -52,6 +52,9 @@ def prep_data(mock_async_method, mock_flattened_deployment):
     mock_deploy = mock_async_method(
         "foodx_devops_tools.deploy_me._deployment.deploy_resource_group"
     )
+    mock_async_method(
+        "foodx_devops_tools.deploy_me._deployment.login_service_principal"
+    )
 
     return mock_validate, mock_deploy, deployment_data, app_data
 

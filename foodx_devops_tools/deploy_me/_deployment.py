@@ -13,6 +13,10 @@ import typing
 
 import click
 
+from foodx_devops_tools.azure.cloud.auth import (
+    AzureAuthenticationError,
+    login_service_principal,
+)
 from foodx_devops_tools.azure.cloud.resource_group import (
     AzureSubscriptionConfiguration,
 )
@@ -160,6 +164,9 @@ async def deploy_application(
                     this_context, str(deployment_data.data)
                 )
             )
+            await login_service_principal(
+                deployment_data.data.azure_credentials
+            )
             if enable_validation:
                 log.info(
                     "validation deployment enabled, {0}".format(this_context)
@@ -203,6 +210,17 @@ async def deploy_application(
             message,
         )
         raise
+    except AzureAuthenticationError as e:
+        message = (
+            "application deployment authentication "
+            "failure, {0}, {1}, {2}".format(this_context, type(e), str(e))
+        )
+        await application_status.write(
+            this_context,
+            DeploymentState.ResultType.failed,
+            message,
+        )
+        log.error(message)
     except Exception as e:
         message = "application deployment failed, {0}, {1}, {2}".format(
             this_context, type(e), str(e)
