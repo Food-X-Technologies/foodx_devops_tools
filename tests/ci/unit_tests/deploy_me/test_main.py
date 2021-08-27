@@ -15,6 +15,7 @@ from foodx_devops_tools.deploy_me._deployment import DeploymentState
 from foodx_devops_tools.deploy_me._main import (
     ConfigurationPathsError,
     PipelineCliOptions,
+    _report_results,
     acquire_configuration_paths,
 )
 from foodx_devops_tools.deploy_me_entry import deploy_me
@@ -25,6 +26,38 @@ from tests.ci.support.pipeline_config import (
     MOCK_SECRET,
     split_directories,
 )
+
+
+class TestReportResults:
+    def test_success(self, capsys):
+        mock_result = DeploymentState.ResultType.success
+        number_iterations = 1
+
+        _report_results(mock_result, number_iterations)
+
+        captured = capsys.readouterr()
+        assert "success: Deployment succeeded" in captured.out
+
+    def test_skipped(self, capsys):
+        mock_result = DeploymentState.ResultType.success
+        number_iterations = 0
+
+        _report_results(mock_result, number_iterations)
+
+        captured = capsys.readouterr()
+        assert "skipped: Deployment skipped" in captured.out
+
+    def test_failed(self, capsys):
+        mock_result = DeploymentState.ResultType.failed
+        number_iterations = 1
+
+        with pytest.raises(SystemExit):
+            _report_results(mock_result, number_iterations)
+
+        captured = capsys.readouterr()
+        assert (
+            "FAILED: Deployment failed. Check log for details" in captured.out
+        )
 
 
 class TestAcquireConfigurationPaths:

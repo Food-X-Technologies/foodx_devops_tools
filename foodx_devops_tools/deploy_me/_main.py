@@ -73,6 +73,28 @@ async def _gather_main(
     return filtered_results
 
 
+def _report_results(
+    result_code: DeploymentState.ResultType, number_iterations: int
+) -> None:
+    if (result_code == DeploymentState.ResultType.success) and (
+        number_iterations != 0
+    ):
+        click.echo(click.style("success: Deployment succeeded.", fg="green"))
+    elif (result_code == DeploymentState.ResultType.success) and (
+        number_iterations == 0
+    ):
+        click.echo(click.style("skipped: Deployment skipped.", fg="yellow"))
+        # exit "clean" because a skip is not a failure per-se.
+    else:
+        click.echo(
+            click.style(
+                "FAILED: Deployment failed. Check log for details.",
+                fg="red",
+            )
+        )
+        sys.exit(ExitState.DEPLOYMENT_FAILED.value)
+
+
 @click.command()
 @click.version_option(acquire_version())
 @click.argument(
@@ -217,9 +239,16 @@ def deploy_me(
             release_id=release_id,
             release_state=release_state.name,
         )
+        log.info("top-level deployment context, {0}".format(str(base_context)))
+
         pipeline_state = ReleaseView(this_configuration, base_context)
         deployment_iterations = pipeline_state.flatten()
 
+        log.info(
+            "number deployment iteration, {0}".format(
+                len(deployment_iterations)
+            )
+        )
         log.debug(str(deployment_iterations))
 
         results = asyncio.run(
@@ -228,17 +257,7 @@ def deploy_me(
             )
         )
         condensed_result = assess_results(results)
-        if condensed_result.code == DeploymentState.ResultType.success:
-            click.echo(
-                click.style("success: Deployment succeeded.", fg="green")
-            )
-        else:
-            click.echo(
-                click.style(
-                    "FAILED: Deployment failed. Check log for details.",
-                    fg="red",
-                )
-            )
+        _report_results(condensed_result.code, len(deployment_iterations))
     except (ConfigurationPathsError, DeploymentConfigurationError) as e:
         message = str(e)
         log.error(message)
