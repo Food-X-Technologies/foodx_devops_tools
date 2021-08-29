@@ -32,20 +32,21 @@ def prep_data(mock_async_method, mock_flattened_deployment):
 
 class TestDoDeploy:
     @pytest.mark.asyncio
-    async def test_validation_clean(self, mocker, prep_data):
-        enable_validation = True
-
+    async def test_validation_clean(
+        self, mocker, prep_data, mock_completion_event, pipeline_parameters
+    ):
+        cli_options = pipeline_parameters()
         mock_frame, deployment_data, pipeline_config = prep_data
 
         await do_deploy(
             pipeline_config,
             deployment_data,
-            enable_validation,
+            cli_options,
         )
 
         mock_frame.assert_called_once_with(
             pipeline_config.frames.frames["f1"],
             mocker.ANY,
             mocker.ANY,
-            enable_validation,
+            cli_options,
         )

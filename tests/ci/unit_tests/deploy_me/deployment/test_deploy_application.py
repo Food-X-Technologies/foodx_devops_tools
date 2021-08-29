@@ -65,7 +65,9 @@ class DeploymentChecks:
     ):
         mock_validate, mock_deploy, deployment_data, app_data = prep_data
 
-        this_status = DeploymentStatus(MOCK_ITERATION_CONTEXT)
+        this_status = DeploymentStatus(
+            MOCK_ITERATION_CONTEXT, timeout_seconds=1
+        )
         await deploy_application(
             app_data,
             deployment_data,
@@ -83,7 +85,9 @@ class DeploymentChecks:
 
         updated = copy.deepcopy(app_data)
         updated[0].resource_group = None
-        this_status = DeploymentStatus(MOCK_ITERATION_CONTEXT)
+        this_status = DeploymentStatus(
+            MOCK_ITERATION_CONTEXT, timeout_seconds=1
+        )
         await deploy_application(
             updated,
             deployment_data,

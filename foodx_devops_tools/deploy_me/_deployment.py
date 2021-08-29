@@ -32,6 +32,10 @@ from foodx_devops_tools.pipeline_config import (
     PipelineConfiguration,
     SingularFrameDefinition,
 )
+from foodx_devops_tools.pipeline_config.frames import (
+    ApplicationDeploymentDefinition,
+)
+from foodx_devops_tools.pipeline_config.puff_map import PuffMapPaths
 
 from ._dependency_monitor import process_dependencies
 from ._state import PipelineCliOptions
@@ -39,12 +43,15 @@ from ._status import DeploymentState, DeploymentStatus
 
 log = logging.getLogger(__name__)
 
+STATUS_SLEEP_SECONDS = 1
 SUBSCRIPTION_NAME_REGEX = (
     r"(?P<system>[a-z0-9]+)_(?P<client>[a-z0-9]+)_(?P<state>[a-z0-9]+)"
 )
 
 
-def assess_results(results: typing.List[DeploymentState]) -> DeploymentState:
+async def assess_results(
+    results: typing.List[DeploymentState],
+) -> DeploymentState:
     """
     Condense an array of deployment results into a single result.
 
@@ -55,8 +62,10 @@ def assess_results(results: typing.List[DeploymentState]) -> DeploymentState:
         Success, if all results are success. Failed otherwise.
     """
     if all([x.code == DeploymentState.ResultType.success for x in results]):
+        log.debug("assessed result success")
         this_result = DeploymentState(code=DeploymentState.ResultType.success)
     else:
+        # any "not success" result means failure.
         messages = [
             x.message
             for x in results
@@ -97,6 +106,70 @@ def _mangle_validation_resource_group(current_name: str, suffix: str) -> str:
     return mangled_name
 
 
+async def _deploy_step(
+    this_step: ApplicationDeploymentDefinition,
+    deployment_data: FlattenedDeployment,
+    puff_parameter_data: PuffMapPaths,
+    this_context: str,
+    frame_folder: pathlib.Path,
+    this_subscription: AzureSubscriptionConfiguration,
+    enable_validation: bool,
+) -> None:
+    resource_group = (
+        _construct_resource_group_name(
+            deployment_data.context.application_name,
+            deployment_data.context.frame_name,
+            deployment_data.context.client,
+        )
+        if not this_step.resource_group
+        else this_step.resource_group
+    )
+    arm_template_path = (
+        frame_folder / this_step.arm_file
+        if this_step.arm_file
+        else frame_folder
+        / "{0}.json".format(deployment_data.context.application_name)
+    )
+    arm_parameters_path = frame_folder / puff_parameter_data[this_step.name]
+
+    log.debug(
+        "deployment_data.context, {0}, {1}".format(
+            this_context, str(deployment_data.context)
+        )
+    )
+    log.debug(
+        "deployment_data.data, {0}, {1}".format(
+            this_context, str(deployment_data.data)
+        )
+    )
+    await login_service_principal(deployment_data.data.azure_credentials)
+    if enable_validation:
+        log.info("validation deployment enabled, {0}".format(this_context))
+        resource_group = _mangle_validation_resource_group(
+            resource_group,
+            deployment_data.context.pipeline_id,
+        )
+        log.info("validation resource group name, {0}".format(resource_group))
+        await validate_resource_group(
+            resource_group,
+            arm_template_path,
+            arm_parameters_path,
+            deployment_data.data.location_primary,
+            this_step.mode.value,
+            this_subscription,
+        )
+    else:
+        log.info("deployment enabled, {0}".format(this_context))
+        await deploy_resource_group(
+            resource_group,
+            arm_template_path,
+            arm_parameters_path,
+            deployment_data.data.location_primary,
+            this_step.mode.value,
+            this_subscription,
+        )
+
+
 async def deploy_application(
     application_data: ApplicationDeploymentSteps,
     deployment_data: FlattenedDeployment,
@@ -135,67 +208,15 @@ async def deploy_application(
             subscription_id=deployment_data.context.azure_subscription_name
         )
         for this_step in application_data:
-            resource_group = (
-                _construct_resource_group_name(
-                    deployment_data.context.application_name,
-                    deployment_data.context.frame_name,
-                    deployment_data.context.client,
-                )
-                if not this_step.resource_group
-                else this_step.resource_group
+            await _deploy_step(
+                this_step,
+                deployment_data,
+                puff_parameter_data,
+                this_context,
+                frame_folder,
+                this_subscription,
+                enable_validation,
             )
-            arm_template_path = (
-                frame_folder / this_step.arm_file
-                if this_step.arm_file
-                else frame_folder
-                / "{0}.json".format(deployment_data.context.application_name)
-            )
-            arm_parameters_path = (
-                frame_folder / puff_parameter_data[this_step.name]
-            )
-
-            log.debug(
-                "deployment_data.context, {0}, {1}".format(
-                    this_context, str(deployment_data.context)
-                )
-            )
-            log.debug(
-                "deployment_data.data, {0}, {1}".format(
-                    this_context, str(deployment_data.data)
-                )
-            )
-            await login_service_principal(
-                deployment_data.data.azure_credentials
-            )
-            if enable_validation:
-                log.info(
-                    "validation deployment enabled, {0}".format(this_context)
-                )
-                resource_group = _mangle_validation_resource_group(
-                    resource_group,
-                    deployment_data.context.pipeline_id,
-                )
-                log.info(
-                    "validation resource group name, {0}".format(resource_group)
-                )
-                await validate_resource_group(
-                    resource_group,
-                    arm_template_path,
-                    arm_parameters_path,
-                    deployment_data.data.location_primary,
-                    this_step.mode.value,
-                    this_subscription,
-                )
-            else:
-                log.info("deployment enabled, {0}".format(this_context))
-                await deploy_resource_group(
-                    resource_group,
-                    arm_template_path,
-                    arm_parameters_path,
-                    deployment_data.data.location_primary,
-                    this_step.mode.value,
-                    this_subscription,
-                )
 
         log.info("application deployment succeeded, {0}".format(this_context))
         await application_status.write(
@@ -257,32 +278,47 @@ async def deploy_frame(
 
     await frame_status.initialize(this_context)
     # application status will show as "pending" until deployment activates.
-    application_status = DeploymentStatus(this_context)
-    await application_status.start_monitor()
-
-    await process_dependencies(
-        deployment_data.data.iteration_context,
-        frame_data,
-        frame_status,
-        pipeline_parameters,
+    application_status = DeploymentStatus(
+        this_context, pipeline_parameters.wait_timeout_seconds
     )
+    try:
+        wait_task = asyncio.create_task(
+            application_status.wait_for_completion()
+        )
+        await application_status.start_monitor()
 
-    await asyncio.gather(
-        *[
-            deploy_application(
-                application_data,
-                deployment_data.copy_add_application(application_name),
-                application_status,
-                pipeline_parameters.enable_validation,
-                frame_data.folder,
-            )
-            for application_name, application_data in frame_data.applications.items()  # noqa: E501
-        ],
-        return_exceptions=False,
-    )
+        await process_dependencies(
+            deployment_data.data.iteration_context,
+            frame_data,
+            frame_status,
+            pipeline_parameters,
+        )
+
+        await asyncio.gather(
+            *[
+                deploy_application(
+                    application_data,
+                    deployment_data.copy_add_application(application_name),
+                    application_status,
+                    pipeline_parameters.enable_validation,
+                    frame_data.folder,
+                )
+                for application_name, application_data in frame_data.applications.items()  # noqa: E501
+            ],
+            return_exceptions=False,
+        )
+
+        await wait_task
+    except asyncio.TimeoutError:
+        message = "timeout waiting for application deployment, {0}".format(
+            deployment_data.data.iteration_context
+        )
+        log.error(message)
+        click.echo(message, err=True)
+        raise
 
     results = [await frame_status.read(x) for x in await frame_status.names()]
-    condensed_result = assess_results(results)
+    condensed_result = await assess_results(results)
     await frame_status.write(
         this_context, condensed_result.code, condensed_result.message
     )
@@ -293,7 +329,13 @@ async def do_deploy(
     deployment_data: FlattenedDeployment,
     pipeline_parameters: PipelineCliOptions,
 ) -> DeploymentState:
-    """Deploy the frames in a flattened deployment configuration."""
+    """
+    Deploy the frames in a flattened deployment configuration.
+
+    Raises:
+        asyncio.TimeoutError: If the maximum wait time in
+                              ``pipeline_parameters`` is exceeded.
+    """
     this_frames = configuration.frames
     deployment_data.data.iteration_context.append(
         deployment_data.data.deployment_tuple
@@ -301,27 +343,41 @@ async def do_deploy(
     deployment_data.data.puff_map = configuration.puff_map
 
     frame_deployment_status = DeploymentStatus(
-        str(deployment_data.data.iteration_context)
+        str(deployment_data.data.iteration_context),
+        timeout_seconds=pipeline_parameters.wait_timeout_seconds,
     )
-    await frame_deployment_status.start_monitor()
+    try:
+        wait_task = asyncio.create_task(
+            frame_deployment_status.wait_for_completion()
+        )
+        await frame_deployment_status.start_monitor()
 
-    await asyncio.gather(
-        *[
-            deploy_frame(
-                frame_data,
-                deployment_data.copy_add_frame(frame_name),
-                frame_deployment_status,
-                pipeline_parameters,
-            )
-            for frame_name, frame_data in this_frames.frames.items()
-        ],
-        return_exceptions=False,
-    )
+        await asyncio.gather(
+            *[
+                deploy_frame(
+                    frame_data,
+                    deployment_data.copy_add_frame(frame_name),
+                    frame_deployment_status,
+                    pipeline_parameters,
+                )
+                for frame_name, frame_data in this_frames.frames.items()
+            ],
+            return_exceptions=False,
+        )
+
+        await wait_task
+    except asyncio.TimeoutError:
+        message = "timeout waiting for frame deployment, {0}".format(
+            deployment_data.data.iteration_context
+        )
+        log.error(message)
+        click.echo(message, err=True)
+        raise
 
     results = [
         await frame_deployment_status.read(x)
         for x in await frame_deployment_status.names()
     ]
-    condensed_result = assess_results(results)
+    condensed_result = await assess_results(results)
 
     return condensed_result

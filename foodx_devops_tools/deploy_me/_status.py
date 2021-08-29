@@ -35,6 +35,12 @@ class DeploymentState:
         pending = enum.auto()
         success = enum.auto()
 
+    COMPLETED_RESULTS = {
+        ResultType.cancelled,
+        ResultType.failed,
+        ResultType.success,
+    }
+
     code: ResultType
     message: typing.Optional[str] = None
 
@@ -46,7 +52,7 @@ class DeploymentStatus:
     """Coordinate reporting of asynchronous deployment status."""
 
     __iteration_context: str
-    __lock: asyncio.Lock
+    __rw_lock: asyncio.Lock
     __status: typing.Dict[str, DeploymentState]
 
     STATE_COLOURS = {
@@ -57,11 +63,16 @@ class DeploymentStatus:
         DeploymentState.ResultType.success: "green",
     }
 
-    def __init__(self: T, iteration_context: str) -> None:
+    def __init__(
+        self: T, iteration_context: str, timeout_seconds: float
+    ) -> None:
         """Construct ``DeploymentStatus`` object."""
+        self.__everything_completed = asyncio.Event()
+
         self.__iteration_context = iteration_context
-        self.__lock = asyncio.Lock()
+        self.__rw_lock = asyncio.Lock()
         self.__status = dict()
+        self.__timeout_seconds = timeout_seconds
 
     async def initialize(self: T, name: str) -> None:
         """
@@ -75,7 +86,7 @@ class DeploymentStatus:
             log.warning(
                 "Re-initializing existing status entry, {0}".format(name)
             )
-        async with self.__lock:
+        async with self.__rw_lock:
             self.__status[name] = DeploymentState(
                 code=DeploymentState.ResultType.pending
             )
@@ -94,9 +105,17 @@ class DeploymentStatus:
             code: Status code to record.
             message: Status message (optional).
         """
-        async with self.__lock:
+        async with self.__rw_lock:
             self.__status[name].code = code
             self.__status[name].message = message
+
+            if all(
+                [
+                    x.code in DeploymentState.COMPLETED_RESULTS
+                    for x in self.__status.values()
+                ]
+            ):
+                self.__everything_completed.set()
 
     async def read(self: T, name: str) -> DeploymentState:
         """
@@ -110,7 +129,7 @@ class DeploymentStatus:
         Raises:
             KeyError: If name does not exist.
         """
-        async with self.__lock:
+        async with self.__rw_lock:
             result = copy.deepcopy(self.__status[name])
 
         return result
@@ -122,10 +141,31 @@ class DeploymentStatus:
         Returns:
             Set of deployment names registered.
         """
-        async with self.__lock:
+        async with self.__rw_lock:
             result = set(self.__status.keys())
 
         return result
+
+    async def wait_for_completion(self: T) -> None:
+        """
+        Block the caller until the completed event is triggered.
+
+        Raises:
+            asyncio.TimeoutError: If there is a timeout waiting for completion.
+        """
+        log.debug(
+            "waiting for everything completed, {0}".format(
+                self.__iteration_context
+            )
+        )
+        await asyncio.wait_for(
+            self.__everything_completed.wait(), timeout=self.__timeout_seconds
+        )
+        log.debug(
+            "everything completed event set, {0}".format(
+                self.__iteration_context
+            )
+        )
 
     async def __monitor_status(self: T) -> None:
         completed = False

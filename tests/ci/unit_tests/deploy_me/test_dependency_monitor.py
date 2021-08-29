@@ -58,7 +58,7 @@ async def mock_frame_dependency(prep_frame_data):
 
         frame_data.depends_on = ["df1"]
 
-        this_status = DeploymentStatus(MOCK_CONTEXT)
+        this_status = DeploymentStatus(MOCK_CONTEXT, timeout_seconds=2)
         await this_status.initialize(str(this_context))
         for this_df in frame_data.depends_on:
             this_df_context = copy.deepcopy(MOCK_ITERATION_CONTEXT)
@@ -240,7 +240,7 @@ class TestStatusWait:
             df_context = copy.deepcopy(MOCK_ITERATION_CONTEXT)
             df_context.append("df1")
 
-            this_status = DeploymentStatus(MOCK_CONTEXT)
+            this_status = DeploymentStatus(MOCK_CONTEXT, timeout_seconds=2)
             await this_status.initialize(str(this_context))
 
             # set the dependency status to "failed"
@@ -281,7 +281,7 @@ class TestProcessDependencies:
             side_effect=MockWaiter([0.5]),
         )
 
-        frame_status = DeploymentStatus(MOCK_CONTEXT)
+        frame_status = DeploymentStatus(MOCK_CONTEXT, timeout_seconds=2)
 
         await process_dependencies(
             MOCK_ITERATION_CONTEXT,
@@ -302,7 +302,7 @@ class TestProcessDependencies:
         )
         frame_data.depends_on = ["df1"]
 
-        this_status = DeploymentStatus(MOCK_CONTEXT)
+        this_status = DeploymentStatus(MOCK_CONTEXT, timeout_seconds=2)
         await this_status.initialize(str(this_context))
         for this_df in frame_data.depends_on:
             this_df_context = copy.deepcopy(MOCK_ITERATION_CONTEXT)
