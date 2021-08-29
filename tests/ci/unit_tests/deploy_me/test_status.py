@@ -12,7 +12,105 @@ import pytest
 from foodx_devops_tools.deploy_me._status import (
     DeploymentState,
     DeploymentStatus,
+    all_completed,
+    all_success,
 )
+
+
+class TestAllSuccess:
+    def test_clean(self):
+        mock_input = [
+            DeploymentState(DeploymentState.ResultType.success),
+            DeploymentState(DeploymentState.ResultType.success),
+        ]
+        result = all_success(mock_input)
+        assert result
+
+    def test_not_clean1(self):
+        mock_input = [
+            DeploymentState(DeploymentState.ResultType.success),
+            DeploymentState(DeploymentState.ResultType.failed),
+        ]
+        result = all_success(mock_input)
+        assert not result
+
+    def test_not_clean2(self):
+        mock_input = [
+            DeploymentState(DeploymentState.ResultType.success),
+            DeploymentState(DeploymentState.ResultType.cancelled),
+        ]
+        result = all_success(mock_input)
+        assert not result
+
+    def test_not_clean3(self):
+        mock_input = [
+            DeploymentState(DeploymentState.ResultType.success),
+            DeploymentState(DeploymentState.ResultType.pending),
+        ]
+        result = all_success(mock_input)
+        assert not result
+
+    def test_not_clean4(self):
+        mock_input = [
+            DeploymentState(DeploymentState.ResultType.success),
+            DeploymentState(DeploymentState.ResultType.in_progress),
+        ]
+        result = all_success(mock_input)
+        assert not result
+
+
+class TestAllCompleted:
+    def test_clean1(self):
+        mock_input = [
+            DeploymentState(DeploymentState.ResultType.success),
+            DeploymentState(DeploymentState.ResultType.failed),
+            DeploymentState(DeploymentState.ResultType.cancelled),
+        ]
+        result = all_completed(mock_input)
+        assert result
+
+    def test_clean2(self):
+        mock_input = [
+            DeploymentState(DeploymentState.ResultType.success),
+            DeploymentState(DeploymentState.ResultType.success),
+            DeploymentState(DeploymentState.ResultType.success),
+        ]
+        result = all_completed(mock_input)
+        assert result
+
+    def test_clean3(self):
+        mock_input = [
+            DeploymentState(DeploymentState.ResultType.failed),
+            DeploymentState(DeploymentState.ResultType.failed),
+            DeploymentState(DeploymentState.ResultType.failed),
+        ]
+        result = all_completed(mock_input)
+        assert result
+
+    def test_clean4(self):
+        mock_input = [
+            DeploymentState(DeploymentState.ResultType.cancelled),
+            DeploymentState(DeploymentState.ResultType.cancelled),
+            DeploymentState(DeploymentState.ResultType.cancelled),
+        ]
+        result = all_completed(mock_input)
+        assert result
+
+    def test_not_clean1(self):
+        mock_input = [
+            DeploymentState(DeploymentState.ResultType.success),
+            DeploymentState(DeploymentState.ResultType.in_progress),
+        ]
+        result = all_completed(mock_input)
+        assert not result
+
+    def test_not_clean2(self):
+        mock_input = [
+            DeploymentState(DeploymentState.ResultType.success),
+            DeploymentState(DeploymentState.ResultType.pending),
+        ]
+        result = all_completed(mock_input)
+        assert not result
 
 
 @pytest.fixture()
@@ -117,7 +215,7 @@ class TestCompletedEvent:
 
     @pytest.mark.asyncio
     async def test_success_fail(self, simple_status):
-        under_test = await simple_status(timeout_seconds=5)
+        under_test = await simple_status(timeout_seconds=2)
 
         async def mock_status_updated():
             nonlocal under_test
@@ -162,7 +260,8 @@ class TestCompletedEvent:
             await under_test.read("n2")
         ).code == DeploymentState.ResultType.in_progress
 
-        await waiter_task
+        with pytest.raises(asyncio.TimeoutError):
+            await waiter_task
 
         assert (
             await under_test.read("n1")
@@ -182,7 +281,6 @@ class TestCompletedEvent:
             await under_test.write("n1", DeploymentState.ResultType.in_progress)
             await asyncio.sleep(0.2)
             await under_test.write("n2", DeploymentState.ResultType.in_progress)
-            await asyncio.sleep(0.2)
 
         waiter_task = asyncio.create_task(under_test.wait_for_completion())
         asyncio.create_task(mock_status_updated())
@@ -238,3 +336,43 @@ class TestCompletedEvent:
         assert (
             await under_test.read("n2")
         ).code == DeploymentState.ResultType.pending
+
+    @pytest.mark.asyncio
+    async def test_low_delays(self, simple_status):
+        under_test = await simple_status(timeout_seconds=5)
+
+        async def mock_status_updated():
+            nonlocal under_test
+
+            await asyncio.sleep(0.1)
+            await under_test.write("n1", DeploymentState.ResultType.in_progress)
+            await under_test.write("n2", DeploymentState.ResultType.in_progress)
+            await asyncio.sleep(0.2)
+            await under_test.write("n1", DeploymentState.ResultType.success)
+            await under_test.write("n2", DeploymentState.ResultType.success)
+
+        waiter_task = asyncio.create_task(under_test.wait_for_completion())
+        asyncio.create_task(mock_status_updated())
+
+        assert (
+            await under_test.read("n1")
+        ).code == DeploymentState.ResultType.pending
+        assert (
+            await under_test.read("n2")
+        ).code == DeploymentState.ResultType.pending
+        await asyncio.sleep(0.2)
+        assert (
+            await under_test.read("n1")
+        ).code == DeploymentState.ResultType.in_progress
+        assert (
+            await under_test.read("n2")
+        ).code == DeploymentState.ResultType.in_progress
+
+        await waiter_task
+
+        assert (
+            await under_test.read("n1")
+        ).code == DeploymentState.ResultType.success
+        assert (
+            await under_test.read("n2")
+        ).code == DeploymentState.ResultType.success

@@ -45,6 +45,32 @@ class DeploymentState:
     message: typing.Optional[str] = None
 
 
+def all_success(values: typing.List[DeploymentState]) -> bool:
+    """Evaluate if a list of deployment states are all succeeded."""
+    result = all(
+        [
+            x.code
+            in [
+                DeploymentState.ResultType.success,
+            ]
+            for x in values
+        ]
+    )
+    return result
+
+
+def all_completed(values: typing.List[DeploymentState]) -> bool:
+    """
+    Evaluate if a list of deployment states are all completed.
+
+    "All completed" is defined here as any one of the deployment states that
+    can be interpreted as the process having stopped for some reason;
+    success, failed or cancelled.
+    """
+    result = all([x.code in DeploymentState.COMPLETED_RESULTS for x in values])
+    return result
+
+
 T = typing.TypeVar("T", bound="DeploymentStatus")
 
 
@@ -109,12 +135,8 @@ class DeploymentStatus:
             self.__status[name].code = code
             self.__status[name].message = message
 
-            if all(
-                [
-                    x.code in DeploymentState.COMPLETED_RESULTS
-                    for x in self.__status.values()
-                ]
-            ):
+            values = list(self.__status.values())
+            if all_success(values):
                 self.__everything_completed.set()
 
     async def read(self: T, name: str) -> DeploymentState:
@@ -185,32 +207,14 @@ class DeploymentStatus:
                     this_colour = self.STATE_COLOURS[s.code]
                     log.info(message)
                     click.echo(click.style(message, fg=this_colour))
-                if all(
-                    [
-                        x
-                        in [
-                            DeploymentState.ResultType.success,
-                        ]
-                        for x in status.values()
-                    ]
-                ):
+                if all_success(list(status.values())):
                     completed = True
                     log.info(
                         "all deployments succeeded for context, {0}".format(
                             self.__iteration_context
                         )
                     )
-                elif all(
-                    [
-                        x
-                        in [
-                            DeploymentState.ResultType.success,
-                            DeploymentState.ResultType.failed,
-                            DeploymentState.ResultType.cancelled,
-                        ]
-                        for x in status.values()
-                    ]
-                ):
+                elif all_completed(list(status.values())):
                     completed = True
                     log.info(
                         "all deployments completed with some failures for "
@@ -225,7 +229,7 @@ class DeploymentStatus:
                 )
                 await asyncio.sleep(DEFAULT_MONITOR_SLEEP_SECONDS)
 
-    async def start_monitor(self: T) -> None:
+    def start_monitor(self: T) -> None:
         """
         Start the concurrent deployment status monitor.
 

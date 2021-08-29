@@ -39,7 +39,7 @@ from foodx_devops_tools.pipeline_config.puff_map import PuffMapPaths
 
 from ._dependency_monitor import process_dependencies
 from ._state import PipelineCliOptions
-from ._status import DeploymentState, DeploymentStatus
+from ._status import DeploymentState, DeploymentStatus, all_success
 
 log = logging.getLogger(__name__)
 
@@ -61,7 +61,7 @@ async def assess_results(
     Returns:
         Success, if all results are success. Failed otherwise.
     """
-    if all([x.code == DeploymentState.ResultType.success for x in results]):
+    if all_success(results):
         log.debug("assessed result success")
         this_result = DeploymentState(code=DeploymentState.ResultType.success)
     else:
@@ -285,7 +285,7 @@ async def deploy_frame(
         wait_task = asyncio.create_task(
             application_status.wait_for_completion()
         )
-        await application_status.start_monitor()
+        application_status.start_monitor()
 
         await process_dependencies(
             deployment_data.data.iteration_context,
@@ -350,7 +350,7 @@ async def do_deploy(
         wait_task = asyncio.create_task(
             frame_deployment_status.wait_for_completion()
         )
-        await frame_deployment_status.start_monitor()
+        frame_deployment_status.start_monitor()
 
         await asyncio.gather(
             *[
