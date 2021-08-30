@@ -189,7 +189,6 @@ async def deploy_application(
         log.info(message)
         click.echo(message)
         await application_status.initialize(this_context)
-
         await application_status.write(
             this_context, DeploymentState.ResultType.in_progress
         )
@@ -253,7 +252,9 @@ async def deploy_application(
         )
         log.exception(message)
 
-    log.info("application deployment completed, {0}".format(this_context))
+    message = "application deployment completed, {0}".format(this_context)
+    log.info(message)
+    click.echo(click.style(message, fg="green"))
 
 
 async def deploy_frame(
@@ -277,6 +278,9 @@ async def deploy_frame(
     click.echo(message)
 
     await frame_status.initialize(this_context)
+    await frame_status.write(
+        this_context, DeploymentState.ResultType.in_progress
+    )
     # application status will show as "pending" until deployment activates.
     application_status = DeploymentStatus(
         this_context, pipeline_parameters.wait_timeout_seconds
@@ -308,6 +312,10 @@ async def deploy_frame(
         )
 
         await wait_task
+
+        message = "frame deployment completed, {0}".format(this_context)
+        log.info(message)
+        click.echo(click.style(message, fg="yellow"))
     except asyncio.TimeoutError:
         message = "timeout waiting for application deployment, {0}".format(
             deployment_data.data.iteration_context
@@ -320,6 +328,15 @@ async def deploy_frame(
     condensed_result = await assess_results(results)
     await frame_status.write(
         this_context, condensed_result.code, condensed_result.message
+    )
+    message = "frame deployment {0}, {1}".format(
+        condensed_result.code.name, this_context
+    )
+    log.info(message)
+    click.echo(
+        click.style(
+            message, fg=DeploymentStatus.STATE_COLOURS[condensed_result.code]
+        )
     )
 
 
