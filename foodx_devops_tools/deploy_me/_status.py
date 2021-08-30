@@ -153,16 +153,29 @@ class DeploymentStatus:
             self.__status[name].code = code
             self.__status[name].message = message
 
-            values = list(self.__status.values())
-            if (name in self.__events) and (
-                code in DeploymentState.COMPLETED_RESULTS
-            ):
-                self.__events[name].set()
+            self.__evaluate_named_completed(name)
+            self.__evaluate_all_success()
+            self.__evaluate_all_completed()
 
-            if all_success(values):
-                self.__events[self.EVENT_KEY_SUCCEEDED].set()
-            if all_completed(values):
-                self.__events[self.EVENT_KEY_COMPLETED].set()
+    def __evaluate_named_completed(self: T, name: str) -> None:
+        # WARNING: assumes self.__rw_lock has been applied
+        code = self.__status[name].code
+        if (name in self.__events) and (
+            code in DeploymentState.COMPLETED_RESULTS
+        ):
+            self.__events[name].set()
+
+    def __evaluate_all_success(self: T) -> None:
+        # WARNING: assumes self.__rw_lock has been applied
+        values = list(self.__status.values())
+        if all_success(values):
+            self.__events[self.EVENT_KEY_SUCCEEDED].set()
+
+    def __evaluate_all_completed(self: T) -> None:
+        # WARNING: assumes self.__rw_lock has been applied
+        values = list(self.__status.values())
+        if all_completed(values):
+            self.__events[self.EVENT_KEY_COMPLETED].set()
 
     async def read(self: T, name: str) -> DeploymentState:
         """
@@ -204,7 +217,13 @@ class DeploymentStatus:
         """
         async with self.__rw_lock:
             if name not in self.__events:
+                # create an event since this must be the first wait.
                 self.__events[name] = asyncio.Event()
+
+            # check the current state to ensure that is is not already where it
+            # needs to be.
+            self.__evaluate_named_completed(name)
+
         log.debug(
             "waiting for named completion, {0}, ({1})".format(
                 name, self.__iteration_context

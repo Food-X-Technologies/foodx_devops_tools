@@ -451,6 +451,36 @@ class TestAllCompletedEvent:
             await under_test.read("n2")
         ).code == DeploymentState.ResultType.pending
 
+    @pytest.mark.asyncio
+    async def test_prior_success(self, simple_status):
+        """success already flagged on entry is clean."""
+        under_test = await simple_status(timeout_seconds=5)
+
+        async def mock_status_updated():
+            nonlocal under_test
+
+        await under_test.write("n1", DeploymentState.ResultType.failed)
+        await under_test.write("n2", DeploymentState.ResultType.cancelled)
+
+        waiter_task = asyncio.create_task(under_test.wait_for_all_completed())
+        asyncio.create_task(mock_status_updated())
+
+        assert (
+            await under_test.read("n1")
+        ).code == DeploymentState.ResultType.failed
+        assert (
+            await under_test.read("n2")
+        ).code == DeploymentState.ResultType.cancelled
+
+        await waiter_task
+
+        assert (
+            await under_test.read("n1")
+        ).code == DeploymentState.ResultType.failed
+        assert (
+            await under_test.read("n2")
+        ).code == DeploymentState.ResultType.cancelled
+
 
 class TestAllSucceededEvent:
     @pytest.mark.asyncio
@@ -690,6 +720,36 @@ class TestAllSucceededEvent:
             await under_test.read("n2")
         ).code == DeploymentState.ResultType.pending
 
+    @pytest.mark.asyncio
+    async def test_prior_success(self, simple_status):
+        """success already flagged on entry is clean."""
+        under_test = await simple_status(timeout_seconds=5)
+
+        async def mock_status_updated():
+            pass
+
+        await under_test.write("n1", DeploymentState.ResultType.success)
+        await under_test.write("n2", DeploymentState.ResultType.success)
+
+        waiter_task = asyncio.create_task(under_test.wait_for_all_succeeded())
+        asyncio.create_task(mock_status_updated())
+
+        assert (
+            await under_test.read("n1")
+        ).code == DeploymentState.ResultType.success
+        assert (
+            await under_test.read("n2")
+        ).code == DeploymentState.ResultType.success
+
+        await waiter_task
+
+        assert (
+            await under_test.read("n1")
+        ).code == DeploymentState.ResultType.success
+        assert (
+            await under_test.read("n2")
+        ).code == DeploymentState.ResultType.success
+
 
 class TestCompletedNamedEvent:
     @pytest.mark.asyncio
@@ -816,3 +876,31 @@ class TestCompletedNamedEvent:
         assert (
             await under_test.read("n2")
         ).code == DeploymentState.ResultType.pending
+
+    @pytest.mark.asyncio
+    async def test_prior_success(self, simple_status):
+        """success already flagged on entry is clean."""
+        under_test = await simple_status(timeout_seconds=5)
+
+        async def mock_status_updated():
+            nonlocal under_test
+
+            await asyncio.sleep(0.1)
+            await under_test.write("n1", DeploymentState.ResultType.in_progress)
+            await asyncio.sleep(0.2)
+            await under_test.write("n1", DeploymentState.ResultType.failed)
+
+        await under_test.write("n2", DeploymentState.ResultType.success)
+
+        waiter_task = asyncio.create_task(under_test.wait_for_completion("n2"))
+        asyncio.create_task(mock_status_updated())
+
+        assert (
+            await under_test.read("n2")
+        ).code == DeploymentState.ResultType.success
+
+        await waiter_task
+
+        assert (
+            await under_test.read("n2")
+        ).code == DeploymentState.ResultType.success
