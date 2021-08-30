@@ -14,6 +14,7 @@ from foodx_devops_tools.deploy_me._status import (
     DeploymentStatus,
     all_completed,
     all_success,
+    any_completed_dirty,
 )
 
 
@@ -110,6 +111,64 @@ class TestAllCompleted:
             DeploymentState(DeploymentState.ResultType.pending),
         ]
         result = all_completed(mock_input)
+        assert not result
+
+
+class TestAnyCompletedDirty:
+    def test_clean1(self):
+        mock_input = [
+            DeploymentState(DeploymentState.ResultType.success),
+            DeploymentState(DeploymentState.ResultType.failed),
+        ]
+        result = any_completed_dirty(mock_input)
+        assert result
+
+    def test_clean2(self):
+        mock_input = [
+            DeploymentState(DeploymentState.ResultType.success),
+            DeploymentState(DeploymentState.ResultType.cancelled),
+        ]
+        result = any_completed_dirty(mock_input)
+        assert result
+
+    def test_in_progress(self):
+        mock_input = [
+            DeploymentState(DeploymentState.ResultType.failed),
+            DeploymentState(DeploymentState.ResultType.in_progress),
+        ]
+        result = any_completed_dirty(mock_input)
+        assert result
+
+    def test_pending(self):
+        mock_input = [
+            DeploymentState(DeploymentState.ResultType.cancelled),
+            DeploymentState(DeploymentState.ResultType.pending),
+        ]
+        result = any_completed_dirty(mock_input)
+        assert result
+
+    def test_all_success(self):
+        mock_input = [
+            DeploymentState(DeploymentState.ResultType.success),
+            DeploymentState(DeploymentState.ResultType.success),
+        ]
+        result = any_completed_dirty(mock_input)
+        assert not result
+
+    def test_in_progress(self):
+        mock_input = [
+            DeploymentState(DeploymentState.ResultType.success),
+            DeploymentState(DeploymentState.ResultType.in_progress),
+        ]
+        result = any_completed_dirty(mock_input)
+        assert not result
+
+    def test_pending(self):
+        mock_input = [
+            DeploymentState(DeploymentState.ResultType.success),
+            DeploymentState(DeploymentState.ResultType.pending),
+        ]
+        result = any_completed_dirty(mock_input)
         assert not result
 
 

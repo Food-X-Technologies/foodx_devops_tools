@@ -71,6 +71,18 @@ def all_completed(values: typing.List[DeploymentState]) -> bool:
     return result
 
 
+def any_completed_dirty(values: typing.List[DeploymentState]) -> bool:
+    """Evaluate if any deployment states completed without success."""
+    result = any(
+        [
+            (x.code in DeploymentState.COMPLETED_RESULTS)
+            and (x.code != DeploymentState.ResultType.success)
+            for x in values
+        ]
+    )
+    return result
+
+
 T = typing.TypeVar("T", bound="DeploymentStatus")
 
 
