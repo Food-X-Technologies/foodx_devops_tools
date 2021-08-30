@@ -283,7 +283,7 @@ async def deploy_frame(
     )
     try:
         wait_task = asyncio.create_task(
-            application_status.wait_for_completion()
+            application_status.wait_for_all_completion()
         )
         application_status.start_monitor()
 
@@ -348,7 +348,7 @@ async def do_deploy(
     )
     try:
         wait_task = asyncio.create_task(
-            frame_deployment_status.wait_for_completion()
+            frame_deployment_status.wait_for_all_completion()
         )
         frame_deployment_status.start_monitor()
 

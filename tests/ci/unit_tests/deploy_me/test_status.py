@@ -232,7 +232,7 @@ class TestCompletedEvent:
             await asyncio.sleep(0.2)
             await under_test.write("n2", DeploymentState.ResultType.success)
 
-        waiter_task = asyncio.create_task(under_test.wait_for_completion())
+        waiter_task = asyncio.create_task(under_test.wait_for_all_completion())
         asyncio.create_task(mock_status_updated())
 
         assert (
@@ -288,7 +288,7 @@ class TestCompletedEvent:
             await asyncio.sleep(0.2)
             await under_test.write("n2", DeploymentState.ResultType.failed)
 
-        waiter_task = asyncio.create_task(under_test.wait_for_completion())
+        waiter_task = asyncio.create_task(under_test.wait_for_all_completion())
         asyncio.create_task(mock_status_updated())
 
         assert (
@@ -341,7 +341,7 @@ class TestCompletedEvent:
             await asyncio.sleep(0.2)
             await under_test.write("n2", DeploymentState.ResultType.in_progress)
 
-        waiter_task = asyncio.create_task(under_test.wait_for_completion())
+        waiter_task = asyncio.create_task(under_test.wait_for_all_completion())
         asyncio.create_task(mock_status_updated())
 
         assert (
@@ -383,7 +383,7 @@ class TestCompletedEvent:
             # do nothing so that state never transitions to a completed state.
             pass
 
-        waiter_task = asyncio.create_task(under_test.wait_for_completion())
+        waiter_task = asyncio.create_task(under_test.wait_for_all_completion())
         asyncio.create_task(mock_status_updated())
 
         with pytest.raises(asyncio.TimeoutError):
@@ -410,7 +410,7 @@ class TestCompletedEvent:
             await under_test.write("n1", DeploymentState.ResultType.success)
             await under_test.write("n2", DeploymentState.ResultType.success)
 
-        waiter_task = asyncio.create_task(under_test.wait_for_completion())
+        waiter_task = asyncio.create_task(under_test.wait_for_all_completion())
         asyncio.create_task(mock_status_updated())
 
         assert (

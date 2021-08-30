@@ -180,9 +180,12 @@ class DeploymentStatus:
 
         return result
 
-    async def wait_for_completion(self: T) -> None:
+    async def wait_for_all_completion(self: T) -> None:
         """
-        Block the caller until the completed event is triggered.
+        Block the caller until the "all completed" event is triggered.
+
+        "All completed" means that all registered deploymenet have reached a
+        completion state as defined by ``DeploymentState.COMPLETED_RESULTS``.
 
         Raises:
             asyncio.TimeoutError: If there is a timeout waiting for completion.

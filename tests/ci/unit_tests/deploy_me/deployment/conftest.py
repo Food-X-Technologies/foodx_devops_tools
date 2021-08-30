@@ -14,7 +14,7 @@ from foodx_devops_tools.deploy_me._deployment import PipelineCliOptions
 def mock_completion_event(mock_async_method):
     mock_async_method(
         "foodx_devops_tools.deploy_me._deployment"
-        ".DeploymentStatus.wait_for_completion"
+        ".DeploymentStatus.wait_for_all_completion"
     )
 
 
