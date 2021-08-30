@@ -105,7 +105,7 @@ class DeploymentStatus:
         self: T, iteration_context: str, timeout_seconds: float
     ) -> None:
         """Construct ``DeploymentStatus`` object."""
-        self.__everything_completed = asyncio.Event()
+        self.__events: dict = {"_all": asyncio.Event()}
 
         self.__iteration_context = iteration_context
         self.__rw_lock = asyncio.Lock()
@@ -149,7 +149,7 @@ class DeploymentStatus:
 
             values = list(self.__status.values())
             if all_success(values):
-                self.__everything_completed.set()
+                self.__events["_all"].set()
 
     async def read(self: T, name: str) -> DeploymentState:
         """
@@ -196,7 +196,7 @@ class DeploymentStatus:
             )
         )
         await asyncio.wait_for(
-            self.__everything_completed.wait(), timeout=self.__timeout_seconds
+            self.__events["_all"].wait(), timeout=self.__timeout_seconds
         )
         log.debug(
             "everything completed event set, {0}".format(
