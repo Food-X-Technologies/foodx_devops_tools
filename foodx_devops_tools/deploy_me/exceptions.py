@@ -7,4 +7,7 @@
 
 """Export ``deploy_me`` package exceptions."""
 
-from ._exceptions import DeploymentCancelledError, DeploymentError  # noqa: F401
+from ._exceptions import (  # noqa: F401
+    DeploymentError,
+    DeploymentTerminatedError,
+)

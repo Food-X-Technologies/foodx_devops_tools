@@ -12,5 +12,5 @@ class DeploymentError(Exception):
     """Problem executing deployment."""
 
 
-class DeploymentCancelledError(DeploymentError):
+class DeploymentTerminatedError(DeploymentError):
     """Deployment was cancelled due to failing dependencies."""

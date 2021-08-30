@@ -14,7 +14,7 @@ from foodx_devops_tools.deploy_me._deployment import (
     DeploymentStatus,
     deploy_frame,
 )
-from foodx_devops_tools.deploy_me.exceptions import DeploymentCancelledError
+from foodx_devops_tools.deploy_me.exceptions import DeploymentTerminatedError
 from foodx_devops_tools.pipeline_config import IterationContext
 
 MOCK_ITERATION_CONTEXT = IterationContext()
@@ -81,7 +81,7 @@ async def check_is_cancelled(
 ):
     cli_options = pipeline_parameters()
     with pytest.raises(
-        DeploymentCancelledError, match=r"^cancelled due to dependency failure"
+        DeploymentTerminatedError, match=r"^cancelled due to dependency failure"
     ):
         await deploy_frame(
             frame_data,
@@ -221,7 +221,9 @@ async def test_in_progress_timeout(
     )
 
     with pytest.raises(
-        DeploymentCancelledError, match=r"^timeout waiting for dependencies"
+        DeploymentTerminatedError,
+        match=r"^deployment cancelled due to timeout waiting for "
+        "dependency completion",
     ):
         await deploy_frame(
             frame_data,

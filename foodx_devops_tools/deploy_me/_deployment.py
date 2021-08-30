@@ -268,7 +268,7 @@ async def deploy_frame(
     Frame applications are deployed concurrently (in parallel).
 
     Raises:
-        DeploymentCancelledError: If any dependencies fail preventing
+        DeploymentTerminatedError: If any dependencies fail preventing
                                   completion.
     """
     this_context = str(deployment_data.data.iteration_context)
@@ -291,7 +291,6 @@ async def deploy_frame(
             deployment_data.data.iteration_context,
             frame_data,
             frame_status,
-            pipeline_parameters,
         )
 
         await asyncio.gather(
@@ -367,7 +366,7 @@ async def do_deploy(
 
         await wait_task
     except asyncio.TimeoutError:
-        message = "timeout waiting for frame deployment, {0}".format(
+        message = "timeout waiting for frame deployments, {0}".format(
             deployment_data.data.iteration_context
         )
         log.error(message)

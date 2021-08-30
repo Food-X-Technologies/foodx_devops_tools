@@ -42,7 +42,7 @@ from ._deployment import (
     assess_results,
     do_deploy,
 )
-from ._exceptions import DeploymentCancelledError
+from ._exceptions import DeploymentTerminatedError
 from ._state import ExitState, PipelineCliOptions
 
 log = logging.getLogger(__name__)
@@ -268,7 +268,7 @@ def deploy_me(
         log.error("Async cancellation exception")
         click.echo("Exiting due to async cancellation", err=True)
         sys.exit(ExitState.DEPLOYMENT_CANCELLED.value)
-    except DeploymentCancelledError as e:
+    except DeploymentTerminatedError as e:
         log.error("Deployment cancelled exception, {0}".format(str(e)))
         click.echo(
             click.style("Exiting due to deployment cancellation", fg="red"),
