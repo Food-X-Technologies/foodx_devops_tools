@@ -215,7 +215,7 @@ class TestDeploymentStatus:
         assert result.message == "some message"
 
 
-class TestCompletedEvent:
+class TestAllCompletedEvent:
     @pytest.mark.asyncio
     async def test_success(self, simple_status):
         under_test = await simple_status(timeout_seconds=5)
@@ -232,7 +232,7 @@ class TestCompletedEvent:
             await asyncio.sleep(0.2)
             await under_test.write("n2", DeploymentState.ResultType.success)
 
-        waiter_task = asyncio.create_task(under_test.wait_for_all_completion())
+        waiter_task = asyncio.create_task(under_test.wait_for_all_completed())
         asyncio.create_task(mock_status_updated())
 
         assert (
@@ -288,7 +288,7 @@ class TestCompletedEvent:
             await asyncio.sleep(0.2)
             await under_test.write("n2", DeploymentState.ResultType.failed)
 
-        waiter_task = asyncio.create_task(under_test.wait_for_all_completion())
+        waiter_task = asyncio.create_task(under_test.wait_for_all_completed())
         asyncio.create_task(mock_status_updated())
 
         assert (
@@ -319,8 +319,7 @@ class TestCompletedEvent:
             await under_test.read("n2")
         ).code == DeploymentState.ResultType.in_progress
 
-        with pytest.raises(asyncio.TimeoutError):
-            await waiter_task
+        await waiter_task
 
         assert (
             await under_test.read("n1")
@@ -328,6 +327,62 @@ class TestCompletedEvent:
         assert (
             await under_test.read("n2")
         ).code == DeploymentState.ResultType.failed
+
+    @pytest.mark.asyncio
+    async def test_success_cancelled(self, simple_status):
+        under_test = await simple_status(timeout_seconds=2)
+
+        async def mock_status_updated():
+            nonlocal under_test
+
+            await asyncio.sleep(0.1)
+            await under_test.write("n1", DeploymentState.ResultType.in_progress)
+            await asyncio.sleep(0.2)
+            await under_test.write("n2", DeploymentState.ResultType.in_progress)
+            await asyncio.sleep(0.2)
+            await under_test.write("n1", DeploymentState.ResultType.success)
+            await asyncio.sleep(0.2)
+            await under_test.write("n2", DeploymentState.ResultType.cancelled)
+
+        waiter_task = asyncio.create_task(under_test.wait_for_all_completed())
+        asyncio.create_task(mock_status_updated())
+
+        assert (
+            await under_test.read("n1")
+        ).code == DeploymentState.ResultType.pending
+        assert (
+            await under_test.read("n2")
+        ).code == DeploymentState.ResultType.pending
+        await asyncio.sleep(0.2)
+        assert (
+            await under_test.read("n1")
+        ).code == DeploymentState.ResultType.in_progress
+        assert (
+            await under_test.read("n2")
+        ).code == DeploymentState.ResultType.pending
+        await asyncio.sleep(0.2)
+        assert (
+            await under_test.read("n1")
+        ).code == DeploymentState.ResultType.in_progress
+        assert (
+            await under_test.read("n2")
+        ).code == DeploymentState.ResultType.in_progress
+        await asyncio.sleep(0.2)
+        assert (
+            await under_test.read("n1")
+        ).code == DeploymentState.ResultType.success
+        assert (
+            await under_test.read("n2")
+        ).code == DeploymentState.ResultType.in_progress
+
+        await waiter_task
+
+        assert (
+            await under_test.read("n1")
+        ).code == DeploymentState.ResultType.success
+        assert (
+            await under_test.read("n2")
+        ).code == DeploymentState.ResultType.cancelled
 
     @pytest.mark.asyncio
     async def test_in_progress(self, simple_status):
@@ -341,7 +396,7 @@ class TestCompletedEvent:
             await asyncio.sleep(0.2)
             await under_test.write("n2", DeploymentState.ResultType.in_progress)
 
-        waiter_task = asyncio.create_task(under_test.wait_for_all_completion())
+        waiter_task = asyncio.create_task(under_test.wait_for_all_completed())
         asyncio.create_task(mock_status_updated())
 
         assert (
@@ -383,7 +438,7 @@ class TestCompletedEvent:
             # do nothing so that state never transitions to a completed state.
             pass
 
-        waiter_task = asyncio.create_task(under_test.wait_for_all_completion())
+        waiter_task = asyncio.create_task(under_test.wait_for_all_completed())
         asyncio.create_task(mock_status_updated())
 
         with pytest.raises(asyncio.TimeoutError):
@@ -396,8 +451,10 @@ class TestCompletedEvent:
             await under_test.read("n2")
         ).code == DeploymentState.ResultType.pending
 
+
+class TestAllSucceededEvent:
     @pytest.mark.asyncio
-    async def test_low_delays(self, simple_status):
+    async def test_success(self, simple_status):
         under_test = await simple_status(timeout_seconds=5)
 
         async def mock_status_updated():
@@ -405,12 +462,14 @@ class TestCompletedEvent:
 
             await asyncio.sleep(0.1)
             await under_test.write("n1", DeploymentState.ResultType.in_progress)
+            await asyncio.sleep(0.2)
             await under_test.write("n2", DeploymentState.ResultType.in_progress)
             await asyncio.sleep(0.2)
             await under_test.write("n1", DeploymentState.ResultType.success)
+            await asyncio.sleep(0.2)
             await under_test.write("n2", DeploymentState.ResultType.success)
 
-        waiter_task = asyncio.create_task(under_test.wait_for_all_completion())
+        waiter_task = asyncio.create_task(under_test.wait_for_all_succeeded())
         asyncio.create_task(mock_status_updated())
 
         assert (
@@ -425,6 +484,20 @@ class TestCompletedEvent:
         ).code == DeploymentState.ResultType.in_progress
         assert (
             await under_test.read("n2")
+        ).code == DeploymentState.ResultType.pending
+        await asyncio.sleep(0.2)
+        assert (
+            await under_test.read("n1")
+        ).code == DeploymentState.ResultType.in_progress
+        assert (
+            await under_test.read("n2")
+        ).code == DeploymentState.ResultType.in_progress
+        await asyncio.sleep(0.2)
+        assert (
+            await under_test.read("n1")
+        ).code == DeploymentState.ResultType.success
+        assert (
+            await under_test.read("n2")
         ).code == DeploymentState.ResultType.in_progress
 
         await waiter_task
@@ -435,3 +508,311 @@ class TestCompletedEvent:
         assert (
             await under_test.read("n2")
         ).code == DeploymentState.ResultType.success
+
+    @pytest.mark.asyncio
+    async def test_success_fail(self, simple_status):
+        under_test = await simple_status(timeout_seconds=2)
+
+        async def mock_status_updated():
+            nonlocal under_test
+
+            await asyncio.sleep(0.1)
+            await under_test.write("n1", DeploymentState.ResultType.in_progress)
+            await asyncio.sleep(0.2)
+            await under_test.write("n2", DeploymentState.ResultType.in_progress)
+            await asyncio.sleep(0.2)
+            await under_test.write("n1", DeploymentState.ResultType.success)
+            await asyncio.sleep(0.2)
+            await under_test.write("n2", DeploymentState.ResultType.failed)
+
+        waiter_task = asyncio.create_task(under_test.wait_for_all_succeeded())
+        asyncio.create_task(mock_status_updated())
+
+        assert (
+            await under_test.read("n1")
+        ).code == DeploymentState.ResultType.pending
+        assert (
+            await under_test.read("n2")
+        ).code == DeploymentState.ResultType.pending
+        await asyncio.sleep(0.2)
+        assert (
+            await under_test.read("n1")
+        ).code == DeploymentState.ResultType.in_progress
+        assert (
+            await under_test.read("n2")
+        ).code == DeploymentState.ResultType.pending
+        await asyncio.sleep(0.2)
+        assert (
+            await under_test.read("n1")
+        ).code == DeploymentState.ResultType.in_progress
+        assert (
+            await under_test.read("n2")
+        ).code == DeploymentState.ResultType.in_progress
+        await asyncio.sleep(0.2)
+        assert (
+            await under_test.read("n1")
+        ).code == DeploymentState.ResultType.success
+        assert (
+            await under_test.read("n2")
+        ).code == DeploymentState.ResultType.in_progress
+
+        with pytest.raises(asyncio.TimeoutError):
+            await waiter_task
+
+        assert (
+            await under_test.read("n1")
+        ).code == DeploymentState.ResultType.success
+        assert (
+            await under_test.read("n2")
+        ).code == DeploymentState.ResultType.failed
+
+    @pytest.mark.asyncio
+    async def test_success_cancelled(self, simple_status):
+        under_test = await simple_status(timeout_seconds=2)
+
+        async def mock_status_updated():
+            nonlocal under_test
+
+            await asyncio.sleep(0.1)
+            await under_test.write("n1", DeploymentState.ResultType.in_progress)
+            await asyncio.sleep(0.2)
+            await under_test.write("n2", DeploymentState.ResultType.in_progress)
+            await asyncio.sleep(0.2)
+            await under_test.write("n1", DeploymentState.ResultType.success)
+            await asyncio.sleep(0.2)
+            await under_test.write("n2", DeploymentState.ResultType.cancelled)
+
+        waiter_task = asyncio.create_task(under_test.wait_for_all_succeeded())
+        asyncio.create_task(mock_status_updated())
+
+        assert (
+            await under_test.read("n1")
+        ).code == DeploymentState.ResultType.pending
+        assert (
+            await under_test.read("n2")
+        ).code == DeploymentState.ResultType.pending
+        await asyncio.sleep(0.2)
+        assert (
+            await under_test.read("n1")
+        ).code == DeploymentState.ResultType.in_progress
+        assert (
+            await under_test.read("n2")
+        ).code == DeploymentState.ResultType.pending
+        await asyncio.sleep(0.2)
+        assert (
+            await under_test.read("n1")
+        ).code == DeploymentState.ResultType.in_progress
+        assert (
+            await under_test.read("n2")
+        ).code == DeploymentState.ResultType.in_progress
+        await asyncio.sleep(0.2)
+        assert (
+            await under_test.read("n1")
+        ).code == DeploymentState.ResultType.success
+        assert (
+            await under_test.read("n2")
+        ).code == DeploymentState.ResultType.in_progress
+
+        with pytest.raises(asyncio.TimeoutError):
+            await waiter_task
+
+        assert (
+            await under_test.read("n1")
+        ).code == DeploymentState.ResultType.success
+        assert (
+            await under_test.read("n2")
+        ).code == DeploymentState.ResultType.cancelled
+
+    @pytest.mark.asyncio
+    async def test_in_progress(self, simple_status):
+        under_test = await simple_status(timeout_seconds=1)
+
+        async def mock_status_updated():
+            nonlocal under_test
+
+            await asyncio.sleep(0.1)
+            await under_test.write("n1", DeploymentState.ResultType.in_progress)
+            await asyncio.sleep(0.2)
+            await under_test.write("n2", DeploymentState.ResultType.in_progress)
+
+        waiter_task = asyncio.create_task(under_test.wait_for_all_succeeded())
+        asyncio.create_task(mock_status_updated())
+
+        assert (
+            await under_test.read("n1")
+        ).code == DeploymentState.ResultType.pending
+        assert (
+            await under_test.read("n2")
+        ).code == DeploymentState.ResultType.pending
+        await asyncio.sleep(0.2)
+        assert (
+            await under_test.read("n1")
+        ).code == DeploymentState.ResultType.in_progress
+        assert (
+            await under_test.read("n2")
+        ).code == DeploymentState.ResultType.pending
+        await asyncio.sleep(0.2)
+        assert (
+            await under_test.read("n1")
+        ).code == DeploymentState.ResultType.in_progress
+        assert (
+            await under_test.read("n2")
+        ).code == DeploymentState.ResultType.in_progress
+
+        with pytest.raises(asyncio.TimeoutError):
+            await waiter_task
+
+        assert (
+            await under_test.read("n1")
+        ).code == DeploymentState.ResultType.in_progress
+        assert (
+            await under_test.read("n2")
+        ).code == DeploymentState.ResultType.in_progress
+
+    @pytest.mark.asyncio
+    async def test_timeout_raises(self, simple_status):
+        under_test = await simple_status(timeout_seconds=0.5)
+
+        async def mock_status_updated():
+            # do nothing so that state never transitions to a completed state.
+            pass
+
+        waiter_task = asyncio.create_task(under_test.wait_for_all_succeeded())
+        asyncio.create_task(mock_status_updated())
+
+        with pytest.raises(asyncio.TimeoutError):
+            await waiter_task
+
+        assert (
+            await under_test.read("n1")
+        ).code == DeploymentState.ResultType.pending
+        assert (
+            await under_test.read("n2")
+        ).code == DeploymentState.ResultType.pending
+
+
+class TestCompletedNamedEvent:
+    @pytest.mark.asyncio
+    async def test_success(self, simple_status):
+        under_test = await simple_status(timeout_seconds=5)
+
+        async def mock_status_updated():
+            nonlocal under_test
+
+            await asyncio.sleep(0.1)
+            await under_test.write("n1", DeploymentState.ResultType.in_progress)
+            await asyncio.sleep(0.2)
+            await under_test.write("n2", DeploymentState.ResultType.in_progress)
+            await asyncio.sleep(0.2)
+            await under_test.write("n1", DeploymentState.ResultType.failed)
+            await asyncio.sleep(0.2)
+            await under_test.write("n2", DeploymentState.ResultType.success)
+
+        waiter_task = asyncio.create_task(under_test.wait_for_completion("n2"))
+        asyncio.create_task(mock_status_updated())
+
+        assert (
+            await under_test.read("n2")
+        ).code != DeploymentState.ResultType.success
+
+        await waiter_task
+
+        assert (
+            await under_test.read("n2")
+        ).code == DeploymentState.ResultType.success
+
+    @pytest.mark.asyncio
+    async def test_success_fail(self, simple_status):
+        under_test = await simple_status(timeout_seconds=2)
+
+        async def mock_status_updated():
+            nonlocal under_test
+
+            await asyncio.sleep(0.1)
+            await under_test.write("n1", DeploymentState.ResultType.in_progress)
+            await asyncio.sleep(0.2)
+            await under_test.write("n2", DeploymentState.ResultType.in_progress)
+            await asyncio.sleep(0.2)
+            await under_test.write("n1", DeploymentState.ResultType.success)
+            await asyncio.sleep(0.2)
+            await under_test.write("n2", DeploymentState.ResultType.failed)
+
+        waiter_task = asyncio.create_task(under_test.wait_for_completion("n2"))
+        asyncio.create_task(mock_status_updated())
+
+        assert (
+            await under_test.read("n2")
+        ).code != DeploymentState.ResultType.failed
+
+        await waiter_task
+
+        assert (
+            await under_test.read("n2")
+        ).code == DeploymentState.ResultType.failed
+
+    @pytest.mark.asyncio
+    async def test_in_progress(self, simple_status):
+        under_test = await simple_status(timeout_seconds=1)
+
+        async def mock_status_updated():
+            nonlocal under_test
+
+            await asyncio.sleep(0.1)
+            await under_test.write("n1", DeploymentState.ResultType.in_progress)
+            await asyncio.sleep(0.2)
+            await under_test.write("n2", DeploymentState.ResultType.in_progress)
+
+        waiter_task = asyncio.create_task(under_test.wait_for_completion("n2"))
+        asyncio.create_task(mock_status_updated())
+
+        assert (
+            await under_test.read("n1")
+        ).code == DeploymentState.ResultType.pending
+        assert (
+            await under_test.read("n2")
+        ).code == DeploymentState.ResultType.pending
+        await asyncio.sleep(0.2)
+        assert (
+            await under_test.read("n1")
+        ).code == DeploymentState.ResultType.in_progress
+        assert (
+            await under_test.read("n2")
+        ).code == DeploymentState.ResultType.pending
+        await asyncio.sleep(0.2)
+        assert (
+            await under_test.read("n1")
+        ).code == DeploymentState.ResultType.in_progress
+        assert (
+            await under_test.read("n2")
+        ).code == DeploymentState.ResultType.in_progress
+
+        with pytest.raises(asyncio.TimeoutError):
+            await waiter_task
+
+        assert (
+            await under_test.read("n1")
+        ).code == DeploymentState.ResultType.in_progress
+        assert (
+            await under_test.read("n2")
+        ).code == DeploymentState.ResultType.in_progress
+
+    @pytest.mark.asyncio
+    async def test_timeout_raises(self, simple_status):
+        under_test = await simple_status(timeout_seconds=0.5)
+
+        async def mock_status_updated():
+            # do nothing so that state never transitions to a completed state.
+            pass
+
+        waiter_task = asyncio.create_task(under_test.wait_for_completion("n2"))
+        asyncio.create_task(mock_status_updated())
+
+        with pytest.raises(asyncio.TimeoutError):
+            await waiter_task
+
+        assert (
+            await under_test.read("n1")
+        ).code == DeploymentState.ResultType.pending
+        assert (
+            await under_test.read("n2")
+        ).code == DeploymentState.ResultType.pending

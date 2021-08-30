@@ -101,11 +101,17 @@ class DeploymentStatus:
         DeploymentState.ResultType.success: "green",
     }
 
+    EVENT_KEY_SUCCEEDED = "_all_succeeded"
+    EVENT_KEY_COMPLETED = "_all_completed"
+
     def __init__(
         self: T, iteration_context: str, timeout_seconds: float
     ) -> None:
         """Construct ``DeploymentStatus`` object."""
-        self.__events: dict = {"_all": asyncio.Event()}
+        self.__events: dict = {
+            self.EVENT_KEY_COMPLETED: asyncio.Event(),
+            self.EVENT_KEY_SUCCEEDED: asyncio.Event(),
+        }
 
         self.__iteration_context = iteration_context
         self.__rw_lock = asyncio.Lock()
@@ -148,8 +154,15 @@ class DeploymentStatus:
             self.__status[name].message = message
 
             values = list(self.__status.values())
+            if (name in self.__events) and (
+                code in DeploymentState.COMPLETED_RESULTS
+            ):
+                self.__events[name].set()
+
             if all_success(values):
-                self.__events["_all"].set()
+                self.__events[self.EVENT_KEY_SUCCEEDED].set()
+            if all_completed(values):
+                self.__events[self.EVENT_KEY_COMPLETED].set()
 
     async def read(self: T, name: str) -> DeploymentState:
         """
@@ -180,11 +193,37 @@ class DeploymentStatus:
 
         return result
 
-    async def wait_for_all_completion(self: T) -> None:
+    async def wait_for_completion(self: T, name: str) -> None:
+        """
+        Block the call until the named deployment has completed.
+
+        Completion state as defined by ``DeploymentState.COMPLETED_RESULTS``.
+
+        Raises:
+            asyncio.TimeoutError: If there is a timeout waiting for completion.
+        """
+        async with self.__rw_lock:
+            if name not in self.__events:
+                self.__events[name] = asyncio.Event()
+        log.debug(
+            "waiting for named completion, {0}, ({1})".format(
+                name, self.__iteration_context
+            )
+        )
+        await asyncio.wait_for(
+            self.__events[name].wait(), timeout=self.__timeout_seconds
+        )
+        log.debug(
+            "completed event set for name, {0}, ({1})".format(
+                name, self.__iteration_context
+            )
+        )
+
+    async def wait_for_all_completed(self: T) -> None:
         """
         Block the caller until the "all completed" event is triggered.
 
-        "All completed" means that all registered deploymenet have reached a
+        "All completed" means that all registered deployment have reached a
         completion state as defined by ``DeploymentState.COMPLETED_RESULTS``.
 
         Raises:
@@ -196,10 +235,36 @@ class DeploymentStatus:
             )
         )
         await asyncio.wait_for(
-            self.__events["_all"].wait(), timeout=self.__timeout_seconds
+            self.__events[self.EVENT_KEY_COMPLETED].wait(),
+            timeout=self.__timeout_seconds,
         )
         log.debug(
             "everything completed event set, {0}".format(
+                self.__iteration_context
+            )
+        )
+
+    async def wait_for_all_succeeded(self: T) -> None:
+        """
+        Block the caller until the "all succeeded" event is triggered.
+
+        "All succeeded" means that all registered deployments have reported a
+        ``success`` result.
+
+        Raises:
+            asyncio.TimeoutError: If there is a timeout waiting for success.
+        """
+        log.debug(
+            "waiting for everything succeeded, {0}".format(
+                self.__iteration_context
+            )
+        )
+        await asyncio.wait_for(
+            self.__events[self.EVENT_KEY_SUCCEEDED].wait(),
+            timeout=self.__timeout_seconds,
+        )
+        log.debug(
+            "everything succeeded event set, {0}".format(
                 self.__iteration_context
             )
         )
