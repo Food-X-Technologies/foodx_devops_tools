@@ -49,6 +49,20 @@ SUBSCRIPTION_NAME_REGEX = (
 )
 
 
+def any_failed(values: typing.List[DeploymentState]) -> bool:
+    """Evaluate if any deployment states failed."""
+    result = any([x.code == DeploymentState.ResultType.failed for x in values])
+    return result
+
+
+def all_cancelled(values: typing.List[DeploymentState]) -> bool:
+    """Evaluate if all deployments were cancelled."""
+    result = all(
+        [x.code == DeploymentState.ResultType.cancelled for x in values]
+    )
+    return result
+
+
 async def assess_results(
     results: typing.List[DeploymentState],
 ) -> DeploymentState:
@@ -64,8 +78,15 @@ async def assess_results(
     if all_success(results):
         log.debug("assessed result success")
         this_result = DeploymentState(code=DeploymentState.ResultType.success)
+    elif any_failed(results):
+        log.debug("assessed result failed")
+        this_result = DeploymentState(code=DeploymentState.ResultType.failed)
+    elif all_cancelled(results):
+        log.debug("assessed result cancelled")
+        this_result = DeploymentState(code=DeploymentState.ResultType.cancelled)
     else:
-        # any "not success" result means failure.
+        # fallback is failure.
+        log.debug("fallback to failed")
         messages = [
             x.message
             for x in results
@@ -324,7 +345,11 @@ async def deploy_frame(
         click.echo(message, err=True)
         raise
 
-    results = [await frame_status.read(x) for x in await frame_status.names()]
+    # read the state of the completed _applications_
+    results = [
+        await application_status.read(x)
+        for x in await application_status.names()
+    ]
     condensed_result = await assess_results(results)
     await frame_status.write(
         this_context, condensed_result.code, condensed_result.message

@@ -6,12 +6,15 @@
 #  foodx_devops_tools. If not, see <https://opensource.org/licenses/MIT>.
 
 import asyncio
+import pathlib
 
 import pytest
 
 from foodx_devops_tools.deploy_me._deployment import (
+    ApplicationDeploymentSteps,
     DeploymentState,
     DeploymentStatus,
+    FlattenedDeployment,
     deploy_frame,
 )
 from foodx_devops_tools.deploy_me.exceptions import DeploymentTerminatedError
@@ -33,12 +36,35 @@ def mock_application_deploy(mock_async_method, prep_frame_data):
     return mock_application, deployment_data, frame_data
 
 
+class MockAppDeploy:
+    def __init__(self, status):
+        self.status = status
+
+    async def __call__(
+        self,
+        application_data: ApplicationDeploymentSteps,
+        deployment_data: FlattenedDeployment,
+        application_status: DeploymentStatus,
+        enable_validation: bool,
+        frame_folder: pathlib.Path,
+    ) -> None:
+        this_context = str(deployment_data.data.iteration_context)
+        await application_status.initialize(this_context)
+        await application_status.write(this_context, self.status)
+
+
 @pytest.mark.asyncio
-async def test_validation_clean(
-    mocker, mock_application_deploy, mock_completion_event, pipeline_parameters
+async def test_clean(
+    mocker, mock_completion_event, pipeline_parameters, prep_frame_data
 ):
     cli_options = pipeline_parameters()
-    mock_application, deployment_data, frame_data = mock_application_deploy
+    deployment_data, frame_data = prep_frame_data
+    mock_app_deploy = MockAppDeploy(DeploymentState.ResultType.success)
+
+    mocker.patch(
+        "foodx_devops_tools.deploy_me._deployment.deploy_application" "",
+        mock_app_deploy,
+    )
 
     this_status = DeploymentStatus(MOCK_CONTEXT, timeout_seconds=1)
     await deploy_frame(
@@ -48,13 +74,91 @@ async def test_validation_clean(
         cli_options,
     )
 
-    mock_application.assert_called_once_with(
-        frame_data.applications["a1"],
-        mocker.ANY,
-        mocker.ANY,
-        cli_options.enable_validation,
-        frame_data.folder,
+    result = await this_status.read("f1")
+    assert result.code == DeploymentState.ResultType.success
+
+
+@pytest.mark.asyncio
+async def test_app_failed(
+    mocker, mock_completion_event, pipeline_parameters, prep_frame_data
+):
+    cli_options = pipeline_parameters()
+    deployment_data, frame_data = prep_frame_data
+    mock_app_deploy = MockAppDeploy(DeploymentState.ResultType.failed)
+
+    mocker.patch(
+        "foodx_devops_tools.deploy_me._deployment.deploy_application" "",
+        mock_app_deploy,
     )
+
+    this_status = DeploymentStatus(MOCK_CONTEXT, timeout_seconds=1)
+    await deploy_frame(
+        frame_data,
+        deployment_data,
+        this_status,
+        cli_options,
+    )
+
+    result = await this_status.read("f1")
+    assert result.code == DeploymentState.ResultType.failed
+
+
+@pytest.mark.asyncio
+async def test_app_cancelled(
+    mocker, mock_completion_event, pipeline_parameters, prep_frame_data
+):
+    cli_options = pipeline_parameters()
+    deployment_data, frame_data = prep_frame_data
+    mock_app_deploy = MockAppDeploy(DeploymentState.ResultType.cancelled)
+
+    mocker.patch(
+        "foodx_devops_tools.deploy_me._deployment.deploy_application" "",
+        mock_app_deploy,
+    )
+
+    this_status = DeploymentStatus(MOCK_CONTEXT, timeout_seconds=1)
+    await deploy_frame(
+        frame_data,
+        deployment_data,
+        this_status,
+        cli_options,
+    )
+
+    result = await this_status.read("f1")
+    assert result.code == DeploymentState.ResultType.cancelled
+
+
+@pytest.mark.asyncio
+async def test_correct_results(
+    mocker, mock_completion_event, pipeline_parameters, prep_frame_data
+):
+    """Test that a frame is correctly reporting the results of it's
+    applications (and not the results of other frames)."""
+    cli_options = pipeline_parameters()
+    deployment_data, frame_data = prep_frame_data
+    mock_app_deploy = MockAppDeploy(DeploymentState.ResultType.success)
+
+    mocker.patch(
+        "foodx_devops_tools.deploy_me._deployment.deploy_application" "",
+        mock_app_deploy,
+    )
+
+    this_status = DeploymentStatus(MOCK_CONTEXT, timeout_seconds=1)
+
+    # ensure that another frame has failed to avoid masking a false positive
+    # in frame status reporting if it is accidentally reporting
+    await this_status.initialize("other-f")
+    await this_status.write("other-f", DeploymentState.ResultType.failed)
+
+    await deploy_frame(
+        frame_data,
+        deployment_data,
+        this_status,
+        cli_options,
+    )
+
+    result = await this_status.read("f1")
+    assert result.code == DeploymentState.ResultType.success
 
 
 @pytest.mark.asyncio
