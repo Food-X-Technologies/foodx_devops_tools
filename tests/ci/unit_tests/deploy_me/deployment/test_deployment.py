@@ -10,6 +10,8 @@
 #  You should have received a copy of the MIT License along with
 #  foodx_devops_tools. If not, see <https://opensource.org/licenses/MIT>.
 
+import pytest
+
 from foodx_devops_tools.deploy_me._deployment import (
     DeploymentState,
     _construct_fqdn,
@@ -42,22 +44,24 @@ class TestConstructResourceGroupName:
 
 
 class TestAssessResults:
-    def test_success(self):
+    @pytest.mark.asyncio
+    async def test_success(self):
         mock_results = [
             DeploymentState(code=DeploymentState.ResultType.success),
             DeploymentState(code=DeploymentState.ResultType.success),
         ]
 
-        result = assess_results(mock_results)
+        result = await assess_results(mock_results)
 
         assert result.code == DeploymentState.ResultType.success
 
-    def test_fail(self):
+    @pytest.mark.asyncio
+    async def test_fail(self):
         mock_results = [
             DeploymentState(code=DeploymentState.ResultType.success),
             DeploymentState(code=DeploymentState.ResultType.failed),
         ]
 
-        result = assess_results(mock_results)
+        result = await assess_results(mock_results)
 
         assert result.code == DeploymentState.ResultType.failed

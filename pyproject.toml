@@ -15,11 +15,13 @@ requires-python = ">=3.8"
 
 requires = [
     "aiofiles == 0.7.0",
+    # required for ansible vault interactions
+    "ansible == 4.4.0",
     "azure-devops == 6.0.0b4",
     "click == 8.0.1",
     "deepmerge == 0.3.0",
     "pydantic == 1.8.2",
-    "ruamel.yaml == 0.17.9"
+    "ruamel.yaml == 0.17.9",
 ]
 
 

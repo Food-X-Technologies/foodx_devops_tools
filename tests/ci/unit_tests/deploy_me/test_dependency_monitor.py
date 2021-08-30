@@ -13,15 +13,16 @@ import typing
 import pytest
 
 from foodx_devops_tools.deploy_me._dependency_monitor import (
-    DeploymentCancelledError,
+    DeploymentTerminatedError,
     IterationContext,
-    PipelineCliOptions,
-    _status_wait,
+    _confirm_dependency_frame_status,
+    _generate_dependency_contexts,
     process_dependencies,
 )
 from foodx_devops_tools.deploy_me._deployment import (
     DeploymentState,
     DeploymentStatus,
+    PipelineCliOptions,
     SingularFrameDefinition,
 )
 
@@ -32,6 +33,105 @@ MOCK_CONTEXT = str(MOCK_ITERATION_CONTEXT)
 MOCK_PIPELINE_PARAMETERS = PipelineCliOptions(
     enable_validation=True, monitor_sleep_seconds=0.5, wait_timeout_seconds=0.1
 )
+
+
+class TestGenerateDependencyContexts:
+    def test_clean(self):
+        mock_dependency_names = {
+            "one",
+            "two",
+        }
+        result = _generate_dependency_contexts(
+            copy.deepcopy(MOCK_ITERATION_CONTEXT), mock_dependency_names
+        )
+
+        one = IterationContext()
+        one.append("some")
+        one.append("one")
+        two = IterationContext()
+        two.append("some")
+        two.append("two")
+        assert result == {
+            str(one),
+            str(two),
+        }
+
+
+class TestConfirmDependencyFrameStatus:
+    @pytest.mark.asyncio
+    async def test_clean(self):
+        dependency_names = {
+            "one",
+            "two",
+        }
+        this_status = DeploymentStatus(MOCK_CONTEXT, timeout_seconds=3)
+        await this_status.initialize(MOCK_CONTEXT)
+        await this_status.initialize("some.one")
+        await this_status.initialize("some.two")
+
+        result = await _confirm_dependency_frame_status(
+            dependency_names, this_status, MOCK_ITERATION_CONTEXT, 0.05
+        )
+
+        assert result == {
+            "some.one",
+            "some.two",
+        }
+        assert (
+            await this_status.read("some.context")
+        ).code == DeploymentState.ResultType.pending
+
+    @pytest.mark.asyncio
+    async def test_delayed_status(self):
+        dependency_names = {
+            "one",
+            "two",
+        }
+        this_status = DeploymentStatus(MOCK_CONTEXT, timeout_seconds=3)
+        await this_status.initialize(MOCK_CONTEXT)
+        await this_status.initialize("some.one")
+
+        this_task = asyncio.create_task(
+            _confirm_dependency_frame_status(
+                dependency_names, this_status, MOCK_ITERATION_CONTEXT, 0.1
+            )
+        )
+        # ensure that the next status change arrives after the first
+        # iteration of dependency checks
+        await asyncio.sleep(0.2)
+        await this_status.initialize("some.two")
+
+        result = await this_task
+
+        assert result == {
+            "some.one",
+            "some.two",
+        }
+        assert (
+            await this_status.read("some.context")
+        ).code == DeploymentState.ResultType.pending
+
+    @pytest.mark.asyncio
+    async def test_not_found_raises(self):
+        dependency_names = {
+            "one",
+            "two",
+        }
+        this_status = DeploymentStatus(MOCK_CONTEXT, timeout_seconds=3)
+        await this_status.initialize(MOCK_CONTEXT)
+        await this_status.initialize("some.one")
+
+        with pytest.raises(
+            DeploymentTerminatedError,
+            match=r"^dependency frames not in frame status",
+        ):
+            await _confirm_dependency_frame_status(
+                dependency_names, this_status, MOCK_ITERATION_CONTEXT, 0.05
+            )
+
+        assert (
+            await this_status.read("some.context")
+        ).code == DeploymentState.ResultType.failed
 
 
 class MockWaiter:
@@ -50,15 +150,20 @@ class MockWaiter:
 
 
 @pytest.fixture()
-async def mock_frame_dependency(prep_frame_data):
+def mock_frame_dependency(prep_frame_data):
     async def _apply():
+        import foodx_devops_tools.deploy_me._dependency_monitor
+
+        foodx_devops_tools.deploy_me._dependency_monitor.STATUS_KEY_RETRY_SLEEP_SECONDS = (
+            0.1
+        )
         deployment_data, frame_data = prep_frame_data
         this_context = copy.deepcopy(MOCK_ITERATION_CONTEXT)
         this_context.append("f1")
 
         frame_data.depends_on = ["df1"]
 
-        this_status = DeploymentStatus(MOCK_CONTEXT)
+        this_status = DeploymentStatus(MOCK_CONTEXT, timeout_seconds=2)
         await this_status.initialize(str(this_context))
         for this_df in frame_data.depends_on:
             this_df_context = copy.deepcopy(MOCK_ITERATION_CONTEXT)
@@ -70,7 +175,7 @@ async def mock_frame_dependency(prep_frame_data):
     return _apply
 
 
-class TestStatusWait:
+class TestProcessDependencies:
     MOCK_SLEEP = 0.1
 
     @pytest.mark.asyncio
@@ -93,11 +198,10 @@ class TestStatusWait:
             )
 
             await asyncio.wait_for(
-                _status_wait(
+                process_dependencies(
                     this_context,
                     frame_data,
                     this_status,
-                    self.MOCK_SLEEP,
                 ),
                 timeout=1,
             )
@@ -152,11 +256,10 @@ class TestStatusWait:
             )
 
             await asyncio.wait_for(
-                _status_wait(
+                process_dependencies(
                     this_context,
                     frame_data,
                     this_status,
-                    self.MOCK_SLEEP,
                 ),
                 timeout=1,
             )
@@ -196,15 +299,14 @@ class TestStatusWait:
             )
 
             with pytest.raises(
-                DeploymentCancelledError,
+                DeploymentTerminatedError,
                 match=r"cancelled due to dependency failure",
             ):
                 await asyncio.wait_for(
-                    _status_wait(
+                    process_dependencies(
                         this_context,
                         frame_data,
                         this_status,
-                        self.MOCK_SLEEP,
                     ),
                     timeout=1,
                 )
@@ -240,7 +342,7 @@ class TestStatusWait:
             df_context = copy.deepcopy(MOCK_ITERATION_CONTEXT)
             df_context.append("df1")
 
-            this_status = DeploymentStatus(MOCK_CONTEXT)
+            this_status = DeploymentStatus(MOCK_CONTEXT, timeout_seconds=2)
             await this_status.initialize(str(this_context))
 
             # set the dependency status to "failed"
@@ -249,11 +351,10 @@ class TestStatusWait:
             )
 
             await asyncio.wait_for(
-                _status_wait(
+                process_dependencies(
                     this_context,
                     frame_data,
                     this_status,
-                    self.MOCK_SLEEP,
                 ),
                 timeout=1,
             )
@@ -261,7 +362,7 @@ class TestStatusWait:
         expected_messages = [
             {
                 "message": "dependency frames not in frame status",
-                "log_stdout_both": True,
+                "log_stdout_both": False,
             },
             {
                 "message": "dependencies completed. proceeding with deployment",
@@ -269,52 +370,3 @@ class TestStatusWait:
             },
         ]
         self._check_messages(expected_messages, caplog, capsys)
-
-
-class TestProcessDependencies:
-    @pytest.mark.asyncio
-    async def test_no_dependencies(self, mocker, prep_frame_data):
-        deployment_data, frame_data = prep_frame_data
-
-        mocker.patch(
-            "foodx_devops_tools.deploy_me._dependency_monitor" "._status_wait",
-            side_effect=MockWaiter([0.5]),
-        )
-
-        frame_status = DeploymentStatus(MOCK_CONTEXT)
-
-        await process_dependencies(
-            MOCK_ITERATION_CONTEXT,
-            frame_data,
-            frame_status,
-            MOCK_PIPELINE_PARAMETERS,
-        )
-
-    @pytest.mark.asyncio
-    async def test_timeout(self, mocker, prep_frame_data):
-        deployment_data, frame_data = prep_frame_data
-        this_context = copy.deepcopy(MOCK_ITERATION_CONTEXT)
-        this_context.append("f1")
-
-        mocker.patch(
-            "foodx_devops_tools.deploy_me._dependency_monitor._status_wait",
-            MockWaiter([10]),
-        )
-        frame_data.depends_on = ["df1"]
-
-        this_status = DeploymentStatus(MOCK_CONTEXT)
-        await this_status.initialize(str(this_context))
-        for this_df in frame_data.depends_on:
-            this_df_context = copy.deepcopy(MOCK_ITERATION_CONTEXT)
-            this_df_context.append(this_df)
-            await this_status.initialize(str(this_df_context))
-
-        with pytest.raises(
-            DeploymentCancelledError, match=r"timeout waiting for dependencies"
-        ):
-            await process_dependencies(
-                this_context,
-                frame_data,
-                this_status,
-                MOCK_PIPELINE_PARAMETERS,
-            )

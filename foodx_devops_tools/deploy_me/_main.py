@@ -42,6 +42,7 @@ from ._deployment import (
     assess_results,
     do_deploy,
 )
+from ._exceptions import DeploymentTerminatedError
 from ._state import ExitState, PipelineCliOptions
 
 log = logging.getLogger(__name__)
@@ -57,7 +58,7 @@ async def _gather_main(
     configuration: PipelineConfiguration,
     deployment_iterations: typing.List[FlattenedDeployment],
     pipeline_parameters: PipelineCliOptions,
-) -> typing.List[DeploymentState]:
+) -> None:
     """Deploy each deployment iteration asynchronously."""
     results = await asyncio.gather(
         *[
@@ -70,7 +71,9 @@ async def _gather_main(
     filtered_results = [x for x in results if isinstance(x, DeploymentState)]
     if len(filtered_results) != len(results):
         log.error("Some deployments may have had unexpected failures.")
-    return filtered_results
+
+    condensed_result = await assess_results(filtered_results)
+    _report_results(condensed_result.code, len(deployment_iterations))
 
 
 def _report_results(
@@ -174,8 +177,8 @@ eg.
 @click.option(
     "--wait-timeout",
     default=15,
-    help="Maximum wait time in minutes for frame dependency completion. Frame "
-    "fails if the timeout is exceeded.",
+    help="Maximum wait time in minutes for frame, application or step "
+    "completion. Failure results if the timeout is exceeded.",
     show_default=True,
     type=int,
 )
@@ -251,21 +254,30 @@ def deploy_me(
         )
         log.debug(str(deployment_iterations))
 
-        results = asyncio.run(
+        asyncio.run(
             _gather_main(
                 this_configuration, deployment_iterations, pipeline_parameters
             )
         )
-        condensed_result = assess_results(results)
-        _report_results(condensed_result.code, len(deployment_iterations))
     except (ConfigurationPathsError, DeploymentConfigurationError) as e:
         message = str(e)
         log.error(message)
         click.echo(message, err=True)
         sys.exit(ExitState.BAD_DEPLOYMENT_CONFIGURATION.value)
     except asyncio.CancelledError:
-        log.debug("Async cancellation exception")
-        raise
+        log.error("Async cancellation exception")
+        click.echo("Exiting due to async cancellation", err=True)
+        sys.exit(ExitState.DEPLOYMENT_CANCELLED.value)
+    except DeploymentTerminatedError as e:
+        log.error("Deployment cancelled exception, {0}".format(str(e)))
+        click.echo(
+            click.style("Exiting due to deployment cancellation", fg="red"),
+            err=True,
+        )
+        sys.exit(ExitState.DEPLOYMENT_CANCELLED.value)
+    except asyncio.TimeoutError:
+        click.echo(click.style("Exiting due to timeout", fg="red"), err=True)
+        sys.exit(ExitState.DEPLOYMENT_TIMEOUT.value)
     except Exception as e:
         log.exception(str(e))
         click.echo(
