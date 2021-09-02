@@ -16,7 +16,7 @@ from foodx_devops_tools.pipeline_config import (
     DeploymentContext,
     PipelineConfigurationPaths,
 )
-from foodx_devops_tools.pipeline_config.service_principals import _encrypt_vault
+from foodx_devops_tools.utilities.ansible import _encrypt_vault
 
 MOCK_CONTEXT = DeploymentContext(
     commit_sha="abc123",

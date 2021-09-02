@@ -14,7 +14,7 @@ import tempfile
 import typing
 
 from foodx_devops_tools.pipeline_config import load_service_principals
-from foodx_devops_tools.pipeline_config.service_principals import (
+from foodx_devops_tools.utilities.ansible import (
     _decrypt_vault,
     _encrypt_vault,
     managed_file_decrypt,

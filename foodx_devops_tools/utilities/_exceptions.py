@@ -8,5 +8,9 @@
 """Utility related exceptions."""
 
 
+class AnsibleVaultError(Exception):
+    """Problem completing Ansible Vault operation."""
+
+
 class CommandError(Exception):
     """Problem completing an external command run."""
