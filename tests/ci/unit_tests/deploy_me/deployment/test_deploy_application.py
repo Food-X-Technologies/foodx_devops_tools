@@ -46,9 +46,6 @@ def prep_data(mock_async_method, mock_flattened_deployment):
         {"puff_map": MOCK_RESULTS["puff_map"]}
     ).puff_map
 
-    mock_validate = mock_async_method(
-        "foodx_devops_tools.deploy_me._deployment.validate_resource_group"
-    )
     mock_deploy = mock_async_method(
         "foodx_devops_tools.deploy_me._deployment.deploy_resource_group"
     )
@@ -56,14 +53,14 @@ def prep_data(mock_async_method, mock_flattened_deployment):
         "foodx_devops_tools.deploy_me._deployment.login_service_principal"
     )
 
-    return mock_validate, mock_deploy, deployment_data, app_data
+    return mock_deploy, deployment_data, app_data
 
 
 class DeploymentChecks:
     async def check_static_resource_group(
         self, enable_validation: bool, prep_data
     ):
-        mock_validate, mock_deploy, deployment_data, app_data = prep_data
+        mock_deploy, deployment_data, app_data = prep_data
 
         this_status = DeploymentStatus(
             MOCK_ITERATION_CONTEXT, timeout_seconds=1
@@ -76,12 +73,12 @@ class DeploymentChecks:
             pathlib.Path("some/path"),
         )
 
-        return mock_validate, mock_deploy
+        return mock_deploy
 
     async def check_auto_resource_group(
         self, enable_validation: bool, prep_data
     ):
-        mock_validate, mock_deploy, deployment_data, app_data = prep_data
+        mock_deploy, deployment_data, app_data = prep_data
 
         updated = copy.deepcopy(app_data)
         updated[0].resource_group = None
@@ -96,7 +93,7 @@ class DeploymentChecks:
             pathlib.Path("some/path"),
         )
 
-        return mock_validate, mock_deploy
+        return mock_deploy
 
 
 class TestValidation(DeploymentChecks):
@@ -104,36 +101,36 @@ class TestValidation(DeploymentChecks):
     async def test_static_resource_group(self, prep_data):
         enable_validation = True
 
-        mock_validate, mock_deploy = await self.check_static_resource_group(
+        mock_deploy = await self.check_static_resource_group(
             enable_validation, prep_data
         )
 
-        mock_deploy.assert_not_called()
-        mock_validate.assert_called_once_with(
+        mock_deploy.assert_called_once_with(
             "a1_group-123456",
             pathlib.Path("some/path/a1.json"),
             pathlib.Path("some/path/some/puff_map/path"),
             "l1",
             "Incremental",
             AzureSubscriptionConfiguration(subscription_id="sub1"),
+            validate=True,
         )
 
     @pytest.mark.asyncio
     async def test_auto_resource_group(self, prep_data):
         enable_validation = True
 
-        mock_validate, mock_deploy = await self.check_auto_resource_group(
+        mock_deploy = await self.check_auto_resource_group(
             enable_validation, prep_data
         )
 
-        mock_deploy.assert_not_called()
-        mock_validate.assert_called_once_with(
+        mock_deploy.assert_called_once_with(
             "a1-f1-c1-123456",
             pathlib.Path("some/path/a1.json"),
             pathlib.Path("some/path/some/puff_map/path"),
             "l1",
             "Incremental",
             AzureSubscriptionConfiguration(subscription_id="sub1"),
+            validate=True,
         )
 
 
@@ -142,11 +139,10 @@ class TestDeployment(DeploymentChecks):
     async def test_static_resource_group(self, prep_data):
         enable_validation = False
 
-        mock_validate, mock_deploy = await self.check_static_resource_group(
+        mock_deploy = await self.check_static_resource_group(
             enable_validation, prep_data
         )
 
-        mock_validate.assert_not_called()
         mock_deploy.assert_called_once_with(
             "a1_group",
             pathlib.Path("some/path/a1.json"),
@@ -154,17 +150,17 @@ class TestDeployment(DeploymentChecks):
             "l1",
             "Incremental",
             AzureSubscriptionConfiguration(subscription_id="sub1"),
+            validate=False,
         )
 
     @pytest.mark.asyncio
     async def test_auto_resource_group(self, prep_data):
         enable_validation = False
 
-        mock_validate, mock_deploy = await self.check_auto_resource_group(
+        mock_deploy = await self.check_auto_resource_group(
             enable_validation, prep_data
         )
 
-        mock_validate.assert_not_called()
         mock_deploy.assert_called_once_with(
             "a1-f1-c1",
             pathlib.Path("some/path/a1.json"),
@@ -172,4 +168,5 @@ class TestDeployment(DeploymentChecks):
             "l1",
             "Incremental",
             AzureSubscriptionConfiguration(subscription_id="sub1"),
+            validate=False,
         )

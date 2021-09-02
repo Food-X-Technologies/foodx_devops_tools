@@ -23,9 +23,6 @@ from foodx_devops_tools.azure.cloud.resource_group import (
 from foodx_devops_tools.azure.cloud.resource_group import (
     deploy as deploy_resource_group,
 )
-from foodx_devops_tools.azure.cloud.resource_group import (
-    validate as validate_resource_group,
-)
 from foodx_devops_tools.pipeline_config import (
     ApplicationDeploymentSteps,
     FlattenedDeployment,
@@ -170,25 +167,18 @@ async def _deploy_step(
             resource_group,
             deployment_data.context.pipeline_id,
         )
-        log.info("validation resource group name, {0}".format(resource_group))
-        await validate_resource_group(
-            resource_group,
-            arm_template_path,
-            arm_parameters_path,
-            deployment_data.data.location_primary,
-            this_step.mode.value,
-            this_subscription,
-        )
     else:
         log.info("deployment enabled, {0}".format(this_context))
-        await deploy_resource_group(
-            resource_group,
-            arm_template_path,
-            arm_parameters_path,
-            deployment_data.data.location_primary,
-            this_step.mode.value,
-            this_subscription,
-        )
+
+    await deploy_resource_group(
+        resource_group,
+        arm_template_path,
+        arm_parameters_path,
+        deployment_data.data.location_primary,
+        this_step.mode.value,
+        this_subscription,
+        validate=enable_validation,
+    )
 
 
 async def deploy_application(

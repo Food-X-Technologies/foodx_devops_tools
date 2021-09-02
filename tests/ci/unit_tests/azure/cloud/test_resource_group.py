@@ -11,6 +11,7 @@
 #  foodx_devops_tools. If not, see <https://opensource.org/licenses/MIT>.
 
 import asyncio
+import pathlib
 import re
 
 import pytest
@@ -23,6 +24,9 @@ from foodx_devops_tools.azure.cloud.resource_group import (
 )
 from foodx_devops_tools.azure.cloud.resource_group import (
     create as create_resource_group,
+)
+from foodx_devops_tools.azure.cloud.resource_group import (
+    deploy as deploy_resource_group,
 )
 from foodx_devops_tools.utilities import CapturedStreams
 
@@ -191,13 +195,96 @@ class TestCreateResourceGroup:
         mock_run.assert_not_called()
 
 
-# class TestDeployResourceGroup:
-#     MOCK_SUBSCRIPTION = AzureSubscriptionConfiguration(
-#         subscription_id="123-abc", tenant_id="abc-123")
-#     MOCK_RETURN=CapturedStreams(out="good run", error="")
-#     @pytest.mark.asyncio
-#     async def test_clean(self,mock_async_method):
-#         mock_run=mock_async_method("foodx_devops_tools.cli.run_async_command",
-#                                    return_value=self.MOCK_RETURN)
-#         await deploy_resource_group(,,self.MOCK_SUBSCRIPTION)
-#         assert False
+class TestDeployResourceGroup:
+    MOCK_SUBSCRIPTION = AzureSubscriptionConfiguration(
+        subscription_id="123-abc", tenant_id="abc-123"
+    )
+    MOCK_RETURN = CapturedStreams(out="good run", error="")
+    EXPECTED_PARAMETERS = {
+        "group": "some_group",
+        "arm_path": pathlib.Path("arm_path.json"),
+        "parameter_path": pathlib.Path("parameter_path.json"),
+        "location": "some location",
+        "mode": "Incremental",
+        "subscription": MOCK_SUBSCRIPTION,
+    }
+
+    @pytest.mark.asyncio
+    async def test_default(self, mock_async_method):
+        mock_create = mock_async_method(
+            "foodx_devops_tools.azure.cloud.resource_group.create"
+        )
+        mock_run = mock_async_method(
+            "foodx_devops_tools.azure.cloud.resource_group.run_async_command",
+            return_value=self.MOCK_RETURN,
+        )
+
+        await deploy_resource_group(
+            self.EXPECTED_PARAMETERS["group"],
+            self.EXPECTED_PARAMETERS["arm_path"],
+            self.EXPECTED_PARAMETERS["parameter_path"],
+            self.EXPECTED_PARAMETERS["location"],
+            self.EXPECTED_PARAMETERS["mode"],
+            self.EXPECTED_PARAMETERS["subscription"],
+        )
+
+        mock_create.assert_called_once()
+        mock_run.assert_called_once_with(
+            [
+                "az",
+                "deployment",
+                "group",
+                "create",
+                "--mode",
+                self.EXPECTED_PARAMETERS["mode"],
+                "--resource-group",
+                self.EXPECTED_PARAMETERS["group"],
+                "--template-file",
+                str(self.EXPECTED_PARAMETERS["arm_path"]),
+                "--parameters",
+                "@{0}".format(self.EXPECTED_PARAMETERS["parameter_path"]),
+            ]
+        )
+
+    @pytest.mark.asyncio
+    async def test_override_parameters(self, mock_async_method):
+        mock_create = mock_async_method(
+            "foodx_devops_tools.azure.cloud.resource_group.create"
+        )
+        mock_run = mock_async_method(
+            "foodx_devops_tools.azure.cloud.resource_group.run_async_command",
+            return_value=self.MOCK_RETURN,
+        )
+
+        await deploy_resource_group(
+            self.EXPECTED_PARAMETERS["group"],
+            self.EXPECTED_PARAMETERS["arm_path"],
+            self.EXPECTED_PARAMETERS["parameter_path"],
+            self.EXPECTED_PARAMETERS["location"],
+            self.EXPECTED_PARAMETERS["mode"],
+            self.EXPECTED_PARAMETERS["subscription"],
+            override_parameters={
+                "one": 1,
+                "two": "2",
+            },
+        )
+
+        mock_create.assert_called_once()
+        mock_run.assert_called_once_with(
+            [
+                "az",
+                "deployment",
+                "group",
+                "create",
+                "--mode",
+                self.EXPECTED_PARAMETERS["mode"],
+                "--resource-group",
+                self.EXPECTED_PARAMETERS["group"],
+                "--template-file",
+                str(self.EXPECTED_PARAMETERS["arm_path"]),
+                "--parameters",
+                "@{0}".format(self.EXPECTED_PARAMETERS["parameter_path"]),
+                "--parameters",
+                '\'{"one": 1, "two": "2"}\'',
+            ]
+        )
