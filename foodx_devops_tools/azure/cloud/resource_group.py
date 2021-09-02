@@ -208,7 +208,14 @@ async def deploy(
             "--parameters",
             "@{0}".format(arm_parameters_path),
         ]
+        log.debug("az command, {0}".format(str(this_command)))
         if override_parameters:
+            # WARNING: these external parameters may be sensitive content
+            # such as secrets, so DO NOT LOG.
+            log.debug(
+                "az command override parameters specified. content "
+                "withheld from log."
+            )
             this_command += [
                 "--parameters",
                 "'{0}'".format(json.dumps(override_parameters)),
