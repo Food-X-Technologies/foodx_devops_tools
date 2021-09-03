@@ -69,9 +69,9 @@ class ExitState(enum.Enum):
     is_flag=True,
 )
 @click.option(
-    "--disable-sp",
+    "--disable-vaults",
     default=False,
-    help="""Disable validation of service principals (local developer use only).
+    help="""Disable encrypted file validation (local developer use only).
 
 Disabling the validation still checks for the presence of the correct file,
 but does not attempt to decrypt the contents for further validation in order
@@ -84,7 +84,7 @@ def _main(
     system_config: pathlib.Path,
     password_file: typing.IO,
     check_paths: bool,
-    disable_sp: bool,
+    disable_vaults: bool,
 ) -> None:
     """
     Validate pipeline configuration files.
@@ -116,8 +116,9 @@ def _main(
         )
 
         decrypt_token = None
-        if not disable_sp:
+        if not disable_vaults:
             decrypt_token = acquire_token(password_file)
+
         pipeline_configuration = PipelineConfiguration.from_files(
             configuration_paths, decrypt_token
         )

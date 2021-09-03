@@ -40,6 +40,10 @@ class ServicePrincipalsError(Exception):
     """Problem loading service principal secrets."""
 
 
+class StaticSecretsError(Exception):
+    """Problem loading static secrets."""
+
+
 class SubscriptionsDefinitionError(Exception):
     """Problem loading subscription definitions."""
 

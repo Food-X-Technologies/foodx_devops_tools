@@ -12,12 +12,9 @@ import pathlib
 import typing
 
 import pydantic
-import ruamel.yaml
 
-from foodx_devops_tools.utilities.ansible import (
-    AnsibleVaultError,
-    managed_file_decrypt,
-)
+from foodx_devops_tools.utilities.ansible import AnsibleVaultError
+from foodx_devops_tools.utilities.io import load_encrypted_data
 
 from ._exceptions import ServicePrincipalsError
 
@@ -45,13 +42,8 @@ def load_service_principals(
     encrypted_file_path: pathlib.Path, decrypt_token: str
 ) -> ServicePrincipals:
     """Load service principal secrets from a string."""
-    yaml = ruamel.yaml.YAML(typ="safe")
     try:
-        with managed_file_decrypt(
-            encrypted_file_path, decrypt_token
-        ) as decrypted_stream:
-            yaml_data = yaml.load(decrypted_stream)
-
+        yaml_data = load_encrypted_data(encrypted_file_path, decrypt_token)
         this_object = ServicePrincipals.parse_obj(yaml_data)
 
         return this_object

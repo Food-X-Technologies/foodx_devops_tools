@@ -33,6 +33,7 @@ from .service_principals import (  # noqa: F401
     ServicePrincipals,
     load_service_principals,
 )
+from .static_secrets import StaticSecrets, load_static_secrets  # noqa: F401
 from .subscriptions import (  # noqa: F401
     SubscriptionsDefinition,
     load_subscriptions,

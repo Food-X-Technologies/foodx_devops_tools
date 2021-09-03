@@ -26,6 +26,8 @@ from .release_states import ValueType as ReleaseStatesData
 from .release_states import load_release_states
 from .service_principals import ValueType as ServicePrincipalsData
 from .service_principals import load_service_principals
+from .static_secrets import ValueType as StaticSecrets
+from .static_secrets import load_static_secrets
 from .subscriptions import ValueType as SubscriptionsData
 from .subscriptions import load_subscriptions
 from .systems import ValueType as SystemsData
@@ -56,6 +58,7 @@ class PipelineConfiguration(pydantic.BaseModel):
     frames: FramesData
     puff_map: PuffMap
     service_principals: typing.Optional[ServicePrincipalsData]
+    static_secrets: typing.Optional[StaticSecrets]
     subscriptions: SubscriptionsData
     systems: SystemsData
     tenants: TenantsData
@@ -87,15 +90,28 @@ class PipelineConfiguration(pydantic.BaseModel):
         tenant_config = load_tenants(paths.tenants)
 
         service_principals_config = None
+        static_secrets_config = None
         if decrypt_token:
             service_principals_config = load_service_principals(
                 paths.service_principals, decrypt_token
+            )
+            static_secrets_config = load_static_secrets(
+                paths.static_secrets, decrypt_token
             )
         else:
             if not paths.service_principals.is_file():
                 raise FileNotFoundError(
                     "Missing service principals vault "
                     "file, {0}".format(paths.service_principals)
+                )
+            missing_files = {
+                str(x) for x in paths.static_secrets if not x.is_file()
+            }
+            if any(missing_files):
+                raise FileNotFoundError(
+                    "Missing static secrets files, {0}".format(
+                        str(missing_files)
+                    )
                 )
 
         kwargs = {
@@ -113,6 +129,8 @@ class PipelineConfiguration(pydantic.BaseModel):
             kwargs[
                 "service_principals"
             ] = service_principals_config.service_principals
+        if static_secrets_config:
+            kwargs["static_secrets"] = static_secrets_config.static_secrets
 
         new_object = cls(**kwargs)
 

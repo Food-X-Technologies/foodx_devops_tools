@@ -22,6 +22,7 @@ from foodx_devops_tools.pipeline_config import (
     PuffMapGeneratedFiles,
     ReleaseStatesDefinition,
     ServicePrincipals,
+    StaticSecrets,
     SubscriptionsDefinition,
     SystemsDefinition,
     TenantsDefinition,
@@ -68,6 +69,12 @@ def mock_loads(mocker):
             "foodx_devops_tools.pipeline_config.pipeline.load_service_principals",
             return_value=ServicePrincipals.parse_obj(
                 {"service_principals": mock_data.service_principals}
+            ),
+        )
+        mocker.patch(
+            "foodx_devops_tools.pipeline_config.pipeline.load_static_secrets",
+            return_value=StaticSecrets.parse_obj(
+                {"static_secrets": mock_data.static_secrets}
             ),
         )
         mocker.patch(

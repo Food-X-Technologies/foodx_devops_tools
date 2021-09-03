@@ -39,6 +39,7 @@ class PipelineConfigurationPaths:
     frames: pathlib.Path
     puff_map: pathlib.Path
     service_principals: pathlib.Path
+    static_secrets: typing.Set[pathlib.Path]
     subscriptions: pathlib.Path
     systems: pathlib.Path
     tenants: pathlib.Path
@@ -85,7 +86,11 @@ class PipelineConfigurationPaths:
         this_object = cls()
         client_files = list()
         for x in client_config.iterdir():
-            if x.is_file() and (x.name in PIPELINE_CONFIG_FILES):
+            if (
+                x.is_file()
+                and (x.name in PIPELINE_CONFIG_FILES)
+                and (x.stem != "static_secrets")
+            ):
                 setattr(this_object, x.stem, x)
                 client_files.append(x)
 
@@ -103,5 +108,11 @@ class PipelineConfigurationPaths:
                 "Duplicate files between "
                 "directories, {0}, {1}".format(client_config, system_config)
             )
+        secrets_path = client_config / "static_secrets"
+        this_object.static_secrets = set()
+        if secrets_path.is_dir():
+            for x in secrets_path.iterdir():
+                if x.is_file():
+                    this_object.static_secrets.add(x)
 
         return this_object

@@ -9,6 +9,7 @@ import contextlib
 import os
 import pathlib
 import tempfile
+import typing
 
 import ruamel.yaml
 
@@ -32,6 +33,7 @@ CLEAN_SPLIT = {
         "frames",
         "puff_map",
         "service_principals",
+        "static_secrets",
     },
     "system": {
         "release_states",
@@ -52,6 +54,7 @@ NOT_SPLIT = {
         "frames",
         "puff_map",
         "service_principals",
+        "static_secrets",
     },
 }
 
@@ -119,6 +122,9 @@ MOCK_RESULTS = {
     "service_principals": {
         "sub1": {"id": "12345", "secret": "verysecret", "name": "sp_name"},
     },
+    "static_secrets": {
+        "sub1": {"k1": "k1v"},
+    },
     "subscriptions": {
         "sub1": {
             "ado_service_connection": "some-name",
@@ -138,11 +144,35 @@ MOCK_PATHS = PipelineConfigurationPaths.from_dict(
         "frames": pathlib.Path("frame/path"),
         "puff_map": pathlib.Path("puff_map/path"),
         "service_principals": pathlib.Path("service_principal/path"),
+        "static_secrets": {pathlib.Path("static_secrets/path")},
         "subscriptions": pathlib.Path("subscription/path"),
         "systems": pathlib.Path("system/path"),
         "tenants": pathlib.Path("tenant/path"),
     }
 )
+
+
+def _create_encrypted_file(
+    file_path: pathlib.Path,
+    data: dict,
+    decrypt_token: str,
+    yaml_label: typing.Optional[str] = None,
+):
+    yaml = ruamel.yaml.YAML(typ="safe")
+    this_file = file_path.stem
+    if not yaml_label:
+        yaml_label = file_path.stem
+    with file_path.open(mode="w") as f:
+        yaml.dump({yaml_label: data}, f)
+
+    encrypted_file_path = file_path.parent / "{0}.vault".format(this_file)
+    password_file_path = pathlib.Path(str(encrypted_file_path) + ".password")
+    with password_file_path.open(mode="w") as f:
+        f.write(decrypt_token)
+    _encrypt_vault(encrypted_file_path, password_file_path, file_path)
+
+    os.remove(password_file_path)
+    os.remove(file_path)
 
 
 @contextlib.contextmanager
@@ -159,30 +189,36 @@ def split_directories(split: dict, decrypt_token: str = MOCK_SECRET):
             }
             for key, files in split.items():
                 for this_file in files:
-                    if this_file != "service_principals":
+                    if this_file not in [
+                        "service_principals",
+                        "static_secrets",
+                    ]:
                         file_path = paths[key] / "{0}.yml".format(this_file)
                         with file_path.open(mode="w") as f:
                             yaml.dump({this_file: MOCK_RESULTS[this_file]}, f)
-                    else:
+                    elif this_file == "service_principals":
                         # service_principals requires special handling due to
                         # encryption
                         file_path = paths[key] / "{0}.yml".format(this_file)
-                        with file_path.open(mode="w") as f:
-                            yaml.dump({this_file: MOCK_RESULTS[this_file]}, f)
-
-                        encrypted_file_path = paths[key] / "{0}.vault".format(
-                            this_file
+                        _create_encrypted_file(
+                            file_path, MOCK_RESULTS[this_file], decrypt_token
                         )
-                        password_file_path = pathlib.Path(
-                            str(encrypted_file_path) + ".password"
+                    elif this_file == "static_secrets":
+                        # static_secrets require special handling due to
+                        # encryption and a directory of files.
+                        this_dir = paths[key] / this_file
+                        os.makedirs(this_dir, exist_ok=True)
+                        for name, data in MOCK_RESULTS[this_file].items():
+                            file_path = this_dir / "{0}.yml".format(name)
+                            _create_encrypted_file(
+                                file_path,
+                                MOCK_RESULTS[this_file],
+                                decrypt_token,
+                                yaml_label=this_file,
+                            )
+                    else:
+                        raise RuntimeError(
+                            "unknown file type, {0}".format(this_file)
                         )
-                        with password_file_path.open(mode="w") as f:
-                            f.write(decrypt_token)
-                        _encrypt_vault(
-                            encrypted_file_path, password_file_path, file_path
-                        )
-
-                        os.remove(password_file_path)
-                        os.remove(file_path)
 
             yield pd1, pd2
