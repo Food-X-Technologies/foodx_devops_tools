@@ -275,7 +275,7 @@ async def deploy_application(
 
     message = "application deployment completed, {0}".format(this_context)
     log.info(message)
-    click.echo(click.style(message, fg="green"))
+    click.echo(click.style(message, fg="yellow"))
 
 
 async def deploy_frame(
