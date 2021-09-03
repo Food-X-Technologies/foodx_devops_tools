@@ -21,6 +21,7 @@ from foodx_devops_tools.pipeline_config import (
     PipelineConfiguration,
     PipelineConfigurationPaths,
     ServicePrincipals,
+    StaticSecrets,
     SubscriptionsDefinition,
 )
 from foodx_devops_tools.pipeline_config.exceptions import (
@@ -249,7 +250,26 @@ class TestPipelineConfiguration:
 
         with pytest.raises(
             PipelineConfigurationError,
-            match=r"Bad subscription\(s\) in " r"service_principals",
+            match=r"Bad subscription\(s\) in service_principals",
+        ):
+            PipelineConfiguration.from_files(MOCK_PATHS, MOCK_SECRET)
+
+    def test_bad_secrets_subscription_raises(self, mock_loads, mock_results):
+        mock_results.static_secrets = StaticSecrets.parse_obj(
+            {
+                "static_secrets": {
+                    "bad_name": {
+                        "k1": "k1v",
+                        "k2": "k2v",
+                    },
+                },
+            }
+        ).static_secrets
+        mock_loads(mock_results)
+
+        with pytest.raises(
+            PipelineConfigurationError,
+            match=r"Bad subscription\(s\) in static_secrets",
         ):
             PipelineConfiguration.from_files(MOCK_PATHS, MOCK_SECRET)
 

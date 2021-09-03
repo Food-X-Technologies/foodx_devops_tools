@@ -254,6 +254,23 @@ class PipelineConfiguration(pydantic.BaseModel):
         return loaded_data
 
     @pydantic.root_validator()
+    def check_static_secrets(
+        cls: pydantic.BaseModel, loaded_data: dict
+    ) -> dict:
+        """Validate static secret data."""
+        if loaded_data["static_secrets"]:
+            bad_subscriptions = [
+                "{0}".format(name)
+                for name in loaded_data["static_secrets"].keys()
+                if name not in loaded_data["subscriptions"].keys()
+            ]
+            if any(bad_subscriptions):
+                message = "Bad subscription(s) in static_secrets"
+                log.error("{0}, {1}".format(message, str(bad_subscriptions)))
+                raise PipelineConfigurationError(message)
+        return loaded_data
+
+    @pydantic.root_validator()
     def check_subscriptions(cls: pydantic.BaseModel, loaded_data: dict) -> dict:
         """Validate subscriptions data."""
         bad_tenants = [
