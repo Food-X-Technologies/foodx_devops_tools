@@ -130,8 +130,8 @@ MOCK_RESULTS = {
     "tenants": {"t1": {"azure_id": "123abc"}},
 }
 
-MOCK_PATHS = PipelineConfigurationPaths(
-    **{
+MOCK_PATHS = PipelineConfigurationPaths.from_dict(
+    {
         "clients": pathlib.Path("client/path"),
         "release_states": pathlib.Path("release_state/path"),
         "deployments": pathlib.Path("deployment/path"),

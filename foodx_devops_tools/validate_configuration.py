@@ -16,12 +16,16 @@ import typing
 
 import click
 
-from ._paths import ConfigurationPathsError, acquire_configuration_paths
 from ._version import acquire_version
 from .console import report_failure, report_success
-from .pipeline_config import PipelineConfiguration, do_path_check
+from .pipeline_config import (
+    PipelineConfiguration,
+    PipelineConfigurationPaths,
+    do_path_check,
+)
 from .pipeline_config.exceptions import (
     ClientsDefinitionError,
+    ConfigurationPathsError,
     DeploymentsDefinitionError,
     FrameDefinitionsError,
     PipelineConfigurationError,
@@ -107,7 +111,7 @@ def _main(
                     password is stored, or "-" for stdin.
     """
     try:
-        configuration_paths = acquire_configuration_paths(
+        configuration_paths = PipelineConfigurationPaths.from_paths(
             client_config, system_config
         )
 

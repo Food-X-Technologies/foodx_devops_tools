@@ -7,15 +7,14 @@
 
 """Manage pipeline configuration files collectively."""
 
-import dataclasses
 import logging
-import pathlib
 import re
 import typing
 
 import pydantic
 
 from ._exceptions import PipelineConfigurationError
+from ._paths import PipelineConfigurationPaths
 from .clients import ValueType as ClientsData
 from .clients import load_clients
 from .deployments import ValueType as DeploymentsData
@@ -43,21 +42,6 @@ DEPLOYMENT_NAME_REGEX = (
     r"[_-]"
     r"(?P<release_state>[a-z0-9]+)$"
 )
-
-
-@dataclasses.dataclass()
-class PipelineConfigurationPaths:
-    """Paths to pipeline configuration files."""
-
-    clients: pathlib.Path
-    release_states: pathlib.Path
-    deployments: pathlib.Path
-    frames: pathlib.Path
-    puff_map: pathlib.Path
-    service_principals: pathlib.Path
-    subscriptions: pathlib.Path
-    systems: pathlib.Path
-    tenants: pathlib.Path
 
 
 T = typing.TypeVar("T", bound="PipelineConfiguration")

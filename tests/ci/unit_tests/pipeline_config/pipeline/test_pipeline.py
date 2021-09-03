@@ -15,11 +15,11 @@ import os
 
 import pytest
 
-from foodx_devops_tools._paths import acquire_configuration_paths
 from foodx_devops_tools.pipeline_config import (
     ClientsDefinition,
     DeploymentsDefinition,
     PipelineConfiguration,
+    PipelineConfigurationPaths,
     ServicePrincipals,
     SubscriptionsDefinition,
 )
@@ -258,7 +258,7 @@ class TestPipelineConfiguration:
             client_config,
             system_config,
         ):
-            this_paths = acquire_configuration_paths(
+            this_paths = PipelineConfigurationPaths.from_paths(
                 client_config, system_config
             )
             # just expect no exceptions, for now.
@@ -269,7 +269,7 @@ class TestPipelineConfiguration:
             client_config,
             system_config,
         ):
-            this_paths = acquire_configuration_paths(
+            this_paths = PipelineConfigurationPaths.from_paths(
                 client_config, system_config
             )
             # just expect no exceptions, for now.
@@ -281,7 +281,7 @@ class TestPipelineConfiguration:
             client_config,
             system_config,
         ):
-            this_paths = acquire_configuration_paths(
+            this_paths = PipelineConfigurationPaths.from_paths(
                 client_config, system_config
             )
             # ensure the vault file doesn't exist

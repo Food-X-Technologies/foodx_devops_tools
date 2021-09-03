@@ -9,6 +9,7 @@
 
 from ._exceptions import (  # noqa: F401
     ClientsDefinitionError,
+    ConfigurationPathsError,
     DeploymentsDefinitionError,
     FolderPathError,
     FrameDefinitionsError,

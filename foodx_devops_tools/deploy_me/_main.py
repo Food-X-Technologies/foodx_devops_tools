@@ -20,15 +20,15 @@ from foodx_devops_tools._declarations import (
     VALID_LOG_LEVELS,
 )
 from foodx_devops_tools._logging import LoggingState
-from foodx_devops_tools._paths import (
-    ConfigurationPathsError,
-    acquire_configuration_paths,
-)
 from foodx_devops_tools._version import acquire_version
 from foodx_devops_tools.pipeline_config import (
     DeploymentContext,
     PipelineConfiguration,
+    PipelineConfigurationPaths,
     ReleaseView,
+)
+from foodx_devops_tools.pipeline_config.exceptions import (
+    ConfigurationPathsError,
 )
 from foodx_devops_tools.release_flow import (
     identify_release_id,
@@ -219,7 +219,7 @@ def deploy_me(
             monitor_sleep_seconds=monitor_sleep,
             wait_timeout_seconds=(60 * wait_timeout),
         )
-        configuration_paths = acquire_configuration_paths(
+        configuration_paths = PipelineConfigurationPaths.from_paths(
             client_config, system_config
         )
         decrypt_token = acquire_token(password_file)
