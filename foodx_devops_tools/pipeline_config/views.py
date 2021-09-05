@@ -10,6 +10,7 @@
 import copy
 import dataclasses
 import logging
+import pathlib
 import typing
 
 from foodx_devops_tools.azure.cloud import AzureCredentials
@@ -178,6 +179,8 @@ class DeployDataView:
     deployment_tuple: str
     location_primary: str
     release_state: str
+
+    frame_folder: typing.Optional[pathlib.Path] = None
 
     __location_secondary: typing.Optional[str] = None
 

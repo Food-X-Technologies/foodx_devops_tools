@@ -6,8 +6,8 @@
 #  foodx_devops_tools. If not, see <https://opensource.org/licenses/MIT>.
 
 import asyncio
+import copy
 import logging
-import pathlib
 import re
 import typing
 
@@ -35,6 +35,7 @@ from foodx_devops_tools.pipeline_config.frames import (
 from foodx_devops_tools.pipeline_config.puff_map import PuffMapPaths
 
 from ._dependency_monitor import process_dependencies
+from ._exceptions import DeploymentError
 from ._state import PipelineCliOptions
 from ._status import DeploymentState, DeploymentStatus, all_success
 
@@ -129,8 +130,6 @@ async def _deploy_step(
     deployment_data: FlattenedDeployment,
     puff_parameter_data: PuffMapPaths,
     this_context: str,
-    frame_folder: pathlib.Path,
-    this_subscription: AzureSubscriptionConfiguration,
     enable_validation: bool,
 ) -> None:
     resource_group = (
@@ -142,6 +141,9 @@ async def _deploy_step(
         if not this_step.resource_group
         else this_step.resource_group
     )
+    if not deployment_data.data.frame_folder:
+        raise DeploymentError("frame_folder not defined for application step")
+    frame_folder = deployment_data.data.frame_folder
     arm_template_path = (
         frame_folder / this_step.arm_file
         if this_step.arm_file
@@ -170,6 +172,13 @@ async def _deploy_step(
     else:
         log.info("deployment enabled, {0}".format(this_context))
 
+    # NOTE: placeholder for being able to deliver parameter overrides in
+    # deployment.
+    parameters = None
+
+    this_subscription = AzureSubscriptionConfiguration(
+        subscription_id=deployment_data.context.azure_subscription_name
+    )
     await deploy_resource_group(
         resource_group,
         arm_template_path,
@@ -177,6 +186,7 @@ async def _deploy_step(
         deployment_data.data.location_primary,
         this_step.mode.value,
         this_subscription,
+        override_parameters=parameters,
         validate=enable_validation,
     )
 
@@ -186,7 +196,6 @@ async def deploy_application(
     deployment_data: FlattenedDeployment,
     application_status: DeploymentStatus,
     enable_validation: bool,
-    frame_folder: pathlib.Path,
 ) -> None:
     """
     Deploy the steps of a frame application.
@@ -214,17 +223,12 @@ async def deploy_application(
             deployment_data.context.release_state
         ][deployment_data.context.azure_subscription_name]
 
-        this_subscription = AzureSubscriptionConfiguration(
-            subscription_id=deployment_data.context.azure_subscription_name
-        )
         for this_step in application_data:
             await _deploy_step(
                 this_step,
                 deployment_data,
                 puff_parameter_data,
                 this_context,
-                frame_folder,
-                this_subscription,
                 enable_validation,
             )
 
@@ -308,14 +312,16 @@ async def deploy_frame(
             frame_status,
         )
 
+        frame_deployment = copy.deepcopy(deployment_data)
+        frame_deployment.data.frame_folder = frame_data.folder
+
         await asyncio.gather(
             *[
                 deploy_application(
                     application_data,
-                    deployment_data.copy_add_application(application_name),
+                    frame_deployment.copy_add_application(application_name),
                     application_status,
                     pipeline_parameters.enable_validation,
-                    frame_data.folder,
                 )
                 for application_name, application_data in frame_data.applications.items()  # noqa: E501
             ],

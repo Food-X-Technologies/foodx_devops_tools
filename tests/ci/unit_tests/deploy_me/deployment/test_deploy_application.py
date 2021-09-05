@@ -26,6 +26,8 @@ MOCK_ITERATION_CONTEXT = IterationContext()
 MOCK_ITERATION_CONTEXT.append("some")
 MOCK_ITERATION_CONTEXT.append("context")
 
+MOCK_CONTEXT = str(MOCK_ITERATION_CONTEXT)
+
 mock_pipeline_config = PipelineConfiguration.parse_obj(MOCK_RESULTS)
 MOCK_APPLICATION_DATA = mock_pipeline_config.frames.frames["f1"].applications[
     "a1"
@@ -62,15 +64,16 @@ class DeploymentChecks:
     ):
         mock_deploy, deployment_data, app_data = prep_data
 
-        this_status = DeploymentStatus(
-            MOCK_ITERATION_CONTEXT, timeout_seconds=1
+        this_status = DeploymentStatus(MOCK_CONTEXT, timeout_seconds=1)
+        application_deployment_data = copy.deepcopy(deployment_data)
+        application_deployment_data.data.frame_folder = pathlib.Path(
+            "some/path"
         )
         await deploy_application(
             app_data,
-            deployment_data,
+            application_deployment_data,
             this_status,
             enable_validation,
-            pathlib.Path("some/path"),
         )
 
         return mock_deploy
@@ -82,15 +85,16 @@ class DeploymentChecks:
 
         updated = copy.deepcopy(app_data)
         updated[0].resource_group = None
-        this_status = DeploymentStatus(
-            MOCK_ITERATION_CONTEXT, timeout_seconds=1
+        this_status = DeploymentStatus(MOCK_CONTEXT, timeout_seconds=1)
+        application_deployment_data = copy.deepcopy(deployment_data)
+        application_deployment_data.data.frame_folder = pathlib.Path(
+            "some/path"
         )
         await deploy_application(
             updated,
-            deployment_data,
+            application_deployment_data,
             this_status,
             enable_validation,
-            pathlib.Path("some/path"),
         )
 
         return mock_deploy
@@ -112,6 +116,7 @@ class TestValidation(DeploymentChecks):
             "l1",
             "Incremental",
             AzureSubscriptionConfiguration(subscription_id="sub1"),
+            override_parameters=None,
             validate=True,
         )
 
@@ -130,6 +135,7 @@ class TestValidation(DeploymentChecks):
             "l1",
             "Incremental",
             AzureSubscriptionConfiguration(subscription_id="sub1"),
+            override_parameters=None,
             validate=True,
         )
 
@@ -150,6 +156,7 @@ class TestDeployment(DeploymentChecks):
             "l1",
             "Incremental",
             AzureSubscriptionConfiguration(subscription_id="sub1"),
+            override_parameters=None,
             validate=False,
         )
 
@@ -168,5 +175,6 @@ class TestDeployment(DeploymentChecks):
             "l1",
             "Incremental",
             AzureSubscriptionConfiguration(subscription_id="sub1"),
+            override_parameters=None,
             validate=False,
         )
