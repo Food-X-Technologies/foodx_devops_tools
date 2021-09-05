@@ -49,10 +49,9 @@ def encrypted_files(
         yield encrypted_file_paths
 
 
-class TestLoadServicePrincipals:
-    def test_load(self):
-        file_text = {
-            "f1": """---
+def test_load():
+    file_text = {
+        "f1": """---
 static_secrets:
   s1:
     s1k1: s1k1v
@@ -60,22 +59,22 @@ static_secrets:
   s2:
     s2k1: s2k1v
 """,
-            "f2": """---
+        "f2": """---
 static_secrets:
   s3:
     s3k1: s3k1v
 """,
-        }
-        decrypt_token = "somesecret"
-        with encrypted_files(file_text, decrypt_token) as encrypted_dir_paths:
-            result = load_static_secrets(encrypted_dir_paths, decrypt_token)
+    }
+    decrypt_token = "somesecret"
+    with encrypted_files(file_text, decrypt_token) as encrypted_dir_paths:
+        result = load_static_secrets(encrypted_dir_paths, decrypt_token)
 
-        assert len(result.static_secrets) == 3
-        assert result.static_secrets == {
-            "s1": {
-                "s1k1": "s1k1v",
-                "s1k2": "s1k2v",
-            },
-            "s2": {"s2k1": "s2k1v"},
-            "s3": {"s3k1": "s3k1v"},
-        }
+    assert len(result.static_secrets) == 3
+    assert result.static_secrets == {
+        "s1": {
+            "s1k1": "s1k1v",
+            "s1k2": "s1k2v",
+        },
+        "s2": {"s2k1": "s2k1v"},
+        "s3": {"s3k1": "s3k1v"},
+    }
