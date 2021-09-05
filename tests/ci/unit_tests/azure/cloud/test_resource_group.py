@@ -285,6 +285,82 @@ class TestDeployResourceGroup:
                 "--parameters",
                 "@{0}".format(self.EXPECTED_PARAMETERS["parameter_path"]),
                 "--parameters",
-                '\'{"one": 1, "two": "2"}\'',
+                '\'{"one": {"value": 1}, "two": {"value": "2"}}\'',
+            ]
+        )
+
+    @pytest.mark.asyncio
+    async def test_override_parameters_empty(self, mock_async_method):
+        mock_create = mock_async_method(
+            "foodx_devops_tools.azure.cloud.resource_group.create"
+        )
+        mock_run = mock_async_method(
+            "foodx_devops_tools.azure.cloud.resource_group.run_async_command",
+            return_value=self.MOCK_RETURN,
+        )
+
+        await deploy_resource_group(
+            self.EXPECTED_PARAMETERS["group"],
+            self.EXPECTED_PARAMETERS["arm_path"],
+            self.EXPECTED_PARAMETERS["parameter_path"],
+            self.EXPECTED_PARAMETERS["location"],
+            self.EXPECTED_PARAMETERS["mode"],
+            self.EXPECTED_PARAMETERS["subscription"],
+            override_parameters=dict(),
+        )
+
+        mock_create.assert_called_once()
+        mock_run.assert_called_once_with(
+            [
+                "az",
+                "deployment",
+                "group",
+                "create",
+                "--mode",
+                self.EXPECTED_PARAMETERS["mode"],
+                "--resource-group",
+                self.EXPECTED_PARAMETERS["group"],
+                "--template-file",
+                str(self.EXPECTED_PARAMETERS["arm_path"]),
+                "--parameters",
+                "@{0}".format(self.EXPECTED_PARAMETERS["parameter_path"]),
+            ]
+        )
+
+    @pytest.mark.asyncio
+    async def test_override_parameters_none(self, mock_async_method):
+        mock_create = mock_async_method(
+            "foodx_devops_tools.azure.cloud.resource_group.create"
+        )
+        mock_run = mock_async_method(
+            "foodx_devops_tools.azure.cloud.resource_group.run_async_command",
+            return_value=self.MOCK_RETURN,
+        )
+
+        await deploy_resource_group(
+            self.EXPECTED_PARAMETERS["group"],
+            self.EXPECTED_PARAMETERS["arm_path"],
+            self.EXPECTED_PARAMETERS["parameter_path"],
+            self.EXPECTED_PARAMETERS["location"],
+            self.EXPECTED_PARAMETERS["mode"],
+            self.EXPECTED_PARAMETERS["subscription"],
+            override_parameters=None,
+        )
+
+        mock_create.assert_called_once()
+        mock_run.assert_called_once_with(
+            [
+                "az",
+                "deployment",
+                "group",
+                "create",
+                "--mode",
+                self.EXPECTED_PARAMETERS["mode"],
+                "--resource-group",
+                self.EXPECTED_PARAMETERS["group"],
+                "--template-file",
+                str(self.EXPECTED_PARAMETERS["arm_path"]),
+                "--parameters",
+                "@{0}".format(self.EXPECTED_PARAMETERS["parameter_path"]),
             ]
         )

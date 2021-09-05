@@ -163,6 +163,15 @@ async def delete(
         )
 
 
+def _make_arm_parameter_values(key_values: dict) -> dict:
+    """Transform a key-value dictionary into ARM template parameter data."""
+    result = dict()
+    for k, v in key_values.items():
+        result[k] = {"value": v}
+
+    return result
+
+
 async def deploy(
     resource_group_name: str,
     arm_template_path: pathlib.Path,
@@ -218,7 +227,9 @@ async def deploy(
             )
             this_command += [
                 "--parameters",
-                "'{0}'".format(json.dumps(override_parameters)),
+                "'{0}'".format(
+                    json.dumps(_make_arm_parameter_values(override_parameters))
+                ),
             ]
         result = await run_async_command(this_command)
         log.info(
