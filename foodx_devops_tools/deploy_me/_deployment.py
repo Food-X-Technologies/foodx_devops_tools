@@ -8,6 +8,7 @@
 import asyncio
 import copy
 import logging
+import pathlib
 import re
 import typing
 
@@ -125,6 +126,20 @@ def _mangle_validation_resource_group(current_name: str, suffix: str) -> str:
     return mangled_name
 
 
+def _make_secrets_object(key_values: dict) -> typing.List[dict]:
+    """Construct secrets into object form required by Foodx ARM template."""
+    result = list()
+    for k, v in key_values.items():
+        this_entry = {
+            "enabled": True,
+            "key": k,
+            "value": v,
+        }
+        result.append(this_entry)
+
+    return result
+
+
 async def _deploy_step(
     this_step: ApplicationDeploymentDefinition,
     deployment_data: FlattenedDeployment,
@@ -132,6 +147,25 @@ async def _deploy_step(
     this_context: str,
     enable_validation: bool,
 ) -> None:
+    def construct_arm_paths() -> typing.Tuple[pathlib.Path, pathlib.Path]:
+        """Construct paths for ARM template files."""
+        nonlocal deployment_data, this_step, puff_parameter_data
+
+        if not deployment_data.data.frame_folder:
+            raise DeploymentError(
+                "frame_folder not defined for application step"
+            )
+        frame_folder = deployment_data.data.frame_folder
+        template_path = (
+            frame_folder / this_step.arm_file
+            if this_step.arm_file
+            else frame_folder
+            / "{0}.json".format(deployment_data.context.application_name)
+        )
+        parameters_path = frame_folder / puff_parameter_data[this_step.name]
+
+        return template_path, parameters_path
+
     resource_group = (
         _construct_resource_group_name(
             deployment_data.context.application_name,
@@ -141,16 +175,7 @@ async def _deploy_step(
         if not this_step.resource_group
         else this_step.resource_group
     )
-    if not deployment_data.data.frame_folder:
-        raise DeploymentError("frame_folder not defined for application step")
-    frame_folder = deployment_data.data.frame_folder
-    arm_template_path = (
-        frame_folder / this_step.arm_file
-        if this_step.arm_file
-        else frame_folder
-        / "{0}.json".format(deployment_data.context.application_name)
-    )
-    arm_parameters_path = frame_folder / puff_parameter_data[this_step.name]
+    arm_template_path, arm_parameters_path = construct_arm_paths()
 
     log.debug(
         "deployment_data.context, {0}, {1}".format(
@@ -172,9 +197,22 @@ async def _deploy_step(
     else:
         log.info("deployment enabled, {0}".format(this_context))
 
-    # NOTE: placeholder for being able to deliver parameter overrides in
-    # deployment.
-    parameters = None
+    parameters = dict()
+    if this_step.static_secrets:
+        if deployment_data.data.static_secrets:
+            # pass static secrets as a single object containing all the
+            # secret key-value pairs.
+            parameter_object = {
+                "staticSecrets": _make_secrets_object(
+                    deployment_data.data.static_secrets
+                )
+            }
+            parameters.update(parameter_object)
+        else:
+            log.warning(
+                "There are no static_secrets even though secrets have been"
+                " enabled"
+            )
 
     this_subscription = AzureSubscriptionConfiguration(
         subscription_id=deployment_data.context.azure_subscription_name

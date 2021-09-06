@@ -227,7 +227,7 @@ async def deploy(
             )
             this_command += [
                 "--parameters",
-                "'{0}'".format(
+                "{0}".format(
                     json.dumps(_make_arm_parameter_values(override_parameters))
                 ),
             ]

@@ -116,7 +116,7 @@ class TestValidation(DeploymentChecks):
             "l1",
             "Incremental",
             AzureSubscriptionConfiguration(subscription_id="sub1"),
-            override_parameters=None,
+            override_parameters=dict(),
             validate=True,
         )
 
@@ -135,7 +135,7 @@ class TestValidation(DeploymentChecks):
             "l1",
             "Incremental",
             AzureSubscriptionConfiguration(subscription_id="sub1"),
-            override_parameters=None,
+            override_parameters=dict(),
             validate=True,
         )
 
@@ -156,7 +156,7 @@ class TestDeployment(DeploymentChecks):
             "l1",
             "Incremental",
             AzureSubscriptionConfiguration(subscription_id="sub1"),
-            override_parameters=None,
+            override_parameters=dict(),
             validate=False,
         )
 
@@ -175,6 +175,6 @@ class TestDeployment(DeploymentChecks):
             "l1",
             "Incremental",
             AzureSubscriptionConfiguration(subscription_id="sub1"),
-            override_parameters=None,
+            override_parameters=dict(),
             validate=False,
         )

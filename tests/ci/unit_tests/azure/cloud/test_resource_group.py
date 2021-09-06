@@ -285,7 +285,7 @@ class TestDeployResourceGroup:
                 "--parameters",
                 "@{0}".format(self.EXPECTED_PARAMETERS["parameter_path"]),
                 "--parameters",
-                '\'{"one": {"value": 1}, "two": {"value": "2"}}\'',
+                '{"one": {"value": 1}, "two": {"value": "2"}}',
             ]
         )
 
