@@ -8,6 +8,10 @@
 """Exception declarations for package internal consumption."""
 
 
+class ConfigurationPathsError(Exception):
+    """Problem with configuration paths, or acquiring configuration."""
+
+
 class DeploymentsDefinitionError(Exception):
     """Problem loading deployment definitions."""
 
@@ -34,6 +38,10 @@ class ReleaseStatesDefinitionError(Exception):
 
 class ServicePrincipalsError(Exception):
     """Problem loading service principal secrets."""
+
+
+class StaticSecretsError(Exception):
+    """Problem loading static secrets."""
 
 
 class SubscriptionsDefinitionError(Exception):

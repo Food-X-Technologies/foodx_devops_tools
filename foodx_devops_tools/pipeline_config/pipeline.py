@@ -7,15 +7,14 @@
 
 """Manage pipeline configuration files collectively."""
 
-import dataclasses
 import logging
-import pathlib
 import re
 import typing
 
 import pydantic
 
 from ._exceptions import PipelineConfigurationError
+from ._paths import PipelineConfigurationPaths
 from .clients import ValueType as ClientsData
 from .clients import load_clients
 from .deployments import ValueType as DeploymentsData
@@ -27,6 +26,8 @@ from .release_states import ValueType as ReleaseStatesData
 from .release_states import load_release_states
 from .service_principals import ValueType as ServicePrincipalsData
 from .service_principals import load_service_principals
+from .static_secrets import ValueType as StaticSecrets
+from .static_secrets import load_static_secrets
 from .subscriptions import ValueType as SubscriptionsData
 from .subscriptions import load_subscriptions
 from .systems import ValueType as SystemsData
@@ -45,21 +46,6 @@ DEPLOYMENT_NAME_REGEX = (
 )
 
 
-@dataclasses.dataclass()
-class PipelineConfigurationPaths:
-    """Paths to pipeline configuration files."""
-
-    clients: pathlib.Path
-    release_states: pathlib.Path
-    deployments: pathlib.Path
-    frames: pathlib.Path
-    puff_map: pathlib.Path
-    service_principals: pathlib.Path
-    subscriptions: pathlib.Path
-    systems: pathlib.Path
-    tenants: pathlib.Path
-
-
 T = typing.TypeVar("T", bound="PipelineConfiguration")
 
 
@@ -72,6 +58,7 @@ class PipelineConfiguration(pydantic.BaseModel):
     frames: FramesData
     puff_map: PuffMap
     service_principals: typing.Optional[ServicePrincipalsData]
+    static_secrets: typing.Optional[StaticSecrets]
     subscriptions: SubscriptionsData
     systems: SystemsData
     tenants: TenantsData
@@ -103,15 +90,28 @@ class PipelineConfiguration(pydantic.BaseModel):
         tenant_config = load_tenants(paths.tenants)
 
         service_principals_config = None
+        static_secrets_config = None
         if decrypt_token:
             service_principals_config = load_service_principals(
                 paths.service_principals, decrypt_token
+            )
+            static_secrets_config = load_static_secrets(
+                paths.static_secrets, decrypt_token
             )
         else:
             if not paths.service_principals.is_file():
                 raise FileNotFoundError(
                     "Missing service principals vault "
                     "file, {0}".format(paths.service_principals)
+                )
+            missing_files = {
+                str(x) for x in paths.static_secrets if not x.is_file()
+            }
+            if any(missing_files):
+                raise FileNotFoundError(
+                    "Missing static secrets files, {0}".format(
+                        str(missing_files)
+                    )
                 )
 
         kwargs = {
@@ -129,6 +129,8 @@ class PipelineConfiguration(pydantic.BaseModel):
             kwargs[
                 "service_principals"
             ] = service_principals_config.service_principals
+        if static_secrets_config:
+            kwargs["static_secrets"] = static_secrets_config.static_secrets
 
         new_object = cls(**kwargs)
 
@@ -247,6 +249,23 @@ class PipelineConfiguration(pydantic.BaseModel):
             ]
             if any(bad_subscriptions):
                 message = "Bad subscription(s) in service_principals"
+                log.error("{0}, {1}".format(message, str(bad_subscriptions)))
+                raise PipelineConfigurationError(message)
+        return loaded_data
+
+    @pydantic.root_validator()
+    def check_static_secrets(
+        cls: pydantic.BaseModel, loaded_data: dict
+    ) -> dict:
+        """Validate static secret data."""
+        if loaded_data["static_secrets"]:
+            bad_subscriptions = [
+                "{0}".format(name)
+                for name in loaded_data["static_secrets"].keys()
+                if name not in loaded_data["subscriptions"].keys()
+            ]
+            if any(bad_subscriptions):
+                message = "Bad subscription(s) in static_secrets"
                 log.error("{0}, {1}".format(message, str(bad_subscriptions)))
                 raise PipelineConfigurationError(message)
         return loaded_data

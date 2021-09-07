@@ -36,36 +36,46 @@ class CapturedStreams:
 
 
 def run_command(
-    command: CommandArgs, **kwargs: typing.Any
+    command: CommandArgs, enable_logging: bool = False, **kwargs: typing.Any
 ) -> subprocess.CompletedProcess:
     """
     Run a system command using ``subprocess.run``.
 
     Args:
         command: List of command and arguments.
+        enable_logging: Enable command and argument logging (default disabled)
         **kwargs: Optional arguments passed through to ``subprocess.run``.
 
     Returns:
         Subprocess results.
     """
-    log.debug("command to run, {0}".format(str(command)))
-    log.debug("command arguments, {0}".format(str(kwargs)))
+    if enable_logging:
+        # WARNING: logging is _disabled_ by default to prevent "default"
+        # leakage of secrets into logs via command arguments
+        log.debug("command to run, {0}".format(str(command)))
+        log.debug("command arguments, {0}".format(str(kwargs)))
     result = subprocess.run(command, **kwargs)
 
     return result
 
 
-async def run_async_command(command: CommandArgs) -> CapturedStreams:
+async def run_async_command(
+    command: CommandArgs, enable_logging: bool = False
+) -> CapturedStreams:
     """
     Run an external command asynchronously.
 
     Args:
         command: Command to be executed.
+        enable_logging: Enable command and argument logging (default disabled)
 
     Returns:
         Any output or error streams captured from the process.
     """
-    log.debug("command to run, {0}".format(str(command)))
+    if enable_logging:
+        # WARNING: logging is _disabled_ by default to prevent "default"
+        # leakage of secrets into logs via command arguments
+        log.debug("command to run, {0}".format(str(command)))
     this_process = await asyncio.create_subprocess_exec(
         *command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
     )

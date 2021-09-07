@@ -163,6 +163,15 @@ async def delete(
         )
 
 
+def _make_arm_parameter_values(key_values: dict) -> dict:
+    """Transform a key-value dictionary into ARM template parameter data."""
+    result = dict()
+    for k, v in key_values.items():
+        result[k] = {"value": v}
+
+    return result
+
+
 async def deploy(
     resource_group_name: str,
     arm_template_path: pathlib.Path,
@@ -170,6 +179,8 @@ async def deploy(
     location: str,
     mode: str,
     subscription: AzureSubscriptionConfiguration,
+    override_parameters: typing.Optional[dict] = None,
+    validate: bool = False,
 ) -> None:
     """
     Deploy resource to a resource group.
@@ -184,6 +195,10 @@ async def deploy(
         location: Azure location in which to deploy resource group.
         mode: Deployment mode; "Complete" or "Incremental".
         subscription: Target subscription/tenant for deployment.
+        override_parameters: Key-value pairs of json compatible data to pass
+            to deployment. (optional; default None)
+        validate: Flag to enable deployment validation. (optional; default
+            False)
     """
     result = None
     try:
@@ -192,16 +207,30 @@ async def deploy(
             "az",
             "deployment",
             "group",
-            "create",
+            "create" if not validate else "validate",
             "--mode",
             mode,
             "--resource-group",
             resource_group_name,
-            "--parameters",
-            "{0}".format(arm_parameters_path),
             "--template-file",
             str(arm_template_path),
+            "--parameters",
+            "@{0}".format(arm_parameters_path),
         ]
+        log.debug("az command, {0}".format(str(this_command)))
+        if override_parameters:
+            # WARNING: these external parameters may be sensitive content
+            # such as secrets, so DO NOT LOG.
+            log.debug(
+                "az command override parameters specified. content "
+                "withheld from log."
+            )
+            this_command += [
+                "--parameters",
+                "{0}".format(
+                    json.dumps(_make_arm_parameter_values(override_parameters))
+                ),
+            ]
         result = await run_async_command(this_command)
         log.info(
             "resource group deployment succeeded, {0} ({1})".format(
@@ -260,71 +289,3 @@ async def delete_when_done(
     await asyncio.shield(
         asyncio.create_task(delete(resource_group_name, subscription))
     )
-
-
-async def validate(
-    resource_group_name: str,
-    arm_template_path: pathlib.Path,
-    arm_parameters_path: pathlib.Path,
-    location: str,
-    mode: str,
-    subscription: AzureSubscriptionConfiguration,
-) -> None:
-    """
-    Validate ARM template deployment.
-
-    Args:
-        resource_group_name: Resource group name
-        arm_template_path: Path to ARM template deployment file.
-        arm_parameters_path: Path to ARM template deployment parameters file.
-        location: Azure location in which to deploy resource group.
-        mode: Deployment mode; "Complete" or "Incremental".
-        subscription: Target subscription/tenant for deployment.
-
-    """
-    result = None
-    async with delete_when_done(resource_group_name, subscription):
-        try:
-            await create(resource_group_name, location, subscription)
-            this_command = [
-                "az",
-                "deployment",
-                "group",
-                "validate",
-                "--mode",
-                mode,
-                "--resource-group",
-                resource_group_name,
-                "--parameters",
-                "{0}".format(arm_parameters_path),
-                "--template-file",
-                str(arm_template_path),
-            ]
-            result = await run_async_command(this_command)
-            log.info(
-                "resource group deployment validation succeeded, "
-                "{0} ({1})".format(
-                    resource_group_name, subscription.subscription_id
-                )
-            )
-        except CommandError as e:
-            log.error(
-                "Resource group deployment validation failed, "
-                "{0} ({1})".format(
-                    resource_group_name, subscription.subscription_id
-                )
-            )
-            if result:
-                log.debug(
-                    "resource group validation stdout, {0}".format(result.out)
-                )
-                log.debug(
-                    "resource group validation stderr, {0}".format(result.error)
-                )
-            else:
-                log.error(
-                    "unexpected error validating resource group, "
-                    "{0}, {1}".format(resource_group_name, str(e))
-                )
-
-            raise

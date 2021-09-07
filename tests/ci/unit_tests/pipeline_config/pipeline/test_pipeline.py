@@ -15,12 +15,13 @@ import os
 
 import pytest
 
-from foodx_devops_tools._paths import acquire_configuration_paths
 from foodx_devops_tools.pipeline_config import (
     ClientsDefinition,
     DeploymentsDefinition,
     PipelineConfiguration,
+    PipelineConfigurationPaths,
     ServicePrincipals,
+    StaticSecrets,
     SubscriptionsDefinition,
 )
 from foodx_devops_tools.pipeline_config.exceptions import (
@@ -249,7 +250,26 @@ class TestPipelineConfiguration:
 
         with pytest.raises(
             PipelineConfigurationError,
-            match=r"Bad subscription\(s\) in " r"service_principals",
+            match=r"Bad subscription\(s\) in service_principals",
+        ):
+            PipelineConfiguration.from_files(MOCK_PATHS, MOCK_SECRET)
+
+    def test_bad_secrets_subscription_raises(self, mock_loads, mock_results):
+        mock_results.static_secrets = StaticSecrets.parse_obj(
+            {
+                "static_secrets": {
+                    "bad_name": {
+                        "k1": "k1v",
+                        "k2": "k2v",
+                    },
+                },
+            }
+        ).static_secrets
+        mock_loads(mock_results)
+
+        with pytest.raises(
+            PipelineConfigurationError,
+            match=r"Bad subscription\(s\) in static_secrets",
         ):
             PipelineConfiguration.from_files(MOCK_PATHS, MOCK_SECRET)
 
@@ -258,7 +278,7 @@ class TestPipelineConfiguration:
             client_config,
             system_config,
         ):
-            this_paths = acquire_configuration_paths(
+            this_paths = PipelineConfigurationPaths.from_paths(
                 client_config, system_config
             )
             # just expect no exceptions, for now.
@@ -269,7 +289,7 @@ class TestPipelineConfiguration:
             client_config,
             system_config,
         ):
-            this_paths = acquire_configuration_paths(
+            this_paths = PipelineConfigurationPaths.from_paths(
                 client_config, system_config
             )
             # just expect no exceptions, for now.
@@ -281,7 +301,7 @@ class TestPipelineConfiguration:
             client_config,
             system_config,
         ):
-            this_paths = acquire_configuration_paths(
+            this_paths = PipelineConfigurationPaths.from_paths(
                 client_config, system_config
             )
             # ensure the vault file doesn't exist

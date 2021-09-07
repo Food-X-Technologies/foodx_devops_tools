@@ -6,6 +6,7 @@
 #  foodx_devops_tools. If not, see <https://opensource.org/licenses/MIT>.
 
 """Manage puff map configuration files."""
+
 import copy
 import logging
 import pathlib

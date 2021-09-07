@@ -10,7 +10,3 @@
 
 class GitReferenceError(Exception):
     """Problem with git reference."""
-
-
-class ConfigurationPathsError(Exception):
-    """Problem with configuration paths, or acquiring configuration."""

@@ -48,6 +48,49 @@ frames:
         result_frames.frames["f1"].applications["a1"][0].resource_group
         == "a1_group"
     )
+    assert not result_frames.frames["f1"].applications["a1"][0].static_secrets
+    assert len(result_frames.frames["f1"].applications["a2"]) == 1
+    assert (
+        result_frames.frames["f1"].applications["a2"][0].resource_group
+        == "a2_group"
+    )
+    assert result_frames.frames["f1"].folder == pathlib.Path("some/path")
+    assert result_frames.frames["f1"].triggers is None
+    assert result_frames.frames["f1"].applications["a2"][0].arm_file is None
+    assert result_frames.frames["f1"].applications["a2"][0].puff_file is None
+    assert result_frames.frames["f1"].applications["a2"][0].name == "a2l1"
+    assert result_frames.triggers is None
+
+
+def test_enable_static_secrets(apply_applications_test):
+    file_text = """---
+frames:
+  frames:
+    f1:
+      applications:
+        a1: 
+          - name: a1l1
+            mode: Incremental
+            resource_group: a1_group
+            static_secrets: true
+        a2:
+          - name: a2l1
+            mode: Complete
+            resource_group: a2_group
+      folder: some/path
+"""
+
+    result = apply_applications_test(file_text)
+
+    result_frames = result.frames
+    assert len(result_frames.frames) == 1
+    assert len(result_frames.frames["f1"].applications["a1"]) == 1
+    assert (
+        result_frames.frames["f1"].applications["a1"][0].resource_group
+        == "a1_group"
+    )
+    assert result_frames.frames["f1"].applications["a1"][0].static_secrets
+    assert not result_frames.frames["f1"].applications["a2"][0].static_secrets
     assert len(result_frames.frames["f1"].applications["a2"]) == 1
     assert (
         result_frames.frames["f1"].applications["a2"][0].resource_group

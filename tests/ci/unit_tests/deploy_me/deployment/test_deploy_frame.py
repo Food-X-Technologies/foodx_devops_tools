@@ -46,7 +46,6 @@ class MockAppDeploy:
         deployment_data: FlattenedDeployment,
         application_status: DeploymentStatus,
         enable_validation: bool,
-        frame_folder: pathlib.Path,
     ) -> None:
         this_context = str(deployment_data.data.iteration_context)
         await application_status.initialize(this_context)

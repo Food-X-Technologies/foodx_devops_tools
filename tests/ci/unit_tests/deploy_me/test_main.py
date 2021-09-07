@@ -16,7 +16,6 @@ from foodx_devops_tools.deploy_me._main import (
     ConfigurationPathsError,
     PipelineCliOptions,
     _report_results,
-    acquire_configuration_paths,
 )
 from foodx_devops_tools.deploy_me_entry import deploy_me
 from foodx_devops_tools.pipeline_config import PipelineConfigurationPaths
@@ -58,54 +57,6 @@ class TestReportResults:
         assert (
             "FAILED: Deployment failed. Check log for details" in captured.out
         )
-
-
-class TestAcquireConfigurationPaths:
-    def test_clean(self):
-        with split_directories(CLEAN_SPLIT.copy()) as (
-            client_config,
-            system_config,
-        ):
-            result = acquire_configuration_paths(client_config, system_config)
-
-            assert result == PipelineConfigurationPaths(
-                clients=client_config / "clients.yml",
-                deployments=client_config / "deployments.yml",
-                frames=client_config / "frames.yml",
-                puff_map=client_config / "puff_map.yml",
-                release_states=system_config / "release_states.yml",
-                service_principals=client_config / "service_principals.vault",
-                subscriptions=system_config / "subscriptions.yml",
-                systems=system_config / "systems.yml",
-                tenants=system_config / "tenants.yml",
-            )
-
-    def test_duplicates_raises(self):
-        split = {
-            # duplicates between client and system dirs
-            "client": {
-                "clients",
-                "deployments",
-                "frames",
-                "puff_map",
-                "release_states",
-                "service_principals",
-            },
-            "system": {
-                "release_states",
-                "subscriptions",
-                "systems",
-                "tenants",
-            },
-        }
-        with split_directories(split) as (
-            client_config,
-            system_config,
-        ), pytest.raises(
-            ConfigurationPathsError,
-            match=r"^Duplicate files between directories",
-        ):
-            acquire_configuration_paths(client_config, system_config)
 
 
 @pytest.fixture()

@@ -10,6 +10,7 @@
 import copy
 import dataclasses
 import logging
+import pathlib
 import typing
 
 from foodx_devops_tools.azure.cloud import AzureCredentials
@@ -178,6 +179,9 @@ class DeployDataView:
     deployment_tuple: str
     location_primary: str
     release_state: str
+    static_secrets: dict
+
+    frame_folder: typing.Optional[pathlib.Path] = None
 
     __location_secondary: typing.Optional[str] = None
 
@@ -190,6 +194,7 @@ class DeployDataView:
         deployment_tuple: str,
         location_primary: str,
         release_state: str,
+        static_secrets: dict,
         location_secondary: typing.Optional[str] = None,
     ) -> None:
         """Construct ``DeployDataView`` object."""
@@ -197,6 +202,7 @@ class DeployDataView:
         self.deployment_tuple = deployment_tuple
         self.location_primary = location_primary
         self.release_state = release_state
+        self.static_secrets = static_secrets
         self.__location_secondary = location_secondary
 
         self.iteration_context = IterationContext()
@@ -333,12 +339,19 @@ class SubscriptionView:
                 subscription=base_data.azure_id,
                 tenant=this_tenants[base_data.tenant].azure_id,
             )
+            static_secrets = dict()
+            if self.deployment_view.release_view.configuration.static_secrets:
+                static_secrets = self.deployment_view.release_view.configuration.static_secrets[  # noqa E501
+                    self.subscription_name
+                ]
+
             this_data: typing.Dict[str, typing.Any] = {
                 "azure_credentials": this_credentials,
                 "deployment_tuple": str(self.deployment_view.deployment_tuple),
                 "location_primary": this_locations.primary,
                 "location_secondary": None,
                 "release_state": self.deployment_view.release_view.deployment_context.release_state,  # noqa E501
+                "static_secrets": static_secrets,
             }
             if this_locations.secondary:
                 this_data["location_secondary"] = this_locations.secondary

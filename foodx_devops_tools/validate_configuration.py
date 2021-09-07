@@ -16,12 +16,16 @@ import typing
 
 import click
 
-from ._paths import ConfigurationPathsError, acquire_configuration_paths
 from ._version import acquire_version
 from .console import report_failure, report_success
-from .pipeline_config import PipelineConfiguration, do_path_check
+from .pipeline_config import (
+    PipelineConfiguration,
+    PipelineConfigurationPaths,
+    do_path_check,
+)
 from .pipeline_config.exceptions import (
     ClientsDefinitionError,
+    ConfigurationPathsError,
     DeploymentsDefinitionError,
     FrameDefinitionsError,
     PipelineConfigurationError,
@@ -65,9 +69,9 @@ class ExitState(enum.Enum):
     is_flag=True,
 )
 @click.option(
-    "--disable-sp",
+    "--disable-vaults",
     default=False,
-    help="""Disable validation of service principals (local developer use only).
+    help="""Disable encrypted file validation (local developer use only).
 
 Disabling the validation still checks for the presence of the correct file,
 but does not attempt to decrypt the contents for further validation in order
@@ -80,7 +84,7 @@ def _main(
     system_config: pathlib.Path,
     password_file: typing.IO,
     check_paths: bool,
-    disable_sp: bool,
+    disable_vaults: bool,
 ) -> None:
     """
     Validate pipeline configuration files.
@@ -107,13 +111,14 @@ def _main(
                     password is stored, or "-" for stdin.
     """
     try:
-        configuration_paths = acquire_configuration_paths(
+        configuration_paths = PipelineConfigurationPaths.from_paths(
             client_config, system_config
         )
 
         decrypt_token = None
-        if not disable_sp:
+        if not disable_vaults:
             decrypt_token = acquire_token(password_file)
+
         pipeline_configuration = PipelineConfiguration.from_files(
             configuration_paths, decrypt_token
         )

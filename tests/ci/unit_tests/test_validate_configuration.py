@@ -36,7 +36,7 @@ class TestMain:
             assert result.exit_code == 0
 
     def test_missing_input_ignored(self, click_runner):
-        """--disable-sp option doesn't read from stdin."""
+        """--disable-vaults option doesn't read from stdin."""
         with split_directories(NOT_SPLIT.copy()) as (
             client_config,
             system_config,
@@ -47,7 +47,7 @@ class TestMain:
                     str(client_config),
                     str(system_config),
                     "-",
-                    "--disable-sp",
+                    "--disable-vaults",
                 ],
             )
 

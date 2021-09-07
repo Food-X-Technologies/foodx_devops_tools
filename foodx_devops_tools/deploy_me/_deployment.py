@@ -6,6 +6,7 @@
 #  foodx_devops_tools. If not, see <https://opensource.org/licenses/MIT>.
 
 import asyncio
+import copy
 import logging
 import pathlib
 import re
@@ -23,9 +24,6 @@ from foodx_devops_tools.azure.cloud.resource_group import (
 from foodx_devops_tools.azure.cloud.resource_group import (
     deploy as deploy_resource_group,
 )
-from foodx_devops_tools.azure.cloud.resource_group import (
-    validate as validate_resource_group,
-)
 from foodx_devops_tools.pipeline_config import (
     ApplicationDeploymentSteps,
     FlattenedDeployment,
@@ -38,6 +36,7 @@ from foodx_devops_tools.pipeline_config.frames import (
 from foodx_devops_tools.pipeline_config.puff_map import PuffMapPaths
 
 from ._dependency_monitor import process_dependencies
+from ._exceptions import DeploymentError
 from ._state import PipelineCliOptions
 from ._status import DeploymentState, DeploymentStatus, all_success
 
@@ -127,15 +126,46 @@ def _mangle_validation_resource_group(current_name: str, suffix: str) -> str:
     return mangled_name
 
 
+def _make_secrets_object(key_values: dict) -> typing.List[dict]:
+    """Construct secrets into object form required by Foodx ARM template."""
+    result = list()
+    for k, v in key_values.items():
+        this_entry = {
+            "enabled": True,
+            "key": k,
+            "value": v,
+        }
+        result.append(this_entry)
+
+    return result
+
+
 async def _deploy_step(
     this_step: ApplicationDeploymentDefinition,
     deployment_data: FlattenedDeployment,
     puff_parameter_data: PuffMapPaths,
     this_context: str,
-    frame_folder: pathlib.Path,
-    this_subscription: AzureSubscriptionConfiguration,
     enable_validation: bool,
 ) -> None:
+    def construct_arm_paths() -> typing.Tuple[pathlib.Path, pathlib.Path]:
+        """Construct paths for ARM template files."""
+        nonlocal deployment_data, this_step, puff_parameter_data
+
+        if not deployment_data.data.frame_folder:
+            raise DeploymentError(
+                "frame_folder not defined for application step"
+            )
+        frame_folder = deployment_data.data.frame_folder
+        template_path = (
+            frame_folder / this_step.arm_file
+            if this_step.arm_file
+            else frame_folder
+            / "{0}.json".format(deployment_data.context.application_name)
+        )
+        parameters_path = frame_folder / puff_parameter_data[this_step.name]
+
+        return template_path, parameters_path
+
     resource_group = (
         _construct_resource_group_name(
             deployment_data.context.application_name,
@@ -145,13 +175,7 @@ async def _deploy_step(
         if not this_step.resource_group
         else this_step.resource_group
     )
-    arm_template_path = (
-        frame_folder / this_step.arm_file
-        if this_step.arm_file
-        else frame_folder
-        / "{0}.json".format(deployment_data.context.application_name)
-    )
-    arm_parameters_path = frame_folder / puff_parameter_data[this_step.name]
+    arm_template_path, arm_parameters_path = construct_arm_paths()
 
     log.debug(
         "deployment_data.context, {0}, {1}".format(
@@ -170,25 +194,39 @@ async def _deploy_step(
             resource_group,
             deployment_data.context.pipeline_id,
         )
-        log.info("validation resource group name, {0}".format(resource_group))
-        await validate_resource_group(
-            resource_group,
-            arm_template_path,
-            arm_parameters_path,
-            deployment_data.data.location_primary,
-            this_step.mode.value,
-            this_subscription,
-        )
     else:
         log.info("deployment enabled, {0}".format(this_context))
-        await deploy_resource_group(
-            resource_group,
-            arm_template_path,
-            arm_parameters_path,
-            deployment_data.data.location_primary,
-            this_step.mode.value,
-            this_subscription,
-        )
+
+    parameters = dict()
+    if this_step.static_secrets:
+        if deployment_data.data.static_secrets:
+            # pass static secrets as a single object containing all the
+            # secret key-value pairs.
+            parameter_object = {
+                "staticSecrets": _make_secrets_object(
+                    deployment_data.data.static_secrets
+                )
+            }
+            parameters.update(parameter_object)
+        else:
+            log.warning(
+                "There are no static_secrets even though secrets have been"
+                " enabled"
+            )
+
+    this_subscription = AzureSubscriptionConfiguration(
+        subscription_id=deployment_data.context.azure_subscription_name
+    )
+    await deploy_resource_group(
+        resource_group,
+        arm_template_path,
+        arm_parameters_path,
+        deployment_data.data.location_primary,
+        this_step.mode.value,
+        this_subscription,
+        override_parameters=parameters,
+        validate=enable_validation,
+    )
 
 
 async def deploy_application(
@@ -196,7 +234,6 @@ async def deploy_application(
     deployment_data: FlattenedDeployment,
     application_status: DeploymentStatus,
     enable_validation: bool,
-    frame_folder: pathlib.Path,
 ) -> None:
     """
     Deploy the steps of a frame application.
@@ -224,17 +261,12 @@ async def deploy_application(
             deployment_data.context.release_state
         ][deployment_data.context.azure_subscription_name]
 
-        this_subscription = AzureSubscriptionConfiguration(
-            subscription_id=deployment_data.context.azure_subscription_name
-        )
         for this_step in application_data:
             await _deploy_step(
                 this_step,
                 deployment_data,
                 puff_parameter_data,
                 this_context,
-                frame_folder,
-                this_subscription,
                 enable_validation,
             )
 
@@ -318,14 +350,16 @@ async def deploy_frame(
             frame_status,
         )
 
+        frame_deployment = copy.deepcopy(deployment_data)
+        frame_deployment.data.frame_folder = frame_data.folder
+
         await asyncio.gather(
             *[
                 deploy_application(
                     application_data,
-                    deployment_data.copy_add_application(application_name),
+                    frame_deployment.copy_add_application(application_name),
                     application_status,
                     pipeline_parameters.enable_validation,
-                    frame_data.folder,
                 )
                 for application_name, application_data in frame_data.applications.items()  # noqa: E501
             ],
