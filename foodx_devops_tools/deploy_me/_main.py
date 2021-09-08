@@ -44,6 +44,7 @@ from ._deployment import (
 )
 from ._exceptions import DeploymentTerminatedError
 from ._state import ExitState, PipelineCliOptions
+from ._to import StructuredTo, StructuredToParameter
 
 log = logging.getLogger(__name__)
 
@@ -168,6 +169,17 @@ eg.
     type=str,
 )
 @click.option(
+    "--to",
+    default=None,
+    help="""Specify a structured name to deploy a specific system component.
+
+<frame>.<application>.<step>
+
+[default: deploy everything]
+""",
+    type=StructuredToParameter(),
+)
+@click.option(
     "--validation",
     default=False,
     help="Force deployments to be a validation deployment, regardless of any "
@@ -192,6 +204,7 @@ def deploy_me(
     monitor_sleep: int,
     git_ref: typing.Optional[str],
     pipeline_id: str,
+    to: StructuredTo,
     validation: bool,
     wait_timeout: int,
 ) -> None:
