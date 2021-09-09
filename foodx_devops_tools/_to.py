@@ -4,6 +4,11 @@
 #
 #  You should have received a copy of the MIT License along with
 #  foodx_devops_tools. If not, see <https://opensource.org/licenses/MIT>.
+#
+#  This file is part of foodx_devops_tools.
+#
+#  You should have received a copy of the MIT License along with
+#  foodx_devops_tools. If not, see <https://opensource.org/licenses/MIT>.
 
 """Manage the structured ``--to`` specifier."""
 
@@ -41,6 +46,20 @@ class StructuredTo:
     frame: typing.Optional[str] = None
     application: typing.Optional[str] = None
     step: typing.Optional[str] = None
+
+    def __str__(self: U) -> str:
+        """Convert structure back to "specifier" form for use in messages."""
+        if (not self.frame) and (not self.application) and (not self.step):
+            result = "<all>"
+        elif (not self.application) and (not self.step):
+            result = "{0}".format(self.frame)
+        elif not self.step:
+            result = "{0}.{1}".format(self.frame, self.application)
+        else:
+            result = "{0}.{1}.{2}".format(
+                self.frame, self.application, self.step
+            )
+        return result
 
     @classmethod
     def from_specifier(

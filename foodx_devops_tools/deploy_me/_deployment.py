@@ -229,28 +229,15 @@ async def _deploy_step(
     )
 
 
-async def deploy_application(
+async def _do_application_deployment(
+    this_context: str,
     application_data: ApplicationDeploymentSteps,
     deployment_data: FlattenedDeployment,
     application_status: DeploymentStatus,
     enable_validation: bool,
 ) -> None:
-    """
-    Deploy the steps of a frame application.
-
-    Application steps must be deployed in sequence (serially).
-    """
-    this_context = str(deployment_data.data.iteration_context)
 
     try:
-        message = "starting application deployment, {0}".format(this_context)
-        log.info(message)
-        click.echo(message)
-        await application_status.initialize(this_context)
-        await application_status.write(
-            this_context, DeploymentState.ResultType.in_progress
-        )
-
         puff_frame_data = deployment_data.data.puff_map.frames[
             deployment_data.context.frame_name
         ]
@@ -294,6 +281,49 @@ async def deploy_application(
             message,
         )
         log.error(message)
+
+
+async def deploy_application(
+    application_data: ApplicationDeploymentSteps,
+    deployment_data: FlattenedDeployment,
+    application_status: DeploymentStatus,
+    enable_validation: bool,
+) -> None:
+    """
+    Deploy the steps of a frame application.
+
+    Application steps must be deployed in sequence (serially).
+    """
+    this_context = str(deployment_data.data.iteration_context)
+    try:
+        message = "starting application deployment, {0}".format(this_context)
+        log.info(message)
+        click.echo(message)
+        await application_status.initialize(this_context)
+        await application_status.write(
+            this_context, DeploymentState.ResultType.in_progress
+        )
+
+        deploy_to = deployment_data.data.to
+        application_name = deployment_data.context.application_name
+        if deploy_to.application and (
+            application_name != deploy_to.application
+        ):
+            await application_status.write(
+                application_name,
+                DeploymentState.ResultType.skipped,
+                message="deployment targeted application, {0}".format(
+                    str(deploy_to)
+                ),
+            )
+        else:
+            await _do_application_deployment(
+                this_context,
+                application_data,
+                deployment_data,
+                application_status,
+                enable_validation,
+            )
     except Exception as e:
         message = "application deployment failed, {0}, {1}, {2}".format(
             this_context, type(e), str(e)
@@ -412,7 +442,7 @@ async def deploy_frame(
         await frame_status.write(
             frame_name,
             DeploymentState.ResultType.skipped,
-            message="deployment targeted frame, {0}".format(deploy_to.frame),
+            message="deployment targeted frame, {0}".format(str(deploy_to)),
         )
     else:
         await _do_frame_deployment(
