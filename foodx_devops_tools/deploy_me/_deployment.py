@@ -140,7 +140,7 @@ def _make_secrets_object(key_values: dict) -> typing.List[dict]:
     return result
 
 
-async def _deploy_step(
+async def _do_step_deployment(
     this_step: ApplicationDeploymentDefinition,
     deployment_data: FlattenedDeployment,
     puff_parameter_data: PuffMapPaths,
@@ -227,6 +227,29 @@ async def _deploy_step(
         override_parameters=parameters,
         validate=enable_validation,
     )
+
+
+async def _deploy_step(
+    this_step: ApplicationDeploymentDefinition,
+    deployment_data: FlattenedDeployment,
+    puff_parameter_data: PuffMapPaths,
+    this_context: str,
+    enable_validation: bool,
+) -> None:
+    deploy_to = deployment_data.data.to
+    if deploy_to.step and (this_step.name != deploy_to.step):
+        log.warning(
+            "application step skipped using deployment specifier, "
+            "{0}".format(str(deploy_to))
+        )
+    else:
+        await _do_step_deployment(
+            this_step,
+            deployment_data,
+            puff_parameter_data,
+            this_context,
+            enable_validation,
+        )
 
 
 async def _do_application_deployment(
