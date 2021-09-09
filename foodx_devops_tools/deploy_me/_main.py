@@ -258,7 +258,7 @@ def deploy_me(
         log.info("top-level deployment context, {0}".format(str(base_context)))
 
         pipeline_state = ReleaseView(this_configuration, base_context)
-        deployment_iterations = pipeline_state.flatten()
+        deployment_iterations = pipeline_state.flatten(to)
 
         log.info(
             "number deployment iteration, {0}".format(
