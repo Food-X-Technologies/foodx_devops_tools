@@ -20,6 +20,7 @@ from foodx_devops_tools._declarations import (
     VALID_LOG_LEVELS,
 )
 from foodx_devops_tools._logging import LoggingState
+from foodx_devops_tools._to import StructuredTo, StructuredToParameter
 from foodx_devops_tools._version import acquire_version
 from foodx_devops_tools.pipeline_config import (
     DeploymentContext,
@@ -44,7 +45,6 @@ from ._deployment import (
 )
 from ._exceptions import DeploymentTerminatedError
 from ._state import ExitState, PipelineCliOptions
-from ._to import StructuredTo, StructuredToParameter
 
 log = logging.getLogger(__name__)
 

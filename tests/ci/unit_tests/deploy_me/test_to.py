@@ -7,7 +7,7 @@
 
 import pytest
 
-from foodx_devops_tools.deploy_me._to import StructuredTo, StructuredToError
+from foodx_devops_tools._to import StructuredTo, StructuredToError
 
 
 def test_default():
