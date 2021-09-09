@@ -10,8 +10,10 @@ import pathlib
 
 import pytest
 
+from foodx_devops_tools._to import StructuredTo
 from foodx_devops_tools.deploy_me._deployment import (
     AzureSubscriptionConfiguration,
+    DeploymentState,
     DeploymentStatus,
     deploy_application,
 )

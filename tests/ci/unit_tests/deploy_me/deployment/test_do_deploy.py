@@ -7,8 +7,16 @@
 
 import pytest
 
-from foodx_devops_tools.deploy_me._deployment import DeploymentState, do_deploy
-from foodx_devops_tools.pipeline_config import PipelineConfiguration
+from foodx_devops_tools._to import StructuredTo
+from foodx_devops_tools.deploy_me._deployment import (
+    DeploymentState,
+    DeploymentStatus,
+    do_deploy,
+)
+from foodx_devops_tools.pipeline_config import (
+    IterationContext,
+    PipelineConfiguration,
+)
 from tests.ci.support.pipeline_config import MOCK_RESULTS
 
 

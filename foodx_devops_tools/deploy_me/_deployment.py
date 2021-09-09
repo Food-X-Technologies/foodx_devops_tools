@@ -310,30 +310,13 @@ async def deploy_application(
     click.echo(click.style(message, fg="yellow"))
 
 
-async def deploy_frame(
-    frame_data: SingularFrameDefinition,
-    deployment_data: FlattenedDeployment,
-    frame_status: DeploymentStatus,
+async def _do_frame_deployment(
+    this_context: str,
     pipeline_parameters: PipelineCliOptions,
+    deployment_data: FlattenedDeployment,
+    frame_data: SingularFrameDefinition,
+    frame_status: DeploymentStatus,
 ) -> None:
-    """
-    Deploy the applications of a frame.
-
-    Frame applications are deployed concurrently (in parallel).
-
-    Raises:
-        DeploymentTerminatedError: If any dependencies fail preventing
-                                  completion.
-    """
-    this_context = str(deployment_data.data.iteration_context)
-    message = "starting frame deployment, {0}".format(this_context)
-    log.info(message)
-    click.echo(message)
-
-    await frame_status.initialize(this_context)
-    await frame_status.write(
-        this_context, DeploymentState.ResultType.in_progress
-    )
     # application status will show as "pending" until deployment activates.
     application_status = DeploymentStatus(
         this_context, pipeline_parameters.wait_timeout_seconds
@@ -399,6 +382,48 @@ async def deploy_frame(
     )
 
 
+async def deploy_frame(
+    frame_data: SingularFrameDefinition,
+    deployment_data: FlattenedDeployment,
+    frame_status: DeploymentStatus,
+    pipeline_parameters: PipelineCliOptions,
+) -> None:
+    """
+    Deploy the applications of a frame.
+
+    Frame applications are deployed concurrently (in parallel).
+
+    Raises:
+        DeploymentTerminatedError: If any dependencies fail preventing
+                                  completion.
+    """
+    this_context = str(deployment_data.data.iteration_context)
+    message = "starting frame deployment, {0}".format(this_context)
+    log.info(message)
+    click.echo(message)
+
+    await frame_status.initialize(this_context)
+    await frame_status.write(
+        this_context, DeploymentState.ResultType.in_progress
+    )
+    deploy_to = deployment_data.data.to
+    frame_name = deployment_data.context.frame_name
+    if deploy_to.frame and (frame_name != deploy_to.frame):
+        await frame_status.write(
+            frame_name,
+            DeploymentState.ResultType.skipped,
+            message="deployment targeted frame, {0}".format(deploy_to.frame),
+        )
+    else:
+        await _do_frame_deployment(
+            this_context,
+            pipeline_parameters,
+            deployment_data,
+            frame_data,
+            frame_status,
+        )
+
+
 async def do_deploy(
     configuration: PipelineConfiguration,
     deployment_data: FlattenedDeployment,
@@ -439,7 +464,6 @@ async def do_deploy(
             ],
             return_exceptions=False,
         )
-
         await wait_task
     except asyncio.TimeoutError:
         message = "timeout waiting for frame deployments, {0}".format(

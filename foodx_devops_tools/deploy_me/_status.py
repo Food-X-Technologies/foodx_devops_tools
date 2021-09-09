@@ -33,11 +33,17 @@ class DeploymentState:
         failed = enum.auto()
         in_progress = enum.auto()
         pending = enum.auto()
+        skipped = enum.auto()
         success = enum.auto()
 
+    COMPLETED_OK = {
+        ResultType.skipped,
+        ResultType.success,
+    }
     COMPLETED_RESULTS = {
         ResultType.cancelled,
         ResultType.failed,
+        ResultType.skipped,
         ResultType.success,
     }
 
@@ -46,16 +52,12 @@ class DeploymentState:
 
 
 def all_success(values: typing.List[DeploymentState]) -> bool:
-    """Evaluate if a list of deployment states are all succeeded."""
-    result = all(
-        [
-            x.code
-            in [
-                DeploymentState.ResultType.success,
-            ]
-            for x in values
-        ]
-    )
+    """
+    Evaluate if a list of deployment states are all succeeded.
+
+    NOTE: "skipped" is also considered a success here.
+    """
+    result = all([x.code in DeploymentState.COMPLETED_OK for x in values])
     return result
 
 
@@ -76,7 +78,7 @@ def any_completed_dirty(values: typing.List[DeploymentState]) -> bool:
     result = any(
         [
             (x.code in DeploymentState.COMPLETED_RESULTS)
-            and (x.code != DeploymentState.ResultType.success)
+            and (x.code not in DeploymentState.COMPLETED_OK)
             for x in values
         ]
     )
@@ -94,14 +96,15 @@ class DeploymentStatus:
     __status: typing.Dict[str, DeploymentState]
 
     STATE_COLOURS = {
-        DeploymentState.ResultType.pending: "white",
-        DeploymentState.ResultType.in_progress: "cyan",
         DeploymentState.ResultType.cancelled: "yellow",
         DeploymentState.ResultType.failed: "red",
+        DeploymentState.ResultType.in_progress: "cyan",
+        DeploymentState.ResultType.pending: "white",
+        DeploymentState.ResultType.skipped: "white",
         DeploymentState.ResultType.success: "green",
     }
 
-    EVENT_KEY_SUCCEEDED = "_all_succeeded"
+    EVENT_KEY_SUCCEEDED = "_all_ok"
     EVENT_KEY_COMPLETED = "_all_completed"
 
     def __init__(
