@@ -250,6 +250,7 @@ async def _deploy_step(
             this_context,
             enable_validation,
         )
+        log.info("application step succeeded, {0}".format(this_context))
 
 
 async def _do_application_deployment(
@@ -333,7 +334,7 @@ async def deploy_application(
             application_name != deploy_to.application
         ):
             await application_status.write(
-                application_name,
+                this_context,
                 DeploymentState.ResultType.skipped,
                 message="deployment targeted application, {0}".format(
                     str(deploy_to)
@@ -463,7 +464,7 @@ async def deploy_frame(
     frame_name = deployment_data.context.frame_name
     if deploy_to.frame and (frame_name != deploy_to.frame):
         await frame_status.write(
-            frame_name,
+            this_context,
             DeploymentState.ResultType.skipped,
             message="deployment targeted frame, {0}".format(str(deploy_to)),
         )
