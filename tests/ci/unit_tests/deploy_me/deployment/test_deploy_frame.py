@@ -6,10 +6,10 @@
 #  foodx_devops_tools. If not, see <https://opensource.org/licenses/MIT>.
 
 import asyncio
-import pathlib
 
 import pytest
 
+from foodx_devops_tools._to import StructuredTo
 from foodx_devops_tools.deploy_me._deployment import (
     ApplicationDeploymentSteps,
     DeploymentState,
@@ -334,3 +334,39 @@ async def test_in_progress_timeout(
             this_status,
             cli_options,
         )
+
+
+@pytest.mark.asyncio
+async def test_frame_skipped(
+    mock_application_deploy, mock_completion_event, pipeline_parameters
+):
+    cli_options = pipeline_parameters(
+        monitor_sleep_seconds=2, wait_timeout_seconds=1
+    )
+    dependency_frame = "other-frame"
+
+    mock_application, deployment_data, frame_data = mock_application_deploy
+    frame_data.depends_on = [dependency_frame]
+
+    this_status = DeploymentStatus(MOCK_CONTEXT, timeout_seconds=1)
+    await this_status.initialize(dependency_frame)
+
+    await asyncio.create_task(
+        delayed_completion(
+            dependency_frame,
+            this_status,
+            0.5,
+            DeploymentState.ResultType.in_progress,
+        )
+    )
+    deployment_data.data.to = StructuredTo(frame="f2")
+
+    await deploy_frame(
+        frame_data,
+        deployment_data,
+        this_status,
+        cli_options,
+    )
+
+    f1_status = await this_status.read("f1")
+    assert f1_status.code == DeploymentState.ResultType.skipped

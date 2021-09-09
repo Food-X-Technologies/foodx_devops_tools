@@ -20,6 +20,7 @@ from foodx_devops_tools._declarations import (
     VALID_LOG_LEVELS,
 )
 from foodx_devops_tools._logging import LoggingState
+from foodx_devops_tools._to import StructuredTo, StructuredToParameter
 from foodx_devops_tools._version import acquire_version
 from foodx_devops_tools.pipeline_config import (
     DeploymentContext,
@@ -168,6 +169,17 @@ eg.
     type=str,
 )
 @click.option(
+    "--to",
+    default=None,
+    help="""Specify a structured name to deploy a specific system component.
+
+<frame>.<application>.<step>
+
+[default: deploy everything]
+""",
+    type=StructuredToParameter(),
+)
+@click.option(
     "--validation",
     default=False,
     help="Force deployments to be a validation deployment, regardless of any "
@@ -192,6 +204,7 @@ def deploy_me(
     monitor_sleep: int,
     git_ref: typing.Optional[str],
     pipeline_id: str,
+    to: StructuredTo,
     validation: bool,
     wait_timeout: int,
 ) -> None:
@@ -245,7 +258,7 @@ def deploy_me(
         log.info("top-level deployment context, {0}".format(str(base_context)))
 
         pipeline_state = ReleaseView(this_configuration, base_context)
-        deployment_iterations = pipeline_state.flatten()
+        deployment_iterations = pipeline_state.flatten(to)
 
         log.info(
             "number deployment iteration, {0}".format(

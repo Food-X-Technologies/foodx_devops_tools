@@ -10,8 +10,10 @@ import pathlib
 
 import pytest
 
+from foodx_devops_tools._to import StructuredTo
 from foodx_devops_tools.deploy_me._deployment import (
     AzureSubscriptionConfiguration,
+    DeploymentState,
     DeploymentStatus,
     deploy_application,
 )
@@ -39,7 +41,7 @@ def prep_data(mock_async_method, mock_flattened_deployment):
     app_data = copy.deepcopy(MOCK_APPLICATION_DATA)
 
     deployment_data = mock_flattened_deployment[0]
-    deployment_data.data.iteration_context.append("f1")
+    deployment_data.data.iteration_context.append("a1")
     deployment_data.context.frame_name = "f1"
     deployment_data.context.application_name = "a1"
     deployment_data.context.release_state = "r1"
@@ -178,3 +180,29 @@ class TestDeployment(DeploymentChecks):
             override_parameters=dict(),
             validate=False,
         )
+
+    @pytest.mark.asyncio
+    async def test_application_skip(self, prep_data):
+        enable_validation = False
+        mock_deploy, deployment_data, app_data = prep_data
+
+        updated = copy.deepcopy(app_data)
+        updated[0].resource_group = None
+        this_status = DeploymentStatus(MOCK_CONTEXT, timeout_seconds=1)
+        application_deployment_data = copy.deepcopy(deployment_data)
+        application_deployment_data.data.frame_folder = pathlib.Path(
+            "some/path"
+        )
+        application_deployment_data.data.to = StructuredTo(
+            frame="f1", application="a2"
+        )
+
+        await deploy_application(
+            updated,
+            application_deployment_data,
+            this_status,
+            enable_validation,
+        )
+
+        status = await this_status.read("a1")
+        assert status.code == DeploymentState.ResultType.skipped

@@ -17,7 +17,7 @@ from foodx_devops_tools.pipeline_config.views import (
     ReleaseView,
     SubscriptionView,
 )
-from tests.ci.support.pipeline_config import MOCK_CONTEXT
+from tests.ci.support.pipeline_config import MOCK_CONTEXT, MOCK_TO
 
 
 class TestIterationContext:
@@ -207,7 +207,7 @@ class TestReleaseView:
     def test_flatten_clean(self, mock_pipeline_config):
         under_test = ReleaseView(mock_pipeline_config(), MOCK_CONTEXT)
 
-        result = under_test.flatten()
+        result = under_test.flatten(MOCK_TO)
 
         assert len(result) == 2
         assert {x.context.client for x in result} == {
@@ -220,3 +220,7 @@ class TestReleaseView:
             "l1",
             "l2",
         }
+        assert [x.data.to for x in result] == [
+            MOCK_TO,
+            MOCK_TO,
+        ]

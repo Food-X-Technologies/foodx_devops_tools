@@ -13,6 +13,7 @@ import logging
 import pathlib
 import typing
 
+from foodx_devops_tools._to import StructuredTo
 from foodx_devops_tools.azure.cloud import AzureCredentials
 
 from ..deployment import DeploymentTuple
@@ -186,6 +187,7 @@ class DeployDataView:
     __location_secondary: typing.Optional[str] = None
 
     iteration_context: IterationContext
+    to: StructuredTo
     __puff_map: typing.Optional[PuffMap] = None
 
     def __init__(
@@ -206,6 +208,7 @@ class DeployDataView:
         self.__location_secondary = location_secondary
 
         self.iteration_context = IterationContext()
+        self.to = StructuredTo()
 
     @property
     def location_secondary(self: X) -> str:
@@ -463,6 +466,7 @@ class ReleaseView:
 
     def flatten(
         self: T,
+        to: StructuredTo,
     ) -> typing.List[FlattenedDeployment]:
         """Flatten the nested hierarchy of views into a simple list."""
         result: typing.List[FlattenedDeployment] = list()
@@ -485,9 +489,12 @@ class ReleaseView:
                         this_deployment.deployment_tuple.system
                     )
 
+                    updated_data = copy.deepcopy(this_deploy_data)
+                    updated_data.to = to
+
                     this_value = FlattenedDeployment(
                         context=updated_context,
-                        data=this_deploy_data,
+                        data=updated_data,
                     )
                     result.append(this_value)
         return result

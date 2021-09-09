@@ -19,7 +19,7 @@ from foodx_devops_tools.pipeline_config.views import (
     DeploymentContext,
     ReleaseView,
 )
-from tests.ci.support.pipeline_config import MOCK_RESULTS
+from tests.ci.support.pipeline_config import MOCK_RESULTS, MOCK_TO
 
 
 @pytest.fixture
@@ -55,7 +55,7 @@ def mock_flattened_deployment(mock_pipeline_config):
         release_state="r1",
     )
     pipeline_state = ReleaseView(mock_pipeline_config(), base_context)
-    mock_flattened = pipeline_state.flatten()
+    mock_flattened = pipeline_state.flatten(MOCK_TO)
 
     return copy.deepcopy(mock_flattened)
 

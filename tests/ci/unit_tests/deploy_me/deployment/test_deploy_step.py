@@ -5,22 +5,20 @@
 #  You should have received a copy of the MIT License along with
 #  foodx_devops_tools. If not, see <https://opensource.org/licenses/MIT>.
 
-import asyncio
 import copy
+import logging
 import pathlib
 
 import pytest
 
+from foodx_devops_tools._to import StructuredTo
 from foodx_devops_tools.deploy_me._deployment import (
     ApplicationDeploymentDefinition,
-    ApplicationDeploymentSteps,
-    AzureSubscriptionConfiguration,
     DeploymentState,
     DeploymentStatus,
     FlattenedDeployment,
     _deploy_step,
 )
-from foodx_devops_tools.deploy_me.exceptions import DeploymentTerminatedError
 from foodx_devops_tools.pipeline_config.frames import DeploymentMode
 from foodx_devops_tools.pipeline_config.views import (
     AzureCredentials,
@@ -155,3 +153,21 @@ async def test_secrets_enabled(
         override_parameters=expected_secrets,
         validate=mocker.ANY,
     )
+
+
+@pytest.mark.asyncio
+async def test_step_skip(
+    caplog, mock_deploystep_context, mock_login, mock_rg_deploy
+):
+    with caplog.at_level(logging.DEBUG):
+        mock_deploystep_context["deployment_data"].data.to = StructuredTo(
+            frame="f1", application="a1", step="other_step"
+        )
+
+        await _deploy_step(**mock_deploystep_context)
+
+        mock_rg_deploy.assert_not_called()
+
+        assert (
+            "application step skipped using deployment specifier" in caplog.text
+        )

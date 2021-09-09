@@ -13,6 +13,7 @@ import typing
 
 import ruamel.yaml
 
+from foodx_devops_tools._to import StructuredTo
 from foodx_devops_tools.pipeline_config import (
     DeploymentContext,
     PipelineConfigurationPaths,
@@ -25,6 +26,9 @@ MOCK_CONTEXT = DeploymentContext(
     release_id="0.0.0-dev.3",
     release_state="r1",
 )
+
+
+MOCK_TO = StructuredTo()
 
 CLEAN_SPLIT = {
     "client": {
