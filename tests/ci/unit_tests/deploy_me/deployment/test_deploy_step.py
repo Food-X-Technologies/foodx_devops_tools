@@ -28,9 +28,17 @@ from tests.ci.support.pipeline_config import MOCK_CONTEXT
 
 
 @pytest.fixture()
+def mock_run_puff(mock_async_method):
+    this_mock = mock_async_method(
+        "foodx_devops_tools.deploy_me._deployment.run_puff"
+    )
+    return this_mock
+
+
+@pytest.fixture()
 def mock_rg_deploy(mock_async_method):
     this_mock = mock_async_method(
-        "foodx_devops_tools.deploy_me._deployment" ".deploy_resource_group"
+        "foodx_devops_tools.deploy_me._deployment.deploy_resource_group"
     )
     return this_mock
 
@@ -38,7 +46,7 @@ def mock_rg_deploy(mock_async_method):
 @pytest.fixture()
 def mock_login(mock_async_method):
     mock_async_method(
-        "foodx_devops_tools.deploy_me._deployment" ".login_service_principal"
+        "foodx_devops_tools.deploy_me._deployment.login_service_principal"
     )
 
 
@@ -88,7 +96,9 @@ def mock_deploystep_context():
 
 
 @pytest.mark.asyncio
-async def test_clean(mock_deploystep_context, mock_login, mock_rg_deploy):
+async def test_clean(
+    mock_deploystep_context, mock_login, mock_rg_deploy, mock_run_puff
+):
     await _deploy_step(**mock_deploystep_context)
 
     mock_rg_deploy.assert_called_once()
@@ -96,7 +106,7 @@ async def test_clean(mock_deploystep_context, mock_login, mock_rg_deploy):
 
 @pytest.mark.asyncio
 async def test_no_override_parameters(
-    mock_deploystep_context, mock_login, mock_rg_deploy, mocker
+    mock_deploystep_context, mock_login, mock_rg_deploy, mock_run_puff, mocker
 ):
     this_context = copy.deepcopy(mock_deploystep_context)
     this_context["this_step"].static_secrets = False
@@ -117,7 +127,7 @@ async def test_no_override_parameters(
 
 @pytest.mark.asyncio
 async def test_secrets_enabled(
-    mock_deploystep_context, mock_login, mock_rg_deploy, mocker
+    mock_deploystep_context, mock_login, mock_rg_deploy, mock_run_puff, mocker
 ):
     this_context = copy.deepcopy(mock_deploystep_context)
     this_context["this_step"].static_secrets = True

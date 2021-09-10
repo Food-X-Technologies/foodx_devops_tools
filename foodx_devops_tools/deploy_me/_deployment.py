@@ -34,6 +34,7 @@ from foodx_devops_tools.pipeline_config.frames import (
     ApplicationDeploymentDefinition,
 )
 from foodx_devops_tools.pipeline_config.puff_map import PuffMapPaths
+from foodx_devops_tools.puff import PuffError, run_puff
 
 from ._dependency_monitor import process_dependencies
 from ._exceptions import DeploymentError
@@ -140,6 +141,36 @@ def _make_secrets_object(key_values: dict) -> typing.List[dict]:
     return result
 
 
+def _construct_arm_paths(
+    this_step: ApplicationDeploymentDefinition,
+    arm_parameter_path: pathlib.Path,
+    application_name: str,
+    frame_folder: typing.Optional[pathlib.Path],
+) -> typing.Tuple[pathlib.Path, pathlib.Path, pathlib.Path]:
+    """Construct paths for ARM template files."""
+    if not frame_folder:
+        raise DeploymentError("frame_folder not defined for application step")
+
+    frame_folder = frame_folder
+    template_path = (
+        (frame_folder / this_step.arm_file)
+        if this_step.arm_file
+        else (frame_folder / "{0}.json".format(application_name))
+    )
+    if this_step.puff_file:
+        puff_path = frame_folder / this_step.puff_file
+    elif this_step.arm_file:
+        puff_path = frame_folder / str(this_step.arm_file).replace(
+            "json", "yml"
+        )
+    else:
+        puff_path = frame_folder / "{0}.yml".format(application_name)
+
+    parameters_path = frame_folder / arm_parameter_path
+
+    return template_path, puff_path, parameters_path
+
+
 async def _do_step_deployment(
     this_step: ApplicationDeploymentDefinition,
     deployment_data: FlattenedDeployment,
@@ -147,25 +178,6 @@ async def _do_step_deployment(
     this_context: str,
     enable_validation: bool,
 ) -> None:
-    def construct_arm_paths() -> typing.Tuple[pathlib.Path, pathlib.Path]:
-        """Construct paths for ARM template files."""
-        nonlocal deployment_data, this_step, puff_parameter_data
-
-        if not deployment_data.data.frame_folder:
-            raise DeploymentError(
-                "frame_folder not defined for application step"
-            )
-        frame_folder = deployment_data.data.frame_folder
-        template_path = (
-            frame_folder / this_step.arm_file
-            if this_step.arm_file
-            else frame_folder
-            / "{0}.json".format(deployment_data.context.application_name)
-        )
-        parameters_path = frame_folder / puff_parameter_data[this_step.name]
-
-        return template_path, parameters_path
-
     resource_group = (
         _construct_resource_group_name(
             deployment_data.context.application_name,
@@ -175,7 +187,16 @@ async def _do_step_deployment(
         if not this_step.resource_group
         else this_step.resource_group
     )
-    arm_template_path, arm_parameters_path = construct_arm_paths()
+    (
+        arm_template_path,
+        puff_file_path,
+        arm_parameters_path,
+    ) = _construct_arm_paths(
+        this_step,
+        puff_parameter_data[this_step.name],
+        deployment_data.context.application_name,
+        deployment_data.data.frame_folder,
+    )
 
     log.debug(
         "deployment_data.context, {0}, {1}".format(
@@ -213,6 +234,8 @@ async def _do_step_deployment(
                 "There are no static_secrets even though secrets have been"
                 " enabled"
             )
+
+    await run_puff(puff_file_path, False, False, disable_ascii_art=True)
 
     this_subscription = AzureSubscriptionConfiguration(
         subscription_id=deployment_data.context.azure_subscription_name
@@ -260,7 +283,6 @@ async def _do_application_deployment(
     application_status: DeploymentStatus,
     enable_validation: bool,
 ) -> None:
-
     try:
         puff_frame_data = deployment_data.data.puff_map.frames[
             deployment_data.context.frame_name
@@ -294,7 +316,7 @@ async def _do_application_deployment(
             message,
         )
         raise
-    except AzureAuthenticationError as e:
+    except (AzureAuthenticationError, PuffError) as e:
         message = (
             "application deployment authentication "
             "failure, {0}, {1}, {2}".format(this_context, type(e), str(e))

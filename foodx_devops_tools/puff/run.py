@@ -77,7 +77,10 @@ def _acquire_yaml_filenames(
 
 
 async def run_puff(
-    path: pathlib.Path, is_delete_files: bool, is_pretty: bool
+    path: pathlib.Path,
+    is_delete_files: bool,
+    is_pretty: bool,
+    disable_ascii_art: bool = False,
 ) -> None:
     """
     Search filesystem for YAML files and create or delete ARM template files.
@@ -92,7 +95,8 @@ async def run_puff(
     else:
         this_action = PuffActions.create
 
-    click.echo(ACTION_MESSAGES[this_action].art)
+    if not disable_ascii_art:
+        click.echo(ACTION_MESSAGES[this_action].art)
     click.echo(ACTION_MESSAGES[this_action].message)
 
     ignore_patterns = await load_puffignore(DEFAULT_PUFFIGNORE_PATH)
