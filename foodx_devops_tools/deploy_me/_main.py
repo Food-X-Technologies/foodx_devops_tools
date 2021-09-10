@@ -170,7 +170,7 @@ eg.
 )
 @click.option(
     "--to",
-    default=None,
+    default=StructuredTo(),
     help="""Specify a structured name to deploy a specific system component.
 
 <frame>.<application>.<step>
