@@ -166,12 +166,12 @@ class TestDeployMe:
             ),
         )
         with split_directories(CLEAN_SPLIT.copy()) as (
-            client_config,
-            system_config,
+            client_path,
+            system_path,
         ):
             mock_input += [
-                str(client_config),
-                str(system_config),
+                str(client_path),
+                str(system_path),
                 "-",
                 # --git-ref is mandatory, for now
                 "--git-ref",

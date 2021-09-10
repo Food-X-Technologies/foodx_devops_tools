@@ -7,16 +7,8 @@
 
 import pytest
 
-from foodx_devops_tools._to import StructuredTo
-from foodx_devops_tools.deploy_me._deployment import (
-    DeploymentState,
-    DeploymentStatus,
-    do_deploy,
-)
-from foodx_devops_tools.pipeline_config import (
-    IterationContext,
-    PipelineConfiguration,
-)
+from foodx_devops_tools.deploy_me._deployment import do_deploy
+from foodx_devops_tools.pipeline_config import PipelineConfiguration
 from tests.ci.support.pipeline_config import MOCK_RESULTS
 
 
@@ -34,6 +26,7 @@ def prep_data(mock_async_method, mock_flattened_deployment):
     mock_frame = mock_async_method(
         "foodx_devops_tools.deploy_me._deployment.deploy_frame"
     )
+    mock_async_method("foodx_devops_tools.deploy_me._deployment.run_puff")
 
     return mock_frame, deployment_data, pipeline_config
 

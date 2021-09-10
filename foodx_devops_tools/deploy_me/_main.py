@@ -102,11 +102,11 @@ def _report_results(
 @click.command()
 @click.version_option(acquire_version())
 @click.argument(
-    "client_config",
+    "client_path",
     type=click.Path(dir_okay=True, file_okay=False, path_type=pathlib.Path),
 )
 @click.argument(
-    "system_config",
+    "system_path",
     type=click.Path(dir_okay=True, file_okay=False, path_type=pathlib.Path),
 )
 @click.argument(
@@ -195,8 +195,8 @@ eg.
     type=int,
 )
 def deploy_me(
-    client_config: pathlib.Path,
-    system_config: pathlib.Path,
+    client_path: pathlib.Path,
+    system_path: pathlib.Path,
     password_file: typing.IO,
     disable_file_log: bool,
     enable_console_log: bool,
@@ -211,9 +211,9 @@ def deploy_me(
     """
     Deploy system resources.
 
-    CLIENT_CONFIG  The client specific configuration directory.
-    SYSTEM_CONFIG  The directory containing all non-client related pipeline
-                   and deployment configuration.
+    CLIENT_PATH  The client specific deployment definition directory.
+    SYSTEM_PATH  The directory containing all non-client related pipeline
+                   and deployment definition.
     PASSWORD_FILE:  The path to a file where the service principal decryption
                     password is stored, or "-" for stdin.
     """
@@ -232,6 +232,8 @@ def deploy_me(
             monitor_sleep_seconds=monitor_sleep,
             wait_timeout_seconds=(60 * wait_timeout),
         )
+        client_config = client_path / "configuration"
+        system_config = system_path / "configuration"
         configuration_paths = PipelineConfigurationPaths.from_paths(
             client_config, system_config
         )

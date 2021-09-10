@@ -53,18 +53,21 @@ def prep_data(mock_async_method, mock_flattened_deployment):
     mock_deploy = mock_async_method(
         "foodx_devops_tools.deploy_me._deployment.deploy_resource_group"
     )
+    mock_puff = mock_async_method(
+        "foodx_devops_tools.deploy_me._deployment.run_puff"
+    )
     mock_async_method(
         "foodx_devops_tools.deploy_me._deployment.login_service_principal"
     )
 
-    return mock_deploy, deployment_data, app_data
+    return mock_deploy, mock_puff, deployment_data, app_data
 
 
 class DeploymentChecks:
     async def check_static_resource_group(
         self, enable_validation: bool, prep_data
     ):
-        mock_deploy, deployment_data, app_data = prep_data
+        mock_deploy, mock_puff, deployment_data, app_data = prep_data
 
         this_status = DeploymentStatus(MOCK_CONTEXT, timeout_seconds=1)
         application_deployment_data = copy.deepcopy(deployment_data)
@@ -78,12 +81,14 @@ class DeploymentChecks:
             enable_validation,
         )
 
+        mock_puff.assert_called_once()
+
         return mock_deploy
 
     async def check_auto_resource_group(
         self, enable_validation: bool, prep_data
     ):
-        mock_deploy, deployment_data, app_data = prep_data
+        mock_deploy, mock_puff, deployment_data, app_data = prep_data
 
         updated = copy.deepcopy(app_data)
         updated[0].resource_group = None
@@ -98,6 +103,8 @@ class DeploymentChecks:
             this_status,
             enable_validation,
         )
+
+        mock_puff.assert_called_once()
 
         return mock_deploy
 
@@ -184,7 +191,7 @@ class TestDeployment(DeploymentChecks):
     @pytest.mark.asyncio
     async def test_application_skip(self, prep_data):
         enable_validation = False
-        mock_deploy, deployment_data, app_data = prep_data
+        mock_deploy, mock_puff, deployment_data, app_data = prep_data
 
         updated = copy.deepcopy(app_data)
         updated[0].resource_group = None
