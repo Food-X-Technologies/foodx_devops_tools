@@ -94,6 +94,7 @@ class DeploymentStatus:
     __iteration_context: str
     __rw_lock: asyncio.Lock
     __status: typing.Dict[str, DeploymentState]
+    __timeout_seconds: float
 
     STATE_COLOURS = {
         DeploymentState.ResultType.cancelled: "yellow",
