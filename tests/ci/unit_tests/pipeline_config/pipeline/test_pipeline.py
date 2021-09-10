@@ -275,9 +275,11 @@ class TestPipelineConfiguration:
 
     def test_load_files(self):
         with split_directories(CLEAN_SPLIT.copy()) as (
-            client_config,
-            system_config,
+            client_path,
+            system_path,
         ):
+            client_config = client_path / "configuration"
+            system_config = system_path / "configuration"
             this_paths = PipelineConfigurationPaths.from_paths(
                 client_config, system_config
             )
@@ -286,9 +288,11 @@ class TestPipelineConfiguration:
 
     def test_none_token_clean(self):
         with split_directories(CLEAN_SPLIT.copy()) as (
-            client_config,
-            system_config,
+            client_path,
+            system_path,
         ):
+            client_config = client_path / "configuration"
+            system_config = system_path / "configuration"
             this_paths = PipelineConfigurationPaths.from_paths(
                 client_config, system_config
             )
@@ -298,9 +302,11 @@ class TestPipelineConfiguration:
     def test_none_token_raises(self):
         """Missing service principals file raises."""
         with split_directories(CLEAN_SPLIT.copy()) as (
-            client_config,
-            system_config,
+            client_path,
+            system_path,
         ):
+            client_config = client_path / "configuration"
+            system_config = system_path / "configuration"
             this_paths = PipelineConfigurationPaths.from_paths(
                 client_config, system_config
             )

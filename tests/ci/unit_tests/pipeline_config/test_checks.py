@@ -21,6 +21,9 @@ from tests.ci.support.pipeline_config import MOCK_PATHS, MOCK_SECRET
 log = logging.getLogger(__name__)
 
 
+MOCK_SYSTEM_PATH = pathlib.Path("some/path")
+
+
 class TestFileExists:
     @pytest.mark.asyncio
     async def test_true(self):
@@ -45,7 +48,9 @@ class TestFileExists:
 
 class TestDoPathCheck:
     @pytest.mark.asyncio
-    async def test_clean(self, mock_loads, mock_results, mock_async_method):
+    async def test_clean(
+        self, mock_loads, mock_results, mock_async_method, mock_run_puff_check
+    ):
         mock_async_method(
             "foodx_devops_tools.pipeline_config._checks._file_exists",
             return_value=True,
@@ -53,11 +58,11 @@ class TestDoPathCheck:
         mock_loads(mock_results)
         mock_config = PipelineConfiguration.from_files(MOCK_PATHS, MOCK_SECRET)
 
-        await do_path_check(mock_config)
+        await do_path_check(mock_config, MOCK_SYSTEM_PATH)
 
     @pytest.mark.asyncio
     async def test_missing_file(
-        self, mock_loads, mock_results, mock_async_method
+        self, mock_loads, mock_results, mock_async_method, mock_run_puff_check
     ):
         mock_async_method(
             "foodx_devops_tools.pipeline_config._checks._file_exists",
@@ -69,11 +74,11 @@ class TestDoPathCheck:
         with pytest.raises(
             FileNotFoundError, match=r"files missing from " r"deployment"
         ):
-            await do_path_check(mock_config)
+            await do_path_check(mock_config, MOCK_SYSTEM_PATH)
 
     @pytest.mark.asyncio
     async def test_multiple_missing_files(
-        self, mock_loads, mock_results, mock_async_method
+        self, mock_loads, mock_results, mock_async_method, mock_run_puff_check
     ):
         mock_async_method(
             "foodx_devops_tools.pipeline_config._checks" "._file_exists",
@@ -85,11 +90,16 @@ class TestDoPathCheck:
         with pytest.raises(
             FileNotFoundError, match=r"files missing from " r"deployment"
         ):
-            await do_path_check(mock_config)
+            await do_path_check(mock_config, MOCK_SYSTEM_PATH)
 
     @pytest.mark.asyncio
     async def test_failed_check(
-        self, mock_loads, mock_results, mock_async_method, mocker
+        self,
+        mock_loads,
+        mock_results,
+        mock_async_method,
+        mocker,
+        mock_run_puff_check,
     ):
         mocker.patch(
             "foodx_devops_tools.pipeline_config._checks._check_arm_files",
@@ -103,4 +113,4 @@ class TestDoPathCheck:
         mock_config = PipelineConfiguration.from_files(MOCK_PATHS, MOCK_SECRET)
 
         with pytest.raises(RuntimeError):
-            await do_path_check(mock_config)
+            await do_path_check(mock_config, MOCK_SYSTEM_PATH)

@@ -11,6 +11,8 @@ import typing
 
 import aiofiles  # type: ignore
 
+from foodx_devops_tools.puff import run_puff
+
 from ._structure import StructuredPathCollection
 from .frames import FramesTriggersDefinition
 from .pipeline import PipelineConfiguration
@@ -67,12 +69,15 @@ async def _check_puff_maps(
 
 
 async def do_path_check(
-    pipeline_configuration: PipelineConfiguration,
+    pipeline_configuration: PipelineConfiguration, system_path: pathlib.Path
 ) -> None:
     """Check that paths in configuration actually exist."""
     # check that all the generated ARM template parameter files and ARM
     # template files are where they are expected to be for the current
     # *client* configuration.
+
+    await run_puff(system_path, False, False, disable_ascii_art=True)
+
     this_futures = await asyncio.gather(
         _check_arm_files(pipeline_configuration.frames),
         _check_puff_maps(

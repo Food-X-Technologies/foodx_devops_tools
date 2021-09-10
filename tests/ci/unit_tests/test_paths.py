@@ -17,9 +17,11 @@ from tests.ci.support.pipeline_config import CLEAN_SPLIT, split_directories
 class TestFromPaths:
     def test_clean(self):
         with split_directories(CLEAN_SPLIT.copy()) as (
-            client_config,
-            system_config,
+            client_path,
+            system_path,
         ):
+            client_config = client_path / "configuration"
+            system_config = system_path / "configuration"
             under_test = PipelineConfigurationPaths.from_paths(
                 client_config, system_config
             )
@@ -52,9 +54,11 @@ class TestFromPaths:
             },
         }
         with split_directories(split) as (
-            client_config,
-            system_config,
+            client_path,
+            system_path,
         ):
+            client_config = client_path / "configuration"
+            system_config = system_path / "configuration"
             under_test = PipelineConfigurationPaths.from_paths(
                 client_config, system_config
             )
@@ -87,10 +91,12 @@ class TestFromPaths:
             },
         }
         with split_directories(split) as (
-            client_config,
-            system_config,
+            client_path,
+            system_path,
         ), pytest.raises(
             ConfigurationPathsError,
             match=r"^Duplicate files between directories",
         ):
+            client_config = client_path / "configuration"
+            system_config = system_path / "configuration"
             PipelineConfigurationPaths.from_paths(client_config, system_config)

@@ -51,11 +51,11 @@ class ExitState(enum.Enum):
 @click.command()
 @click.version_option(acquire_version())
 @click.argument(
-    "client_config",
+    "client_path",
     type=click.Path(dir_okay=True, file_okay=False, path_type=pathlib.Path),
 )
 @click.argument(
-    "system_config",
+    "system_path",
     type=click.Path(dir_okay=True, file_okay=False, path_type=pathlib.Path),
 )
 @click.argument(
@@ -80,8 +80,8 @@ to avoid having to specify the decryption password.
     is_flag=True,
 )
 def _main(
-    client_config: pathlib.Path,
-    system_config: pathlib.Path,
+    client_path: pathlib.Path,
+    system_path: pathlib.Path,
     password_file: typing.IO,
     check_paths: bool,
     disable_vaults: bool,
@@ -103,14 +103,14 @@ def _main(
     decryption password must be piped via stdin using an ``echo`` or ``cat``
     command.
 
-    CLIENT_CONFIG:  The path to the directory where client configuration
-                    files are located.
-    SYSTEM_CONFIG:  The path to the directory where system configuration
-                    files are located.
+    CLIENT_PATH:  The path to the directory where client files are located.
+    SYSTEM_PATH:  The path to the directory where system files are located.
     PASSWORD_FILE:  The path to a file where the service principal decryption
                     password is stored, or "-" for stdin.
     """
     try:
+        client_config = client_path / "configuration"
+        system_config = system_path / "configuration"
         configuration_paths = PipelineConfigurationPaths.from_paths(
             client_config, system_config
         )
@@ -124,7 +124,7 @@ def _main(
         )
 
         if check_paths:
-            asyncio.run(do_path_check(pipeline_configuration))
+            asyncio.run(do_path_check(pipeline_configuration, system_path))
 
         report_success("pipeline configuration validated")
     except FileNotFoundError as e:

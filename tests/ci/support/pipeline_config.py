@@ -192,25 +192,28 @@ def split_directories(split: dict, decrypt_token: str = MOCK_SECRET):
                 "system": pd2,
             }
             for key, files in split.items():
+                config_dir = paths[key] / "configuration"
+                os.makedirs(config_dir, exist_ok=True)
+
                 for this_file in files:
                     if this_file not in [
                         "service_principals",
                         "static_secrets",
                     ]:
-                        file_path = paths[key] / "{0}.yml".format(this_file)
+                        file_path = config_dir / "{0}.yml".format(this_file)
                         with file_path.open(mode="w") as f:
                             yaml.dump({this_file: MOCK_RESULTS[this_file]}, f)
                     elif this_file == "service_principals":
                         # service_principals requires special handling due to
                         # encryption
-                        file_path = paths[key] / "{0}.yml".format(this_file)
+                        file_path = config_dir / "{0}.yml".format(this_file)
                         _create_encrypted_file(
                             file_path, MOCK_RESULTS[this_file], decrypt_token
                         )
                     elif this_file == "static_secrets":
                         # static_secrets require special handling due to
                         # encryption and a directory of files.
-                        this_dir = paths[key] / this_file
+                        this_dir = config_dir / this_file
                         os.makedirs(this_dir, exist_ok=True)
                         for name, data in MOCK_RESULTS[this_file].items():
                             file_path = this_dir / "{0}.yml".format(name)

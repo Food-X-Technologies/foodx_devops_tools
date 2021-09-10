@@ -22,7 +22,7 @@ from tests.ci.support.pipeline_config import (
 
 
 class TestMain:
-    def test_default(self, click_runner):
+    def test_default(self, click_runner, mock_run_puff_check):
         with split_directories(NOT_SPLIT.copy()) as (
             client_config,
             system_config,
@@ -35,7 +35,7 @@ class TestMain:
 
             assert result.exit_code == 0
 
-    def test_missing_input_ignored(self, click_runner):
+    def test_missing_input_ignored(self, click_runner, mock_run_puff_check):
         """--disable-vaults option doesn't read from stdin."""
         with split_directories(NOT_SPLIT.copy()) as (
             client_config,
@@ -53,7 +53,7 @@ class TestMain:
 
             assert result.exit_code == 0
 
-    def test_split_files(self, click_runner):
+    def test_split_files(self, click_runner, mock_run_puff_check):
         with split_directories(CLEAN_SPLIT.copy()) as (
             client_config,
             system_config,
@@ -70,9 +70,9 @@ class TestMain:
 
             assert result.exit_code == 0
 
-    def test_configuration_error_exits_dirty(self, click_runner, mocker):
-        expected_dir = "some/path"
-
+    def test_configuration_error_exits_dirty(
+        self, click_runner, mocker, mock_run_puff_check
+    ):
         mocker.patch(
             "foodx_devops_tools.validate_configuration"
             ".PipelineConfiguration.from_files",
@@ -95,9 +95,9 @@ class TestMain:
 
             assert result.exit_code == ExitState.MISSING_GITREF.value
 
-    def test_unknown_error_exits_dirty(self, click_runner, mocker):
-        expected_dir = "some/path"
-
+    def test_unknown_error_exits_dirty(
+        self, click_runner, mocker, mock_run_puff_check
+    ):
         mocker.patch(
             "foodx_devops_tools.validate_configuration"
             ".PipelineConfiguration.from_files",
