@@ -42,6 +42,12 @@ class TriggersDefinition(pydantic.BaseModel):
     paths: GlobPathDeclarations
 
 
+class ApplicationStepDelay(pydantic.BaseModel):
+    """Define a pause delay for an application step."""
+
+    delay_seconds: int
+
+
 class ApplicationDeploymentDefinition(pydantic.BaseModel):
     """Application resource group deployment definition."""
 
@@ -54,7 +60,9 @@ class ApplicationDeploymentDefinition(pydantic.BaseModel):
     static_secrets: typing.Optional[bool] = False
 
 
-ApplicationDeploymentSteps = typing.List[ApplicationDeploymentDefinition]
+ApplicationDeploymentSteps = typing.List[
+    typing.Union[ApplicationDeploymentDefinition, ApplicationStepDelay]
+]
 
 ApplicationDeclarations = typing.Dict[str, ApplicationDeploymentSteps]
 
@@ -144,16 +152,17 @@ class FramesTriggersDefinition(pydantic.BaseModel):
                 app_structure = copy.deepcopy(frame_structure)
                 app_structure.append(application_name)
                 for this_step in application_data:
-                    step_structure = copy.deepcopy(app_structure)
-                    step_structure.append(this_step.name)
+                    if isinstance(this_step, ApplicationDeploymentDefinition):
+                        step_structure = copy.deepcopy(app_structure)
+                        step_structure.append(this_step.name)
 
-                    if this_step.arm_file:
-                        arm_name = this_step.arm_file
-                    else:
-                        arm_name = pathlib.Path(f"{application_name}.json")
-                    this_file = this_folder / arm_name
+                        if this_step.arm_file:
+                            arm_name = this_step.arm_file
+                        else:
+                            arm_name = pathlib.Path(f"{application_name}.json")
+                        this_file = this_folder / arm_name
 
-                    result[step_structure] = this_file
+                        result[step_structure] = this_file
         return result
 
     def frame_folders(self: U) -> StructuredPathCollection:

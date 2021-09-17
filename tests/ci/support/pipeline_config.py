@@ -99,6 +99,9 @@ MOCK_RESULTS = {
                             "name": "a1l1",
                             "mode": "Incremental",
                         },
+                        {
+                            "delay_seconds": "23",
+                        },
                     ],
                 },
                 "folder": "some/path",

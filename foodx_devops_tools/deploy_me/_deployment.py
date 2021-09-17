@@ -26,6 +26,7 @@ from foodx_devops_tools.azure.cloud.resource_group import (
 )
 from foodx_devops_tools.pipeline_config import (
     ApplicationDeploymentSteps,
+    ApplicationStepDelay,
     FlattenedDeployment,
     PipelineConfiguration,
     SingularFrameDefinition,
@@ -297,13 +298,26 @@ async def _do_application_deployment(
         ][deployment_data.context.azure_subscription_name]
 
         for this_step in application_data:
-            await _deploy_step(
-                this_step,
-                deployment_data,
-                puff_parameter_data,
-                this_context,
-                enable_validation,
-            )
+            if isinstance(this_step, ApplicationDeploymentDefinition):
+                await _deploy_step(
+                    this_step,
+                    deployment_data,
+                    puff_parameter_data,
+                    this_context,
+                    enable_validation,
+                )
+            elif isinstance(this_step, ApplicationStepDelay):
+                message = "application steps paused for, {0} (seconds)".format(
+                    this_step.delay_seconds
+                )
+                log.info(message)
+                click.echo(message)
+                await asyncio.sleep(this_step.delay_seconds)
+            else:
+                raise DeploymentError(
+                    "Bad application step definition, "
+                    "{0}".format(this_context)
+                )
 
         log.info("application deployment succeeded, {0}".format(this_context))
         await application_status.write(

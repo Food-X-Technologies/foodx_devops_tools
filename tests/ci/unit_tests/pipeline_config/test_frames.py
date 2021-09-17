@@ -62,6 +62,39 @@ frames:
     assert result_frames.triggers is None
 
 
+def test_deploy_delay(apply_applications_test):
+    file_text = """---
+frames:
+  frames:
+    f1:
+      applications:
+        a1: 
+          - name: a1l1
+            mode: Incremental
+            resource_group: a1_group
+          - delay_seconds: 23
+      folder: some/path
+"""
+
+    result = apply_applications_test(file_text)
+
+    result_frames = result.frames
+    assert len(result_frames.frames) == 1
+    assert len(result_frames.frames["f1"].applications["a1"]) == 2
+    assert (
+        result_frames.frames["f1"].applications["a1"][0].resource_group
+        == "a1_group"
+    )
+    assert not result_frames.frames["f1"].applications["a1"][0].static_secrets
+    assert not hasattr(
+        result_frames.frames["f1"].applications["a1"][0], "delay_seconds"
+    )
+    assert result_frames.frames["f1"].applications["a1"][1].delay_seconds == 23
+    assert not hasattr(
+        result_frames.frames["f1"].applications["a1"][1], "resource_group"
+    )
+
+
 def test_enable_static_secrets(apply_applications_test):
     file_text = """---
 frames:

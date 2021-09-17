@@ -379,7 +379,11 @@ class PipelineConfiguration(pydantic.BaseModel):
                         )
                         raise PipelineConfigurationError(message)
                     for subscription_data in state_data.values():
-                        frame_step_names = {x.name for x in application_data}
+                        frame_step_names = {
+                            x.name
+                            for x in application_data
+                            if hasattr(x, "name")
+                        }
                         if frame_step_names != set(subscription_data.keys()):
                             message = (
                                 "Application step name mismatch between "
