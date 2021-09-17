@@ -178,6 +178,7 @@ async def _do_step_deployment(
     this_context: str,
     enable_validation: bool,
 ) -> None:
+    step_context = "{0}.{1}".format(this_context, this_step.name)
     resource_group = (
         _construct_resource_group_name(
             deployment_data.context.application_name,
@@ -200,23 +201,23 @@ async def _do_step_deployment(
 
     log.debug(
         "deployment_data.context, {0}, {1}".format(
-            this_context, str(deployment_data.context)
+            step_context, str(deployment_data.context)
         )
     )
     log.debug(
         "deployment_data.data, {0}, {1}".format(
-            this_context, str(deployment_data.data)
+            step_context, str(deployment_data.data)
         )
     )
     await login_service_principal(deployment_data.data.azure_credentials)
     if enable_validation:
-        log.info("validation deployment enabled, {0}".format(this_context))
+        log.info("validation deployment enabled, {0}".format(step_context))
         resource_group = _mangle_validation_resource_group(
             resource_group,
             deployment_data.context.pipeline_id,
         )
     else:
-        log.info("deployment enabled, {0}".format(this_context))
+        log.info("deployment enabled, {0}".format(step_context))
 
     parameters = dict()
     if this_step.static_secrets:
@@ -232,7 +233,7 @@ async def _do_step_deployment(
         else:
             log.warning(
                 "There are no static_secrets even though secrets have been"
-                " enabled"
+                " enabled, {0}".format(step_context)
             )
 
     await run_puff(puff_file_path, False, False, disable_ascii_art=True)
@@ -259,11 +260,12 @@ async def _deploy_step(
     this_context: str,
     enable_validation: bool,
 ) -> None:
+    step_context = "{0}.{1}".format(this_context, this_step.name)
     deploy_to = deployment_data.data.to
     if deploy_to.step and (this_step.name != deploy_to.step):
         log.warning(
             "application step skipped using deployment specifier, "
-            "{0}".format(str(deploy_to))
+            "{0} skipped {1}".format(str(deploy_to), step_context)
         )
     else:
         await _do_step_deployment(
@@ -273,7 +275,7 @@ async def _deploy_step(
             this_context,
             enable_validation,
         )
-        log.info("application step succeeded, {0}".format(this_context))
+        log.info("application step succeeded, {0}".format(step_context))
 
 
 async def _do_application_deployment(
