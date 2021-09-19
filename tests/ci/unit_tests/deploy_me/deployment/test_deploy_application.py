@@ -69,7 +69,7 @@ class DeploymentChecks:
     ):
         mock_deploy, mock_puff, deployment_data, app_data = prep_data
 
-        this_status = DeploymentStatus(MOCK_CONTEXT, timeout_seconds=1)
+        this_status = DeploymentStatus(MOCK_CONTEXT, timeout_seconds=0.1)
         application_deployment_data = copy.deepcopy(deployment_data)
         application_deployment_data.data.frame_folder = pathlib.Path(
             "some/path"
@@ -111,13 +111,16 @@ class DeploymentChecks:
 
 class TestValidation(DeploymentChecks):
     @pytest.mark.asyncio
-    async def test_static_resource_group(self, prep_data):
+    async def test_static_resource_group(
+        self, default_override_parameters, prep_data
+    ):
         enable_validation = True
 
         mock_deploy = await self.check_static_resource_group(
             enable_validation, prep_data
         )
 
+        expected_parameters = default_override_parameters(prep_data[2])
         mock_deploy.assert_called_once_with(
             "a1_group-123456",
             pathlib.Path("some/path/a1.json"),
@@ -125,18 +128,21 @@ class TestValidation(DeploymentChecks):
             "l1",
             "Incremental",
             AzureSubscriptionConfiguration(subscription_id="sub1"),
-            override_parameters=dict(),
+            override_parameters=expected_parameters,
             validate=True,
         )
 
     @pytest.mark.asyncio
-    async def test_auto_resource_group(self, prep_data):
+    async def test_auto_resource_group(
+        self, default_override_parameters, prep_data
+    ):
         enable_validation = True
 
         mock_deploy = await self.check_auto_resource_group(
             enable_validation, prep_data
         )
 
+        expected_parameters = default_override_parameters(prep_data[2])
         mock_deploy.assert_called_once_with(
             "a1-f1-c1-123456",
             pathlib.Path("some/path/a1.json"),
@@ -144,20 +150,23 @@ class TestValidation(DeploymentChecks):
             "l1",
             "Incremental",
             AzureSubscriptionConfiguration(subscription_id="sub1"),
-            override_parameters=dict(),
+            override_parameters=expected_parameters,
             validate=True,
         )
 
 
 class TestDeployment(DeploymentChecks):
     @pytest.mark.asyncio
-    async def test_static_resource_group(self, prep_data):
+    async def test_static_resource_group(
+        self, default_override_parameters, prep_data
+    ):
         enable_validation = False
 
         mock_deploy = await self.check_static_resource_group(
             enable_validation, prep_data
         )
 
+        expected_parameters = default_override_parameters(prep_data[2])
         mock_deploy.assert_called_once_with(
             "a1_group",
             pathlib.Path("some/path/a1.json"),
@@ -165,18 +174,21 @@ class TestDeployment(DeploymentChecks):
             "l1",
             "Incremental",
             AzureSubscriptionConfiguration(subscription_id="sub1"),
-            override_parameters=dict(),
+            override_parameters=expected_parameters,
             validate=False,
         )
 
     @pytest.mark.asyncio
-    async def test_auto_resource_group(self, prep_data):
+    async def test_auto_resource_group(
+        self, default_override_parameters, prep_data
+    ):
         enable_validation = False
 
         mock_deploy = await self.check_auto_resource_group(
             enable_validation, prep_data
         )
 
+        expected_parameters = default_override_parameters(prep_data[2])
         mock_deploy.assert_called_once_with(
             "a1-f1-c1",
             pathlib.Path("some/path/a1.json"),
@@ -184,7 +196,7 @@ class TestDeployment(DeploymentChecks):
             "l1",
             "Incremental",
             AzureSubscriptionConfiguration(subscription_id="sub1"),
-            override_parameters=dict(),
+            override_parameters=expected_parameters,
             validate=False,
         )
 
@@ -195,7 +207,7 @@ class TestDeployment(DeploymentChecks):
 
         updated = copy.deepcopy(app_data)
         updated[0].resource_group = None
-        this_status = DeploymentStatus(MOCK_CONTEXT, timeout_seconds=1)
+        this_status = DeploymentStatus(MOCK_CONTEXT, timeout_seconds=0.1)
         application_deployment_data = copy.deepcopy(deployment_data)
         application_deployment_data.data.frame_folder = pathlib.Path(
             "some/path"

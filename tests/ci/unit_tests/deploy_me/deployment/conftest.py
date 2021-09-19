@@ -34,3 +34,18 @@ def pipeline_parameters():
         return cli_options
 
     return _apply
+
+
+@pytest.fixture()
+def default_override_parameters():
+    def _apply(context):
+        result = {
+            "locations": {
+                "primary": context.data.location_primary,
+                "secondary": context.data.location_secondary,
+            },
+        }
+
+        return result
+
+    return _apply
