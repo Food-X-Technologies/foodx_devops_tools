@@ -162,16 +162,16 @@ class DeploymentContext:
         these prefixes must be renamed for the dictionary conversion.
         """
         return {
+            "application_name": self.__application_name,
+            "client": self.__client,
             "commit_sha": self.commit_sha,
+            "frame_name": self.__frame_name,
             "pipeline_id": self.pipeline_id,
             "release_id": self.release_id,
             "release_state": self.release_state,
-            "application_name": self.__application_name,
             "subscription_name": self.__azure_subscription_name,
-            "tenant_name": self.__azure_tenant_name,
-            "client": self.__client,
-            "frame_name": self.__frame_name,
             "system": self.__system,
+            "tenant_name": self.__azure_tenant_name,
         }
 
     def __str__(self: Y) -> str:
