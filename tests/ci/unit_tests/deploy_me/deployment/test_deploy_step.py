@@ -105,14 +105,22 @@ async def test_clean(
 
 
 @pytest.mark.asyncio
-async def test_no_override_parameters(
-    mock_deploystep_context, mock_login, mock_rg_deploy, mock_run_puff, mocker
+async def test_default_override_parameters(
+    default_override_parameters,
+    mock_deploystep_context,
+    mock_login,
+    mock_rg_deploy,
+    mock_run_puff,
+    mocker,
 ):
     this_context = copy.deepcopy(mock_deploystep_context)
     this_context["this_step"].static_secrets = False
 
     await _deploy_step(**this_context)
 
+    expected_defaults = default_override_parameters(
+        mock_deploystep_context["deployment_data"]
+    )
     mock_rg_deploy.assert_called_once_with(
         mocker.ANY,
         mocker.ANY,
@@ -120,14 +128,19 @@ async def test_no_override_parameters(
         mocker.ANY,
         mocker.ANY,
         mocker.ANY,
-        override_parameters=dict(),
+        override_parameters=expected_defaults,
         validate=mocker.ANY,
     )
 
 
 @pytest.mark.asyncio
 async def test_secrets_enabled(
-    mock_deploystep_context, mock_login, mock_rg_deploy, mock_run_puff, mocker
+    default_override_parameters,
+    mock_deploystep_context,
+    mock_login,
+    mock_rg_deploy,
+    mock_run_puff,
+    mocker,
 ):
     this_context = copy.deepcopy(mock_deploystep_context)
     this_context["this_step"].static_secrets = True
@@ -136,20 +149,25 @@ async def test_secrets_enabled(
         "one": 1,
         "two": "2",
     }
-    expected_secrets = {
-        "staticSecrets": [
-            {
-                "enabled": True,
-                "key": "one",
-                "value": 1,
-            },
-            {
-                "enabled": True,
-                "key": "two",
-                "value": "2",
-            },
-        ],
-    }
+    expected_parameters = default_override_parameters(
+        mock_deploystep_context["deployment_data"]
+    )
+    expected_parameters.update(
+        {
+            "staticSecrets": [
+                {
+                    "enabled": True,
+                    "key": "one",
+                    "value": 1,
+                },
+                {
+                    "enabled": True,
+                    "key": "two",
+                    "value": "2",
+                },
+            ],
+        }
+    )
 
     await _deploy_step(**this_context)
 
@@ -160,7 +178,7 @@ async def test_secrets_enabled(
         mocker.ANY,
         mocker.ANY,
         mocker.ANY,
-        override_parameters=expected_secrets,
+        override_parameters=expected_parameters,
         validate=mocker.ANY,
     )
 

@@ -211,14 +211,9 @@ class DeployDataView:
         self.to = StructuredTo()
 
     @property
-    def location_secondary(self: X) -> str:
+    def location_secondary(self: X) -> typing.Optional[str]:
         """Get location secondary property."""
-        if self.__location_secondary:
-            return self.__location_secondary
-        else:
-            raise PipelineViewError(
-                "location secondary not specified in " "deployment data"
-            )
+        return self.__location_secondary
 
     @location_secondary.setter
     def location_secondary(self: X, v: str) -> None:

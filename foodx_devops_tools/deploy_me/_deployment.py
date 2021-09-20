@@ -220,12 +220,17 @@ async def _do_step_deployment(
     else:
         log.info("deployment enabled, {0}".format(step_context))
 
-    parameters = dict()
+    parameters: typing.Dict[str, typing.Any] = {
+        "locations": {
+            "primary": deployment_data.data.location_primary,
+            "secondary": deployment_data.data.location_secondary,
+        },
+    }
     if this_step.static_secrets:
         if deployment_data.data.static_secrets:
             # pass static secrets as a single object containing all the
             # secret key-value pairs.
-            parameter_object = {
+            parameter_object: typing.Dict[str, typing.Any] = {
                 "staticSecrets": _make_secrets_object(
                     deployment_data.data.static_secrets
                 )
