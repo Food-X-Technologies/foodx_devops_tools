@@ -225,6 +225,7 @@ async def _do_step_deployment(
             "primary": deployment_data.data.location_primary,
             "secondary": deployment_data.data.location_secondary,
         },
+        "tags": deployment_data.context.as_dict(),
     }
     if this_step.static_secrets:
         if deployment_data.data.static_secrets:
