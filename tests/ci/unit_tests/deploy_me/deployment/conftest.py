@@ -45,16 +45,16 @@ def default_override_parameters():
                 "secondary": context.data.location_secondary,
             },
             "tags": {
+                "application_name": context.context.application_name,
+                "client": context.context.client,
                 "commit_sha": context.context.commit_sha,
+                "frame_name": context.context.frame_name,
                 "pipeline_id": context.context.pipeline_id,
                 "release_id": context.context.release_id,
                 "release_state": context.context.release_state,
-                "application_name": context.context.application_name,
                 "subscription_name": context.context.azure_subscription_name,
-                "tenant_name": context.context.azure_tenant_name,
-                "client": context.context.client,
-                "frame_name": context.context.frame_name,
                 "system": context.context.system,
+                "tenant_name": context.context.azure_tenant_name,
             },
         }
 

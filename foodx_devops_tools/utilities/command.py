@@ -17,7 +17,10 @@
 import asyncio
 import dataclasses
 import logging
+import pathlib
+import shutil
 import subprocess
+import sys
 import typing
 
 from ._exceptions import CommandError
@@ -33,6 +36,26 @@ class CapturedStreams:
 
     out: str
     error: str
+
+
+def detect_venv_command(command_name: str) -> pathlib.Path:
+    """Detect a command in the same venv as the current utility."""
+    venv_path = pathlib.Path(sys.argv[0]).parent.absolute()
+
+    expected_command_path = venv_path / command_name
+    if expected_command_path.is_file():
+        result = expected_command_path
+    else:
+        # assume command in the PATH when run...
+        found = shutil.which(command_name)
+        if found:
+            result = pathlib.Path(found)
+        else:
+            raise CommandError(
+                "Command not in users path or venv, {0}".format(command_name)
+            )
+
+    return result
 
 
 def run_command(

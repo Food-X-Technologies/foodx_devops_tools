@@ -14,7 +14,7 @@ import pathlib
 import typing
 
 from ._exceptions import AnsibleVaultError
-from .command import run_command
+from .command import detect_venv_command, run_command
 
 log = logging.getLogger(__name__)
 
@@ -24,8 +24,9 @@ def _encrypt_vault(
     password_file_path: pathlib.Path,
     unencrypted_file_path: pathlib.Path,
 ) -> None:
+    command_path = str(detect_venv_command("ansible-vault"))
     this_command = [
-        "ansible-vault",
+        command_path,
         "encrypt",
         "--output",
         str(encrypted_file_path),
@@ -48,8 +49,9 @@ def _decrypt_vault(
     decrypted_path: pathlib.Path,
     password_file_path: pathlib.Path,
 ) -> None:
+    command_path = str(detect_venv_command("ansible-vault"))
     this_command = [
-        "ansible-vault",
+        command_path,
         "decrypt",
         "--output",
         str(decrypted_path),
