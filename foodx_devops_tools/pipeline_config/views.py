@@ -152,22 +152,31 @@ class DeploymentContext:
         """Set system name property."""
         self.__system = v
 
+    def as_dict(self: Y) -> dict:
+        """
+        Generate ``dict`` object representation of context data.
+
+        The representation is intended to be used for tags data in ARM
+        template parameter files. Note that "microsoft", "azure" and
+        "windows" are reserved prefixes in Azure tags so any fields using
+        these prefixes must be renamed for the dictionary conversion.
+        """
+        return {
+            "commit_sha": self.commit_sha,
+            "pipeline_id": self.pipeline_id,
+            "release_id": self.release_id,
+            "release_state": self.release_state,
+            "application_name": self.__application_name,
+            "subscription_name": self.__azure_subscription_name,
+            "tenant_name": self.__azure_tenant_name,
+            "client": self.__client,
+            "frame_name": self.__frame_name,
+            "system": self.__system,
+        }
+
     def __str__(self: Y) -> str:
         """Convert object to str for logging purposes."""
-        return str(
-            {
-                "commit_sha": self.commit_sha,
-                "pipeline_id": self.pipeline_id,
-                "release_id": self.release_id,
-                "release_state": self.release_state,
-                "application_name": self.__application_name,
-                "azure_subscription_name": self.__azure_subscription_name,
-                "azure_tenant_name": self.__azure_tenant_name,
-                "client": self.__client,
-                "frame_name": self.__frame_name,
-                "system": self.__system,
-            }
-        )
+        return str(self.as_dict())
 
 
 X = typing.TypeVar("X", bound="DeployDataView")
