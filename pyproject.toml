@@ -37,6 +37,7 @@ validate-configuration = "foodx_devops_tools.validate_configuration:flit_entry"
 dev = [
     "build_harness == 0.1.1",
     "pre_commit == 2.7.1",
+    "pyjson5 == 1.5.2"
 ]
 doc = [
     "sphinx == 3.2.1",

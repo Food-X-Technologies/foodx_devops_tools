@@ -36,6 +36,7 @@ from foodx_devops_tools.pipeline_config.frames import (
 )
 from foodx_devops_tools.pipeline_config.puff_map import PuffMapPaths
 from foodx_devops_tools.puff import PuffError, run_puff
+from foodx_devops_tools.templates import do_snippet_substitution
 
 from ._dependency_monitor import process_dependencies
 from ._exceptions import DeploymentError
@@ -243,14 +244,22 @@ async def _do_step_deployment(
                 " enabled, {0}".format(step_context)
             )
 
-    await run_puff(puff_file_path, False, False, disable_ascii_art=True)
+    # use the same directory as puff files for escolar file to avoid
+    # confusion over reused arm templates in the configuration dir.
+    target_arm_path = puff_file_path.parent / "{0}.escolar".format(
+        arm_template_path.name
+    )
+    await asyncio.gather(
+        run_puff(puff_file_path, False, False, disable_ascii_art=True),
+        do_snippet_substitution(arm_template_path, target_arm_path),
+    )
 
     this_subscription = AzureSubscriptionConfiguration(
         subscription_id=deployment_data.context.azure_subscription_name
     )
     await deploy_resource_group(
         resource_group,
-        arm_template_path,
+        target_arm_path,
         arm_parameters_path,
         deployment_data.data.location_primary,
         this_step.mode.value,
