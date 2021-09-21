@@ -249,24 +249,42 @@ async def _do_step_deployment(
     target_arm_path = puff_file_path.parent / "{0}.escolar".format(
         arm_template_path.name
     )
-    await asyncio.gather(
-        run_puff(puff_file_path, False, False, disable_ascii_art=True),
-        do_snippet_substitution(arm_template_path, target_arm_path),
+    log.info(
+        "step escolar source ARM template, {0}, {1}".format(
+            step_context, arm_template_path
+        )
     )
+    log.info(
+        "step escolar target ARM template, {0}, {1}".format(
+            step_context, target_arm_path
+        )
+    )
+    try:
+        await asyncio.gather(
+            run_puff(puff_file_path, False, False, disable_ascii_art=True),
+            do_snippet_substitution(arm_template_path, target_arm_path),
+        )
 
-    this_subscription = AzureSubscriptionConfiguration(
-        subscription_id=deployment_data.context.azure_subscription_name
-    )
-    await deploy_resource_group(
-        resource_group,
-        target_arm_path,
-        arm_parameters_path,
-        deployment_data.data.location_primary,
-        this_step.mode.value,
-        this_subscription,
-        override_parameters=parameters,
-        validate=enable_validation,
-    )
+        this_subscription = AzureSubscriptionConfiguration(
+            subscription_id=deployment_data.context.azure_subscription_name
+        )
+        await deploy_resource_group(
+            resource_group,
+            target_arm_path,
+            arm_parameters_path,
+            deployment_data.data.location_primary,
+            this_step.mode.value,
+            this_subscription,
+            override_parameters=parameters,
+            validate=enable_validation,
+        )
+    except Exception as e:
+        message = "step deployment failed, {0}, {1}, {2}".format(
+            step_context, target_arm_path, str(e)
+        )
+        log.error(message)
+        click.echo(click.style(message, fg="red"), err=True)
+        raise
 
 
 async def _deploy_step(
