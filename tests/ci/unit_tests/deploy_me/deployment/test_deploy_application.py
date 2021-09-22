@@ -45,7 +45,7 @@ def prep_data(mock_async_method, mock_flattened_deployment):
     deployment_data.context.frame_name = "f1"
     deployment_data.context.application_name = "a1"
     deployment_data.context.release_state = "r1"
-    deployment_data.context.azure_subscription_name = "sub1"
+    deployment_data.context.azure_subscription_name = "sys1_c1_r1a"
     deployment_data.data.puff_map = PuffMapGeneratedFiles.parse_obj(
         {"puff_map": MOCK_RESULTS["puff_map"]}
     ).puff_map
@@ -130,7 +130,7 @@ class TestValidation(DeploymentChecks):
             pathlib.Path("some/path/some/puff_map/path"),
             "l1",
             "Incremental",
-            AzureSubscriptionConfiguration(subscription_id="sub1"),
+            AzureSubscriptionConfiguration(subscription_id="sys1_c1_r1a"),
             override_parameters=expected_parameters,
             validate=True,
         )
@@ -152,7 +152,7 @@ class TestValidation(DeploymentChecks):
             pathlib.Path("some/path/some/puff_map/path"),
             "l1",
             "Incremental",
-            AzureSubscriptionConfiguration(subscription_id="sub1"),
+            AzureSubscriptionConfiguration(subscription_id="sys1_c1_r1a"),
             override_parameters=expected_parameters,
             validate=True,
         )
@@ -176,7 +176,7 @@ class TestDeployment(DeploymentChecks):
             pathlib.Path("some/path/some/puff_map/path"),
             "l1",
             "Incremental",
-            AzureSubscriptionConfiguration(subscription_id="sub1"),
+            AzureSubscriptionConfiguration(subscription_id="sys1_c1_r1a"),
             override_parameters=expected_parameters,
             validate=False,
         )
@@ -198,7 +198,7 @@ class TestDeployment(DeploymentChecks):
             pathlib.Path("some/path/some/puff_map/path"),
             "l1",
             "Incremental",
-            AzureSubscriptionConfiguration(subscription_id="sub1"),
+            AzureSubscriptionConfiguration(subscription_id="sys1_c1_r1a"),
             override_parameters=expected_parameters,
             validate=False,
         )

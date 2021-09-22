@@ -203,6 +203,7 @@ async def deploy(
     result = None
     try:
         await create(resource_group_name, location, subscription)
+        # assume az cli is in the PATH when command is run...
         this_command = [
             "az",
             "deployment",

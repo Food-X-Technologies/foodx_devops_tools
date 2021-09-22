@@ -404,7 +404,7 @@ def test_missing_application_step_raises1(mock_loads, mock_results):
                             "a1": {
                                 "arm_parameters_files": {
                                     "r1": {
-                                        "sub1": {
+                                        "sys1_c1_r1a": {
                                             "a1stp2": "some/path/puff1.json"
                                         }
                                     }
@@ -455,7 +455,7 @@ def test_missing_application_step_raises2(mock_loads, mock_results):
                             "a1": {
                                 "arm_parameters_files": {
                                     "r1": {
-                                        "sub1": {
+                                        "sys1_c1_r1a": {
                                             "a1stp1": "some/path/puff1.json",
                                             "a1stp2": "some/path/puff2.json",
                                         }

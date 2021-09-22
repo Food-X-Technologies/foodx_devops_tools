@@ -34,7 +34,9 @@ class TestFromPaths:
                 if this_name != "static_secrets":
                     assert getattr(under_test, this_name) in all_paths
 
-            assert {x.stem for x in under_test.static_secrets} == {"sub1"}
+            assert {x.stem for x in under_test.static_secrets} == {
+                "sys1_c1_r1a"
+            }
 
     def test_no_secrets(self):
         split = {

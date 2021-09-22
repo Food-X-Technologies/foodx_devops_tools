@@ -15,6 +15,7 @@ import typing
 
 from foodx_devops_tools._to import StructuredTo
 from foodx_devops_tools.azure.cloud import AzureCredentials
+from foodx_devops_tools.patterns import SubscriptionData
 
 from ..deployment import DeploymentTuple
 from ._exceptions import PipelineViewError
@@ -140,6 +141,20 @@ class DeploymentContext:
         self.__frame_name = v
 
     @property
+    def resource_suffix(self: Y) -> str:
+        """Get resource suffix property."""
+        try:
+            subscription_data = SubscriptionData.from_subscription_name(
+                self.azure_subscription_name
+            )
+
+            return subscription_data.resource_suffix
+        except PipelineViewError:
+            # azure_subscription_name is undefined so just return an
+            # identifiable response here.
+            return "UNSPECIFIED"
+
+    @property
     def system(self: Y) -> str:
         """Get system name property."""
         if self.__system:
@@ -169,6 +184,7 @@ class DeploymentContext:
             "pipeline_id": self.pipeline_id,
             "release_id": self.release_id,
             "release_state": self.release_state,
+            "resource_suffix": self.resource_suffix,
             "subscription_name": self.__azure_subscription_name,
             "system": self.__system,
             "tenant_name": self.__azure_tenant_name,

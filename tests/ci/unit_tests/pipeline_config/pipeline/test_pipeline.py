@@ -49,10 +49,10 @@ class TestPipelineConfiguration:
         assert under_test.release_states[0] == "r1"
         assert len(under_test.subscriptions) == 1
         assert (
-            under_test.subscriptions["sub1"].ado_service_connection
+            under_test.subscriptions["sys1_c1_r1a"].ado_service_connection
             == "some-name"
         )
-        assert under_test.subscriptions["sub1"].azure_id == "abc123"
+        assert under_test.subscriptions["sys1_c1_r1a"].azure_id == "abc123"
         assert len(under_test.systems) == 2
         assert under_test.systems[0] == "sys1"
 
@@ -65,7 +65,7 @@ class TestPipelineConfiguration:
                 "deployments": {
                     "badname": {
                         "subscriptions": {
-                            "sub1": {
+                            "sys1_c1_r1a": {
                                 "locations": [
                                     {"primary": "l1"},
                                     {"primary": "l2"},
@@ -89,7 +89,7 @@ class TestPipelineConfiguration:
                 "deployments": {
                     "sys1-bad-r1": {
                         "subscriptions": {
-                            "sub1": {
+                            "sys1_c1_r1a": {
                                 "locations": [
                                     {"primary": "l1"},
                                     {"primary": "l2"},
@@ -217,7 +217,7 @@ class TestPipelineConfiguration:
         mock_results.subscriptions = SubscriptionsDefinition.parse_obj(
             {
                 "subscriptions": {
-                    "sub1": {
+                    "sys1_c1_r1a": {
                         "ado_service_connection": "some-name",
                         "azure_id": "abc123",
                         "tenant": "bad_name",

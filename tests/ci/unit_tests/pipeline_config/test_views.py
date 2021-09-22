@@ -69,7 +69,7 @@ class TestSubscriptionView:
         )
         under_test = SubscriptionView(
             deployment_view,
-            "sub1",
+            "sys1_c1_r1a",
         )
 
     def test_deploy_data_clean(self, mock_pipeline_config):
@@ -80,7 +80,7 @@ class TestSubscriptionView:
         )
         under_test = SubscriptionView(
             deployment_view,
-            "sub1",
+            "sys1_c1_r1a",
         )
 
         result = under_test.deploy_data

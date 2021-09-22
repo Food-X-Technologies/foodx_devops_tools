@@ -63,7 +63,7 @@ def mock_deploystep_context():
     mock_context = copy.deepcopy(MOCK_CONTEXT)
     mock_context.application_name = "app-name"
     mock_context.azure_tenant_name = "t1"
-    mock_context.azure_subscription_name = "sb1"
+    mock_context.azure_subscription_name = "sys1_c1_r1a"
     mock_context.client = "c1"
     mock_context.system = "sys1"
     mock_context.frame_name = "f1"
@@ -72,7 +72,7 @@ def mock_deploystep_context():
         AzureCredentials(
             userid="abc",
             secret="verysecret",
-            subscription="abc123",
+            subscription="sys1_c1_r1a",
             name="n",
             tenant="123abc",
         ),
