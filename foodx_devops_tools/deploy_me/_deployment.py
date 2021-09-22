@@ -24,6 +24,7 @@ from foodx_devops_tools.azure.cloud.resource_group import (
 from foodx_devops_tools.azure.cloud.resource_group import (
     deploy as deploy_resource_group,
 )
+from foodx_devops_tools.patterns import SubscriptionData
 from foodx_devops_tools.pipeline_config import (
     ApplicationDeploymentSteps,
     ApplicationStepDelay,
@@ -46,9 +47,6 @@ from ._status import DeploymentState, DeploymentStatus, all_success
 log = logging.getLogger(__name__)
 
 STATUS_SLEEP_SECONDS = 1
-SUBSCRIPTION_NAME_REGEX = (
-    r"(?P<system>[a-z0-9]+)_(?P<client>[a-z0-9]+)_(?P<state>[a-z0-9]+)"
-)
 
 
 def any_failed(values: typing.List[DeploymentState]) -> bool:
@@ -111,15 +109,20 @@ def _construct_resource_group_name(
 def _construct_fqdn(
     leaf_name: str, domain_root: str, client: str, subscription_name: str
 ) -> str:
-    """Construct an FQDN from deployment context."""
-    this_match = re.match(SUBSCRIPTION_NAME_REGEX, subscription_name)
-    if this_match is not None:
-        subd_state = this_match.group("state")
-    else:
-        # assume the entire subscription name is DNS valid
-        subd_state = subscription_name
+    """
+    Construct an FQDN from deployment context.
 
-    return ".".join([leaf_name, subd_state, client, domain_root])
+    Raises:
+        SubscriptionNameError: If the subscription name cannot be parsed to
+            extract the resource suffix.
+    """
+    subscription_data = SubscriptionData.from_subscription_name(
+        subscription_name
+    )
+
+    return ".".join(
+        [leaf_name, subscription_data.resource_suffix, client, domain_root]
+    )
 
 
 def _mangle_validation_resource_group(current_name: str, suffix: str) -> str:

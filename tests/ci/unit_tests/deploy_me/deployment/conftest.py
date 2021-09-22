@@ -8,6 +8,7 @@
 import pytest
 
 from foodx_devops_tools.deploy_me._deployment import PipelineCliOptions
+from foodx_devops_tools.patterns import SubscriptionData
 
 
 @pytest.fixture()
@@ -39,6 +40,9 @@ def pipeline_parameters():
 @pytest.fixture()
 def default_override_parameters():
     def _apply(context):
+        subscription_data = SubscriptionData.from_subscription_name(
+            context.context.azure_subscription_name
+        )
         result = {
             "locations": {
                 "primary": context.data.location_primary,
@@ -52,6 +56,7 @@ def default_override_parameters():
                 "pipeline_id": context.context.pipeline_id,
                 "release_id": context.context.release_id,
                 "release_state": context.context.release_state,
+                "resource_suffix": subscription_data.resource_suffix,
                 "subscription_name": context.context.azure_subscription_name,
                 "system": context.context.system,
                 "tenant_name": context.context.azure_tenant_name,

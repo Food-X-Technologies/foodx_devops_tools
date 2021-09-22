@@ -83,7 +83,7 @@ MOCK_RESULTS = {
     "deployments": {
         "sys1-c1-r1": {
             "subscriptions": {
-                "sub1": {
+                "sys1_c1_r1a": {
                     "locations": [{"primary": "l1"}, {"primary": "l2"}],
                 },
             },
@@ -115,7 +115,7 @@ MOCK_RESULTS = {
                     "a1": {
                         "arm_parameters_files": {
                             "r1": {
-                                "sub1": {
+                                "sys1_c1_r1a": {
                                     "a1l1": "some/puff_map/path",
                                 },
                             },
@@ -127,13 +127,17 @@ MOCK_RESULTS = {
     },
     "release_states": ["r1", "r2"],
     "service_principals": {
-        "sub1": {"id": "12345", "secret": "verysecret", "name": "sp_name"},
+        "sys1_c1_r1a": {
+            "id": "12345",
+            "secret": "verysecret",
+            "name": "sp_name",
+        },
     },
     "static_secrets": {
-        "sub1": {"k1": "k1v"},
+        "sys1_c1_r1a": {"k1": "k1v"},
     },
     "subscriptions": {
-        "sub1": {
+        "sys1_c1_r1a": {
             "ado_service_connection": "some-name",
             "azure_id": "abc123",
             "tenant": "t1",
