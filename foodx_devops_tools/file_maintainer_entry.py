@@ -57,12 +57,34 @@ def _get_filesystem_capacity_used(directory: pathlib.Path) -> int:
 
     capacity_used_percent = int((1 - (available_bytes / size_bytes)) * 100)
 
-    log.info("filesystem size (bytes), {0}".format(size_bytes))
-    log.info("filesystem available size (bytes), {0}".format(size_bytes))
+    log.info("filesystem size (bytes): {0}".format(size_bytes))
+    log.info("filesystem available size (bytes): {0}".format(size_bytes))
 
-    log.info("filesystem capacity used (%), {0}".format(capacity_used_percent))
+    log.info("filesystem capacity used: {0}%".format(capacity_used_percent))
+    log.info("inode capacity used: {0}%".format(inode_used_percent))
 
     return capacity_used_percent
+
+def _get_inode_capacity_used(directory: pathlib.Path) -> int:
+    """
+    Calculate the used capacity of the filesystem inodes in percent.
+
+    Returns:
+        Percentage of inode capacity used.
+    """
+    stats = os.statvfs(directory)
+
+    total_inode = stats.f_files
+    free_inode = stats.f_ffree
+
+    inode_used_percent = int((1 - (free_inode / total_inode)) * 100)
+
+    log.info("inodes used: {0}".format(total_inode))
+    log.info("inodes available: {0}".format(free_inode))
+
+    log.info("inode capacity used: {0}%".format(inode_used_percent))
+
+    return inode_used_percent
 
 
 T = typing.TypeVar("T", bound="RunMonitor")
@@ -150,15 +172,25 @@ async def _run_maintainer(
     directory: pathlib.Path,
     persist_interval_minutes: typing.Optional[int],
     threshold_percent: int,
+    inode_threshold_percent: int,
 ) -> None:
     this_iteration = RunMonitor(persist_interval_minutes)
     while this_iteration.keep_running():
         capacity_used_percent = _get_filesystem_capacity_used(directory)
+        inode_used_percent = _get_inode_capacity_used(directory)
 
         if capacity_used_percent >= threshold_percent:
             click.echo(
-                "capacity above threshold, {0} ({1})".format(
+                "disk space usage above threshold, {0} ({1})".format(
                     capacity_used_percent, threshold_percent
+                )
+            )
+            await _clean_filesystem(directory)
+
+        if inode_used_percent >= inode_threshold_percent:
+            click.echo(
+                "inode usage above threshold, {0} ({1})".format(
+                    inode_used_percent, inode_threshold_percent
                 )
             )
             await _clean_filesystem(directory)
@@ -210,9 +242,18 @@ async def _run_maintainer(
     type=int,
 )
 @click.option(
-    "--threshold",
+    "--storage-threshold",
+    "storage_threshold"
     default=80,
-    help="Filesystem threshold to trigger clean up.",
+    help="Filesystem storage usage threshold to trigger clean up.",
+    show_default=True,
+    type=int,
+)
+@click.option(
+    "--inode-threshold",
+    "inode_threshold"
+    default=80,
+    help="Filesystem inode usage threshold to trigger clean up.",
     show_default=True,
     type=int,
 )
@@ -222,7 +263,8 @@ def file_maintainer(
     enable_console_log: bool,
     log_level: str,
     persist_interval_minutes: typing.Optional[int],
-    threshold: int,
+    storage_threshold: int,
+    inode_threshold: int,
 ) -> None:
     """
     Delete old sub-directories from the specified directory.
@@ -245,7 +287,7 @@ def file_maintainer(
         )
 
         asyncio.run(
-            _run_maintainer(directory, persist_interval_minutes, threshold)
+            _run_maintainer(directory, persist_interval_minutes, threshold, inode_threshold)
         )
 
         click.echo("maintainer exiting due to task completion")
