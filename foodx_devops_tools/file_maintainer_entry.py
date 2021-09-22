@@ -57,11 +57,10 @@ def _get_filesystem_capacity_used(directory: pathlib.Path) -> int:
 
     capacity_used_percent = int((1 - (available_bytes / size_bytes)) * 100)
 
-    log.info("filesystem size (bytes): {0}".format(size_bytes))
-    log.info("filesystem available size (bytes): {0}".format(size_bytes))
+    log.info("filesystem size (bytes), {0}".format(size_bytes))
+    log.info("filesystem available size (bytes), {0}".format(size_bytes))
 
-    log.info("filesystem capacity used: {0}%".format(capacity_used_percent))
-    log.info("inode capacity used: {0}%".format(inode_used_percent))
+    log.info("filesystem capacity used (%), {0}".format(capacity_used_percent))
 
     return capacity_used_percent
 
@@ -79,10 +78,10 @@ def _get_inode_capacity_used(directory: pathlib.Path) -> int:
 
     inode_used_percent = int((1 - (free_inode / total_inode)) * 100)
 
-    log.info("inodes used: {0}".format(total_inode))
-    log.info("inodes available: {0}".format(free_inode))
+    log.info("inodes used, {0}".format(total_inode))
+    log.info("inodes available, {0}".format(free_inode))
 
-    log.info("inode capacity used: {0}%".format(inode_used_percent))
+    log.info("inode capacity used (%), {0}".format(inode_used_percent))
 
     return inode_used_percent
 
@@ -144,7 +143,7 @@ async def _do_delete(this_dir: pathlib.Path) -> None:
 
 
 async def _clean_filesystem(directory: pathlib.Path) -> None:
-    subdirectories = [x for x in directory.iterdir() if x.is_dir()]
+    subdirectories = [x for x in directory.iterdir() if x.is_dir() and (not x.name.startswith("."))]
     subdirectory_ages = {
         x: datetime.datetime.fromtimestamp(x.stat().st_mtime)
         for x in subdirectories
