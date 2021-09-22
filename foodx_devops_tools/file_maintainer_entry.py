@@ -287,7 +287,7 @@ def file_maintainer(
         )
 
         asyncio.run(
-            _run_maintainer(directory, persist_interval_minutes, threshold, inode_threshold)
+            _run_maintainer(directory, persist_interval_minutes, storage_threshold, inode_threshold)
         )
 
         click.echo("maintainer exiting due to task completion")
