@@ -243,7 +243,7 @@ async def _run_maintainer(
 )
 @click.option(
     "--storage-threshold",
-    "storage_threshold"
+    "storage_threshold",
     default=80,
     help="Filesystem storage usage threshold to trigger clean up.",
     show_default=True,
@@ -251,7 +251,7 @@ async def _run_maintainer(
 )
 @click.option(
     "--inode-threshold",
-    "inode_threshold"
+    "inode_threshold",
     default=80,
     help="Filesystem inode usage threshold to trigger clean up.",
     show_default=True,
