@@ -79,7 +79,8 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - run: |
-          echo "Python version: "$(python3 --version)
+          echo "system Python version: "$(python3 --version)
+          echo "venv Python version: "$(${{ env.VENV_BIN }}/python3 --version)
           ${{ env.CALL_TARGET }} ${TARGET}
 
 
