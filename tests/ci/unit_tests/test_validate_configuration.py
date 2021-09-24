@@ -22,6 +22,19 @@ from tests.ci.support.pipeline_config import (
 
 
 class TestMain:
+    def test_help(self, click_runner, mock_run_puff_check):
+        with split_directories(NOT_SPLIT.copy()) as (
+            client_config,
+            system_config,
+        ):
+            result = click_runner.invoke(
+                _main,
+                ["--help"],
+            )
+
+            assert result.exit_code == 0
+            assert "Validate pipeline configuration files." in result.output
+
     def test_default(self, click_runner, mock_run_puff_check):
         with split_directories(NOT_SPLIT.copy()) as (
             client_config,
