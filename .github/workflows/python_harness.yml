@@ -212,29 +212,6 @@ jobs:
       - run: ${{ env.CALL_TARGET }} ${TARGET}
 
 
-  install-check:
-    env:
-      TARGET: install
-    needs:
-      - build-docker-image
-
-    container:
-      image: "foodxtech/foodx-devops-tools-pipeline:${{ github.sha }}"
-    runs-on: ubuntu-20.04
-
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: [3.8, 3.9]
-    steps:
-      - uses: actions/checkout@v2
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
-      - run: ${{ env.CALL_TARGET }} ${TARGET}
-
-
   build-packages:
     needs:
       - build-docker-image
@@ -268,6 +245,27 @@ jobs:
         with:
           name: distribution-package-artifacts
           path: dist
+
+
+  install-check:
+    needs:
+      - build-packages
+
+    runs-on: ubuntu-20.04
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [3.8, 3.9]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: |
+          python3 -m venv venv
+          venv/bin/pip install dist/*.whl
 
 
   publish-release-packages:
