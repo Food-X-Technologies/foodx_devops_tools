@@ -106,6 +106,9 @@ class StructuredToParameter(click.ParamType):
     """Custom click parameter for the structured to option."""
 
     # https://click.palletsprojects.com/en/8.0.x/parameters/#implementing-custom-types
+
+    name: str = "structured_to"
+
     def convert(
         self: T,
         value: typing.Optional[typing.Union[str, StructuredTo]],

@@ -57,6 +57,23 @@ environments: {}
 
 
 class TestMain:
+    def test_help(self, caplog, click_runner, mocker):
+        expected_dir = "some_path"
+
+        mocker.patch(
+            "foodx_devops_tools.puff.run.load_puffignore",
+            return_value=list(),
+        )
+
+        with singlefile_fs(expected_dir, click_runner) as puff_file:
+            result = click_runner.invoke(_main, ["--help"])
+
+            assert result.exit_code == 0
+            assert (
+                "Create or delete ARM template parameter files from puff "
+                "YAML configuration." in result.output
+            )
+
     def test_single_file(self, caplog, click_runner, mocker):
         expected_dir = "some_path"
         caplog.set_level(logging.WARN)

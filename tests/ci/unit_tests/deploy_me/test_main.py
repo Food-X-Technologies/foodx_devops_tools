@@ -79,6 +79,35 @@ class TestDeployMe:
     class MockReleaseState(enum.Enum):
         r1 = enum.auto()
 
+    def test_help(
+        self, caplog, click_runner, mocker, mock_async_method, mock_getsha
+    ):
+        mock_input = [
+            "--help",
+        ]
+        mock_getsha()
+        mocker.patch(
+            "foodx_devops_tools.deploy_me._main.identify_release_state",
+            return_value=TestDeployMe.MockReleaseState.r1,
+        )
+        mock_deploy = mock_async_method(
+            "foodx_devops_tools.deploy_me._main.do_deploy",
+            return_value=DeploymentState(
+                code=DeploymentState.ResultType.success
+            ),
+        )
+        with split_directories(CLEAN_SPLIT.copy()) as (
+            client_path,
+            system_path,
+        ):
+            with caplog.at_level(logging.DEBUG):
+                result = click_runner.invoke(
+                    deploy_me, mock_input, input=MOCK_SECRET
+                )
+
+            assert result.exit_code == 0
+            assert "Deploy system resources." in result.output
+
     def test_default(
         self,
         click_runner,
