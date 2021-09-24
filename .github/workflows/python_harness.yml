@@ -278,6 +278,8 @@ jobs:
     needs:
       - build-packages
       - build-docker-image
+      # don't "need" anything from install-check, but definitely don't want to publish if it fails
+      - install-check
 
     container:
       image: "foodxtech/foodx-devops-tools-pipeline:${{ github.sha }}"
@@ -309,6 +311,7 @@ jobs:
       PYPI_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
     if: ${{ startsWith(github.ref, 'refs/tags/') && contains(github.ref, '+dryrun') }}
     needs:
+      # don't ever publish here, so don't depend on install-check to make pipeline slightly faster
       - build-packages
       - build-docker-image
 
@@ -345,6 +348,8 @@ jobs:
     needs:
       - build-packages
       - build-docker-image
+      # don't "need" anything from install-check, but definitely don't want to publish if it fails
+      - install-check
 
     container:
       image: "foodxtech/foodx-devops-tools-pipeline:${{ github.sha }}"
@@ -379,6 +384,7 @@ jobs:
       PYPI_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
     if: ${{ !startsWith(github.ref, 'refs/tags/') && !startsWith(github.ref, 'refs/heads/main') }}
     needs:
+      # don't ever publish here, so don't depend on install-check to make pipeline slightly faster
       - build-packages
       - build-docker-image
 
