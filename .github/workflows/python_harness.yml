@@ -7,62 +7,44 @@ env:
 
   PYPI_API_USER: __token__
 
-
-  VENV_DIR: .venv
-  VENV_BIN: .venv/bin
-  CACHE_HASH_PATH: pyproject.toml
+  VENV_DIR: /venv
+  VENV_BIN: /venv/bin
 
   CALL_TARGET: ${VENV_BIN}/build-harness
 
+  IMAGE_PATH: "foodxtech/foodx-devops-tools-pipeline:${{ github.sha }}"
+
 
 jobs:
-  install-dependencies:
+  build-docker-image:
     runs-on: ubuntu-20.04
-    strategy:
-      fail-fast: false
-      matrix:
-        # Only need to check formatting on one version.
-        python-version: [3.8, 3.9]
+
     steps:
       - uses: actions/checkout@v2
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+      - name: Login to Docker Hub
+        uses: docker/login-action@v1
         with:
-          python-version: ${{ matrix.python-version }}
-      - uses: actions/cache@v2
-        id: venv-cache
-        with:
-          path: ${{ env.VENV_DIR }}
-          key: venv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles(env.CACHE_HASH_PATH) }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
       - run: |
-          python3 -m venv .venv
-          ${{ env.VENV_BIN }}/pip install build_harness
-          ${{ env.VENV_BIN }}/build-harness install
-          ${{ env.VENV_BIN }}/flit install -s
-        # Only reinstall packages if there is a cache miss.
-        if: steps.venv-cache.output.cache-hit != 'true'
+          docker build \
+            -t ${{ env.IMAGE_PATH }} \
+            docker/pipeline
+          docker push ${{ env.IMAGE_PATH }}
+
 
   formatting-check:
     env:
       TARGET: formatting --check
     needs:
-      - install-dependencies
+      - build-docker-image
+
+    container:
+      image: "foodxtech/foodx-devops-tools-pipeline:${{ github.sha }}"
     runs-on: ubuntu-20.04
-    strategy:
-      fail-fast: false
-      matrix:
-        # Only need to check formatting on one version.
-        python-version: [3.9]
+
     steps:
       - uses: actions/checkout@v2
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
-      - uses: actions/cache@v2
-        with:
-          path: ${{ env.VENV_DIR }}
-          key: venv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles(env.CACHE_HASH_PATH) }}
       - run: ${{ env.CALL_TARGET }} ${TARGET}
 
 
@@ -70,47 +52,32 @@ jobs:
     env:
       TARGET: static-analysis --analysis flake8
     needs:
-      - install-dependencies
+      - build-docker-image
+
+    container:
+      image: "foodxtech/foodx-devops-tools-pipeline:${{ github.sha }}"
     runs-on: ubuntu-20.04
-    strategy:
-      fail-fast: false
-      # It can be useful to do flake8 checks across Python version because you get code checks across versions.
-      matrix:
-        python-version: [3.8, 3.9]
+
     steps:
       - uses: actions/checkout@v2
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
-      - uses: actions/cache@v2
-        with:
-          path: ${{ env.VENV_DIR }}
-          key: venv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles(env.CACHE_HASH_PATH) }}
-      - run: ${{ env.CALL_TARGET }} ${TARGET}
+      - run: |
+          echo "system Python version: "$(python3 --version)
+          echo "venv Python version: "$(${{ env.VENV_BIN }}/python3 --version)
+          ${{ env.CALL_TARGET }} ${TARGET}
 
 
   mypy-check:
     env:
       TARGET: static-analysis --analysis mypy
     needs:
-      - install-dependencies
+      - build-docker-image
+
+    container:
+      image: "foodxtech/foodx-devops-tools-pipeline:${{ github.sha }}"
     runs-on: ubuntu-20.04
-    strategy:
-      fail-fast: false
-      # It can be useful to do mypy checks across Python version because you get code checks across versions.
-      matrix:
-        python-version: [3.8, 3.9]
+
     steps:
       - uses: actions/checkout@v2
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
-      - uses: actions/cache@v2
-        with:
-          path: ${{ env.VENV_DIR }}
-          key: venv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles(env.CACHE_HASH_PATH) }}
       - run: ${{ env.CALL_TARGET }} ${TARGET}
 
 
@@ -118,23 +85,14 @@ jobs:
     env:
       TARGET: static-analysis --analysis pydocstyle
     needs:
-      - install-dependencies
+      - build-docker-image
+
+    container:
+      image: "foodxtech/foodx-devops-tools-pipeline:${{ github.sha }}"
     runs-on: ubuntu-20.04
-    strategy:
-      fail-fast: false
-      matrix:
-        # Only need to check docstrings on one version.
-        python-version: [3.9]
+
     steps:
       - uses: actions/checkout@v2
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
-      - uses: actions/cache@v2
-        with:
-          path: ${{ env.VENV_DIR }}
-          key: venv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles(env.CACHE_HASH_PATH) }}
       - run: ${{ env.CALL_TARGET }} ${TARGET}
 
 
@@ -143,47 +101,15 @@ jobs:
       # have to avoid the new manual directory in CI pipeline
       TARGET: unit-test --test-dir tests/ci
     needs:
-      - install-dependencies
+      - build-docker-image
+
+    container:
+      image: "foodxtech/foodx-devops-tools-pipeline:${{ github.sha }}"
     runs-on: ubuntu-20.04
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: [3.8, 3.9]
+
     steps:
       - uses: actions/checkout@v2
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
-      - uses: actions/cache@v2
-        with:
-          path: ${{ env.VENV_DIR }}
-          key: venv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles(env.CACHE_HASH_PATH) }}
       - run: ${{ env.CALL_TARGET }} ${TARGET}
-
-
-# !!! acceptance tests deactivated while there are no feature files present in repo.
-#  acceptance-tests:
-#    env:
-#      TARGET: acceptance tests --junitxml
-#    needs:
-#      - install-dependencies
-#    runs-on: ubuntu-20.04
-#    strategy:
-#      fail-fast: false
-#      matrix:
-#        python-version: [3.8, 3.9]
-#    steps:
-#      - uses: actions/checkout@v2
-#      - name: Set up Python ${{ matrix.python-version }}
-#        uses: actions/setup-python@v2
-#        with:
-#          python-version: ${{ matrix.python-version }}
-#      - uses: actions/cache@v2
-#        with:
-#          path: ${{ env.VENV_DIR }}
-#          key: venv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles(env.CACHE_HASH_PATH) }}
-#      - run: ${{ env.CALL_TARGET }} ${TARGET}
 
 
   unit-tests-coverage-report:
@@ -192,22 +118,14 @@ jobs:
       # have to avoid the new manual directory in CI pipeline
       TARGET: unit-test --test-dir tests/ci --coverage-html
     needs:
-      - install-dependencies
+      - build-docker-image
+
+    container:
+      image: "foodxtech/foodx-devops-tools-pipeline:${{ github.sha }}"
     runs-on: ubuntu-20.04
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: [3.8, 3.9]
+
     steps:
       - uses: actions/checkout@v2
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
-      - uses: actions/cache@v2
-        with:
-          path: ${{ env.VENV_DIR }}
-          key: venv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles(env.CACHE_HASH_PATH) }}
       - run: ${{ env.CALL_TARGET }} ${TARGET}
       - uses: actions/upload-artifact@v2
         with:
@@ -224,71 +142,31 @@ jobs:
       # have to avoid the new manual directory in CI pipeline
       TARGET: unit-test --test-dir tests/ci --check 80
     needs:
-      - install-dependencies
+      - build-docker-image
+
+    container:
+      image: "foodxtech/foodx-devops-tools-pipeline:${{ github.sha }}"
     runs-on: ubuntu-20.04
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: [3.8, 3.9]
+
     steps:
       - uses: actions/checkout@v2
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
-      - uses: actions/cache@v2
-        with:
-          path: ${{ env.VENV_DIR }}
-          key: venv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles(env.CACHE_HASH_PATH) }}
-      - run: ${{ env.CALL_TARGET }} ${TARGET}
-
-
-  install-check:
-    env:
-      TARGET: install
-    needs:
-      - install-dependencies
-    runs-on: ubuntu-20.04
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: [3.8, 3.9]
-    steps:
-      - uses: actions/checkout@v2
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
-      - uses: actions/cache@v2
-        with:
-          path: ${{ env.VENV_DIR }}
-          key: venv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles(env.CACHE_HASH_PATH) }}
       - run: ${{ env.CALL_TARGET }} ${TARGET}
 
 
   build-packages:
     needs:
-      - install-dependencies
+      - build-docker-image
+
+    container:
+      image: "foodxtech/foodx-devops-tools-pipeline:${{ github.sha }}"
     runs-on: ubuntu-20.04
-    strategy:
-      fail-fast: false
-      matrix:
-        # Only need to build package using a single run.
-        python-version: [3.9]
+
     steps:
       - uses: actions/checkout@v2
         with:
           # need all tags and branch info for release-flow utility.
           # https://github.com/actions/checkout#fetch-all-history-for-all-tags-and-branches
           fetch-depth: 0
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
-      - uses: actions/cache@v2
-        with:
-          path: ${{ env.VENV_DIR }}
-          key: venv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles(env.CACHE_HASH_PATH) }}
       - run: |
           git config user.name github-actions
           git config user.email github-actions@github.com
@@ -301,6 +179,24 @@ jobs:
           path: dist
 
 
+  install-check:
+    needs:
+      - build-packages
+
+    runs-on: ubuntu-20.04
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/download-artifact@v2
+        with:
+          name: distribution-package-artifacts
+          path: dist
+      - run: |
+          python3 -m venv venv
+          ls dist
+          venv/bin/pip install dist/*.whl
+
+
   publish-release-packages:
     concurrency: publish
     env:
@@ -310,22 +206,16 @@ jobs:
     if: ${{ startsWith(github.ref, 'refs/tags/') && !contains(github.ref, '+dryrun') }}
     needs:
       - build-packages
-      - install-dependencies
+      - build-docker-image
+      # don't "need" anything from install-check, but definitely don't want to publish if it fails
+      - install-check
+
+    container:
+      image: "foodxtech/foodx-devops-tools-pipeline:${{ github.sha }}"
     runs-on: ubuntu-20.04
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: [3.9]
+
     steps:
       - uses: actions/checkout@v2
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
-      - uses: actions/cache@v2
-        with:
-          path: ${{ env.VENV_DIR }}
-          key: venv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles(env.CACHE_HASH_PATH) }}
       - uses: actions/download-artifact@v2
         with:
           name: distribution-package-artifacts
@@ -342,23 +232,16 @@ jobs:
       PYPI_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
     if: ${{ startsWith(github.ref, 'refs/tags/') && contains(github.ref, '+dryrun') }}
     needs:
+      # don't ever publish here, so don't depend on install-check to make pipeline slightly faster
       - build-packages
-      - install-dependencies
+      - build-docker-image
+
+    container:
+      image: "foodxtech/foodx-devops-tools-pipeline:${{ github.sha }}"
     runs-on: ubuntu-20.04
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: [3.9]
+
     steps:
       - uses: actions/checkout@v2
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
-      - uses: actions/cache@v2
-        with:
-          path: ${{ env.VENV_DIR }}
-          key: venv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles(env.CACHE_HASH_PATH) }}
       - uses: actions/download-artifact@v2
         with:
           name: distribution-package-artifacts
@@ -377,22 +260,16 @@ jobs:
     if: ${{ startsWith(github.ref, 'refs/heads/main') }}
     needs:
       - build-packages
-      - install-dependencies
+      - build-docker-image
+      # don't "need" anything from install-check, but definitely don't want to publish if it fails
+      - install-check
+
+    container:
+      image: "foodxtech/foodx-devops-tools-pipeline:${{ github.sha }}"
     runs-on: ubuntu-20.04
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: [3.9]
+
     steps:
       - uses: actions/checkout@v2
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
-      - uses: actions/cache@v2
-        with:
-          path: ${{ env.VENV_DIR }}
-          key: venv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles(env.CACHE_HASH_PATH) }}
       - uses: actions/download-artifact@v2
         with:
           name: distribution-package-artifacts
@@ -412,23 +289,16 @@ jobs:
       PYPI_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
     if: ${{ !startsWith(github.ref, 'refs/tags/') && !startsWith(github.ref, 'refs/heads/main') }}
     needs:
+      # don't ever publish here, so don't depend on install-check to make pipeline slightly faster
       - build-packages
-      - install-dependencies
+      - build-docker-image
+
+    container:
+      image: "foodxtech/foodx-devops-tools-pipeline:${{ github.sha }}"
     runs-on: ubuntu-20.04
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: [3.9]
+
     steps:
       - uses: actions/checkout@v2
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
-      - uses: actions/cache@v2
-        with:
-          path: ${{ env.VENV_DIR }}
-          key: venv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles(env.CACHE_HASH_PATH) }}
       - uses: actions/download-artifact@v2
         with:
           name: distribution-package-artifacts
