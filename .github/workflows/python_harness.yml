@@ -263,8 +263,13 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
+      - uses: actions/download-artifact@v2
+        with:
+          name: distribution-package-artifacts
+          path: dist
       - run: |
           python3 -m venv venv
+          ls dist
           venv/bin/pip install dist/*.whl
 
 
