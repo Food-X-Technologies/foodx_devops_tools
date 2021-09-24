@@ -43,17 +43,8 @@ jobs:
       image: "foodxtech/foodx-devops-tools-pipeline:${{ github.sha }}"
     runs-on: ubuntu-20.04
 
-    strategy:
-      fail-fast: false
-      matrix:
-        # Only need to check formatting on one version.
-        python-version: [3.9]
     steps:
       - uses: actions/checkout@v2
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
       - run: ${{ env.CALL_TARGET }} ${TARGET}
 
 
@@ -67,17 +58,8 @@ jobs:
       image: "foodxtech/foodx-devops-tools-pipeline:${{ github.sha }}"
     runs-on: ubuntu-20.04
 
-    strategy:
-      fail-fast: false
-      # It can be useful to do flake8 checks across Python version because you get code checks across versions.
-      matrix:
-        python-version: [3.8, 3.9]
     steps:
       - uses: actions/checkout@v2
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
       - run: |
           echo "system Python version: "$(python3 --version)
           echo "venv Python version: "$(${{ env.VENV_BIN }}/python3 --version)
@@ -94,17 +76,8 @@ jobs:
       image: "foodxtech/foodx-devops-tools-pipeline:${{ github.sha }}"
     runs-on: ubuntu-20.04
 
-    strategy:
-      fail-fast: false
-      # It can be useful to do mypy checks across Python version because you get code checks across versions.
-      matrix:
-        python-version: [3.8, 3.9]
     steps:
       - uses: actions/checkout@v2
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
       - run: ${{ env.CALL_TARGET }} ${TARGET}
 
 
@@ -118,17 +91,8 @@ jobs:
       image: "foodxtech/foodx-devops-tools-pipeline:${{ github.sha }}"
     runs-on: ubuntu-20.04
 
-    strategy:
-      fail-fast: false
-      matrix:
-        # Only need to check docstrings on one version.
-        python-version: [3.9]
     steps:
       - uses: actions/checkout@v2
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
       - run: ${{ env.CALL_TARGET }} ${TARGET}
 
 
@@ -143,16 +107,8 @@ jobs:
       image: "foodxtech/foodx-devops-tools-pipeline:${{ github.sha }}"
     runs-on: ubuntu-20.04
 
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: [3.8, 3.9]
     steps:
       - uses: actions/checkout@v2
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
       - run: ${{ env.CALL_TARGET }} ${TARGET}
 
 
@@ -168,16 +124,8 @@ jobs:
       image: "foodxtech/foodx-devops-tools-pipeline:${{ github.sha }}"
     runs-on: ubuntu-20.04
 
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: [3.8, 3.9]
     steps:
       - uses: actions/checkout@v2
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
       - run: ${{ env.CALL_TARGET }} ${TARGET}
       - uses: actions/upload-artifact@v2
         with:
@@ -200,16 +148,8 @@ jobs:
       image: "foodxtech/foodx-devops-tools-pipeline:${{ github.sha }}"
     runs-on: ubuntu-20.04
 
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: [3.8, 3.9]
     steps:
       - uses: actions/checkout@v2
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
       - run: ${{ env.CALL_TARGET }} ${TARGET}
 
 
@@ -221,21 +161,12 @@ jobs:
       image: "foodxtech/foodx-devops-tools-pipeline:${{ github.sha }}"
     runs-on: ubuntu-20.04
 
-    strategy:
-      fail-fast: false
-      matrix:
-        # Only need to build package using a single run.
-        python-version: [3.9]
     steps:
       - uses: actions/checkout@v2
         with:
           # need all tags and branch info for release-flow utility.
           # https://github.com/actions/checkout#fetch-all-history-for-all-tags-and-branches
           fetch-depth: 0
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
       - run: |
           git config user.name github-actions
           git config user.email github-actions@github.com
@@ -254,16 +185,8 @@ jobs:
 
     runs-on: ubuntu-20.04
 
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: [3.8, 3.9]
     steps:
       - uses: actions/checkout@v2
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
       - uses: actions/download-artifact@v2
         with:
           name: distribution-package-artifacts
@@ -291,16 +214,8 @@ jobs:
       image: "foodxtech/foodx-devops-tools-pipeline:${{ github.sha }}"
     runs-on: ubuntu-20.04
 
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: [3.9]
     steps:
       - uses: actions/checkout@v2
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
       - uses: actions/download-artifact@v2
         with:
           name: distribution-package-artifacts
@@ -325,16 +240,8 @@ jobs:
       image: "foodxtech/foodx-devops-tools-pipeline:${{ github.sha }}"
     runs-on: ubuntu-20.04
 
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: [3.9]
     steps:
       - uses: actions/checkout@v2
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
       - uses: actions/download-artifact@v2
         with:
           name: distribution-package-artifacts
@@ -361,16 +268,8 @@ jobs:
       image: "foodxtech/foodx-devops-tools-pipeline:${{ github.sha }}"
     runs-on: ubuntu-20.04
 
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: [3.9]
     steps:
       - uses: actions/checkout@v2
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
       - uses: actions/download-artifact@v2
         with:
           name: distribution-package-artifacts
@@ -398,16 +297,8 @@ jobs:
       image: "foodxtech/foodx-devops-tools-pipeline:${{ github.sha }}"
     runs-on: ubuntu-20.04
 
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: [3.9]
     steps:
       - uses: actions/checkout@v2
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
       - uses: actions/download-artifact@v2
         with:
           name: distribution-package-artifacts
