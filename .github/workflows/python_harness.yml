@@ -45,7 +45,11 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - run: ${{ env.CALL_TARGET }} ${TARGET}
+      - run: |
+          ${{ env.CALL_TARGET }} \
+            --log-enable-console \
+            --log-level debug \
+            ${TARGET}
 
 
   flake8-check:
@@ -63,7 +67,10 @@ jobs:
       - run: |
           echo "system Python version: "$(python3 --version)
           echo "venv Python version: "$(${{ env.VENV_BIN }}/python3 --version)
-          ${{ env.CALL_TARGET }} ${TARGET}
+          ${{ env.CALL_TARGET }} \
+            --log-enable-console \
+            --log-level debug \
+            ${TARGET}
 
 
   mypy-check:
@@ -78,7 +85,11 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - run: ${{ env.CALL_TARGET }} ${TARGET}
+      - run: |
+          ${{ env.CALL_TARGET }} \
+            --log-enable-console \
+            --log-level debug \
+            ${TARGET}
 
 
   pydocstyle-check:
@@ -93,7 +104,11 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - run: ${{ env.CALL_TARGET }} ${TARGET}
+      - run: |
+          ${{ env.CALL_TARGET }} \
+            --log-enable-console \
+            --log-level debug \
+            ${TARGET}
 
 
   unit-tests:
@@ -109,7 +124,16 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - run: ${{ env.CALL_TARGET }} ${TARGET}
+      - run: |
+          ${{ env.CALL_TARGET }} \
+            --log-enable-console \
+            --log-level debug \
+            ${TARGET}
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: unittests-log
+          path: build_harness.log
 
 
   unit-tests-coverage-report:
@@ -167,12 +191,22 @@ jobs:
           # need all tags and branch info for release-flow utility.
           # https://github.com/actions/checkout#fetch-all-history-for-all-tags-and-branches
           fetch-depth: 0
-      - run: |
+      - name: Build package
+        run: |
           git config user.name github-actions
           git config user.email github-actions@github.com
           export THIS_VERSION=$(${{ env.VENV_BIN }}/release-flow --default-branch main)
           echo ${THIS_VERSION}
-          ${{ env.CALL_TARGET }} package --release-id ${THIS_VERSION}
+          ${{ env.CALL_TARGET }} \
+            --log-enable-console \
+            --log-level debug \
+            package \
+              --release-id ${THIS_VERSION}
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: build-log
+          path: build_harness.log
       - uses: actions/upload-artifact@v2
         with:
           name: distribution-package-artifacts
@@ -201,9 +235,7 @@ jobs:
     concurrency: publish
     env:
       PYPI_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
-    # Lack of regular expression parsing limits what conditions are possible here.
-    # Want to scope in on valid semantic versions https://semver.org including "alpha", "beta" pre-releases.
-    if: ${{ startsWith(github.ref, 'refs/tags/') && !contains(github.ref, '+dryrun') }}
+    if: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/') }}
     needs:
       - build-packages
       - build-docker-image
@@ -216,48 +248,36 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
       - uses: actions/download-artifact@v2
         with:
           name: distribution-package-artifacts
           path: dist
-      - run: |
-          echo "github.ref: ${{ github.ref }}"
-          ls dist/
-          ${{ env.CALL_TARGET }} publish --user ${PYPI_API_USER} --password ${PYPI_TOKEN}
-
-
-  publish-release-dryrun:
-    concurrency: publish
-    env:
-      PYPI_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
-    if: ${{ startsWith(github.ref, 'refs/tags/') && contains(github.ref, '+dryrun') }}
-    needs:
-      # don't ever publish here, so don't depend on install-check to make pipeline slightly faster
-      - build-packages
-      - build-docker-image
-
-    container:
-      image: "foodxtech/foodx-devops-tools-pipeline:${{ github.sha }}"
-    runs-on: ubuntu-20.04
-
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/download-artifact@v2
+      - name: Publish package
+        run: |
+          git --version
+          export PUBLISH_THIS=$(${{ env.VENV_BIN }}/publish-flow --default-branch main)
+          echo ${PUBLISH_THIS}
+          echo ${PYPI_TOKEN} | ${{ env.CALL_TARGET }} \
+            --log-enable-console \
+            --log-level debug \
+            publish \
+              --publish ${PUBLISH_THIS} \
+              --user ${PYPI_API_USER} \
+              --password-file -
+      - uses: actions/upload-artifact@v2
+        if: failure()
         with:
-          name: distribution-package-artifacts
-          path: dist
-      - run: |
-          echo "github.ref: ${{ github.ref }}"
-          ls dist/
-          ${{ env.CALL_TARGET }} publish --user ${PYPI_API_USER} --password ${PYPI_TOKEN} --dryrun
+          name: publish-log
+          path: build_harness.log
 
 
-
-  publish-prerelease-baseline-packages:
+  publish-nonrelease-packages:
     concurrency: publish
     env:
       PYPI_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
-    if: ${{ startsWith(github.ref, 'refs/heads/main') }}
+    if: ${{ github.ref != 'refs/heads/main' && !startsWith(github.ref, 'refs/tags/') }}
     needs:
       - build-packages
       - build-docker-image
@@ -270,41 +290,24 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
       - uses: actions/download-artifact@v2
         with:
           name: distribution-package-artifacts
           path: dist
-      # Main branch publish pre-release "baseline" package (semantic version "-post.N" release id suffix).
-      - run: |
-          # debug logging
-          echo "github.ref: ${{ github.ref }}"
-          ls dist/
-          # publish main branch packages with appropriate release id
-          ${{ env.CALL_TARGET }} publish --user ${PYPI_API_USER} --password ${PYPI_TOKEN}
-
-
-  publish-feature-packages:
-    concurrency: publish
-    env:
-      PYPI_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
-    if: ${{ !startsWith(github.ref, 'refs/tags/') && !startsWith(github.ref, 'refs/heads/main') }}
-    needs:
-      # don't ever publish here, so don't depend on install-check to make pipeline slightly faster
-      - build-packages
-      - build-docker-image
-
-    container:
-      image: "foodxtech/foodx-devops-tools-pipeline:${{ github.sha }}"
-    runs-on: ubuntu-20.04
-
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/download-artifact@v2
+      - name: Publish package
+        run: |
+          git --version
+          echo ${PYPI_TOKEN} | ${{ env.CALL_TARGET }} \
+            --log-enable-console \
+            --log-level debug \
+            publish \
+              --publish dryrun \
+              --user ${PYPI_API_USER} \
+              --password-file -
+      - uses: actions/upload-artifact@v2
+        if: failure()
         with:
-          name: distribution-package-artifacts
-          path: dist
-      # Don't publish feature branch packages, just provide diagnostic logging.
-      - run: |
-          # debug logging
-          echo "github.ref: ${{ github.ref }}"
-          ls dist/
+          name: publish-log
+          path: build_harness.log
