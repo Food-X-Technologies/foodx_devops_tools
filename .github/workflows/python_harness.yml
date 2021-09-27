@@ -264,10 +264,8 @@ jobs:
         name: Publish package
         run: |
           git --version
-          export PUBLISH_THIS=$(${{ env.VENV_BIN }}/publish-flow --default-branch main)
-          echo ${PUBLISH_THIS}
 
-          echo ${PYPI_TOKEN} | ${{ env.PUBLISH_COMMAND }} --publish ${PUBLISH_THIS}
+          echo ${PYPI_TOKEN} | ${{ env.PUBLISH_COMMAND }} --publish yes
       - if: ${{ github.ref != 'refs/heads/main' && !startsWith(github.ref, 'refs/tags/') }}
         name: Publish package dryrun
         run: |
