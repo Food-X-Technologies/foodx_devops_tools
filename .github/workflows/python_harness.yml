@@ -10,7 +10,7 @@ env:
   VENV_DIR: /venv
   VENV_BIN: /venv/bin
 
-  CALL_TARGET: ${VENV_BIN}/build-harness
+  CALL_TARGET: /venv/bin/build-harness
 
   IMAGE_PATH: "foodxtech/foodx-devops-tools-pipeline:${{ github.sha }}"
 
@@ -231,11 +231,17 @@ jobs:
           venv/bin/pip install dist/*.whl
 
 
-  publish-release-packages:
+  publish-packages:
     concurrency: publish
     env:
+      PUBLISH_COMMAND: |
+        ${CALL_TARGET} \
+          --log-enable-console \
+          --log-level debug \
+          publish \
+            --user ${PYPI_API_USER} \
+            --password-file -
       PYPI_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
-    if: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/') }}
     needs:
       - build-packages
       - build-docker-image
@@ -254,60 +260,20 @@ jobs:
         with:
           name: distribution-package-artifacts
           path: dist
-      - name: Publish package
+      - if: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/') }}
+        name: Publish package
         run: |
           git --version
-          export PUBLISH_THIS=$(${{ env.VENV_BIN }}/publish-flow --default-branch main)
-          echo ${PUBLISH_THIS}
-          echo ${PYPI_TOKEN} | ${{ env.CALL_TARGET }} \
-            --log-enable-console \
-            --log-level debug \
-            publish \
-              --publish ${PUBLISH_THIS} \
-              --user ${PYPI_API_USER} \
-              --password-file -
-      - uses: actions/upload-artifact@v2
-        if: failure()
-        with:
-          name: publish-log
-          path: build_harness.log
 
-
-  publish-nonrelease-packages:
-    concurrency: publish
-    env:
-      PYPI_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
-    if: ${{ github.ref != 'refs/heads/main' && !startsWith(github.ref, 'refs/tags/') }}
-    needs:
-      - build-packages
-      - build-docker-image
-      # don't "need" anything from install-check, but definitely don't want to publish if it fails
-      - install-check
-
-    container:
-      image: "foodxtech/foodx-devops-tools-pipeline:${{ github.sha }}"
-    runs-on: ubuntu-20.04
-
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-      - uses: actions/download-artifact@v2
-        with:
-          name: distribution-package-artifacts
-          path: dist
-      - name: Publish package
+          echo ${PYPI_TOKEN} | ${{ env.PUBLISH_COMMAND }} --publish yes
+      - if: ${{ github.ref != 'refs/heads/main' && !startsWith(github.ref, 'refs/tags/') }}
+        name: Publish package dryrun
         run: |
           git --version
-          echo ${PYPI_TOKEN} | ${{ env.CALL_TARGET }} \
-            --log-enable-console \
-            --log-level debug \
-            publish \
-              --publish dryrun \
-              --user ${PYPI_API_USER} \
-              --password-file -
-      - uses: actions/upload-artifact@v2
-        if: failure()
+
+          echo ${PYPI_TOKEN} | ${{ env.PUBLISH_COMMAND }} --publish dryrun
+      - if: failure()
+        uses: actions/upload-artifact@v2
         with:
           name: publish-log
           path: build_harness.log
