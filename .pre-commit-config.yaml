@@ -41,15 +41,8 @@ repos:
 
   - repo: local
     hooks:
-      # have to avoid executing manual tests here
-      - entry: build-harness unit-test --test-dir tests/ci
-        id: unit-test
-        language: system
-        name: Unit tests run clean
-        pass_filenames: false
-
-  - repo: local
-    hooks:
+      # now that unit tests take some time to complete, this check embodies both coverage test and unit tests check
+      # run unit tests manually to figure out which tests are causing a failure
       # have to avoid executing manual tests here
       # Don't forget to update the coverage threshold in .gitlab-ci.yml
       - entry: build-harness unit-test --test-dir tests/ci --check 90
