@@ -188,6 +188,7 @@ def _construct_deployment_name(
     * must only contain alphanumerics and the characters ".-_"
     """
     assert deployment_data.context.application_name is not None
+    assert deployment_data.context.client is not None
     assert deployment_data.context.pipeline_id is not None
     assert deployment_data.context.release_id is not None
 
@@ -195,15 +196,17 @@ def _construct_deployment_name(
     # reserving underscore here for segmentation of deployment name.
     regex = re.compile(r"[^A-Za-z0-9.\-]")
 
+    client_id = deployment_data.context.client
     filtered_app_name = regex.sub(
         substitution_value, deployment_data.context.application_name
-    )
+    )[0:20]
     filtered_pipeline_id = regex.sub(
         substitution_value, deployment_data.context.pipeline_id
     )
-    filtered_step_name = regex.sub(substitution_value, step_name)
+    filtered_step_name = regex.sub(substitution_value, step_name)[0:20]
 
-    result = "{0}_{1}".format(
+    result = "{0}_{1}_{2}".format(
+        client_id,
         filtered_app_name
         if filtered_app_name == filtered_step_name
         else "{0}_{1}".format(filtered_app_name, filtered_step_name),

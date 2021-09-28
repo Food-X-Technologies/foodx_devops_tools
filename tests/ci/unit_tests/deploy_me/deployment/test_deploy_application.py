@@ -131,7 +131,7 @@ class TestValidation(DeploymentChecks):
             "l1",
             "Incremental",
             AzureSubscriptionConfiguration(subscription_id="sys1_c1_r1a"),
-            deployment_name="a1_a1l1_123456",
+            deployment_name="c1_a1_a1l1_123456",
             override_parameters=expected_parameters,
             validate=True,
         )
@@ -154,7 +154,7 @@ class TestValidation(DeploymentChecks):
             "l1",
             "Incremental",
             AzureSubscriptionConfiguration(subscription_id="sys1_c1_r1a"),
-            deployment_name="a1_a1l1_123456",
+            deployment_name="c1_a1_a1l1_123456",
             override_parameters=expected_parameters,
             validate=True,
         )
@@ -179,7 +179,7 @@ class TestDeployment(DeploymentChecks):
             "l1",
             "Incremental",
             AzureSubscriptionConfiguration(subscription_id="sys1_c1_r1a"),
-            deployment_name="a1_a1l1_123456",
+            deployment_name="c1_a1_a1l1_123456",
             override_parameters=expected_parameters,
             validate=False,
         )
@@ -202,7 +202,7 @@ class TestDeployment(DeploymentChecks):
             "l1",
             "Incremental",
             AzureSubscriptionConfiguration(subscription_id="sys1_c1_r1a"),
-            deployment_name="a1_a1l1_123456",
+            deployment_name="c1_a1_a1l1_123456",
             override_parameters=expected_parameters,
             validate=False,
         )
