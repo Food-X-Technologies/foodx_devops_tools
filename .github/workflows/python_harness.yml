@@ -234,13 +234,6 @@ jobs:
   publish-packages:
     concurrency: publish
     env:
-      PUBLISH_COMMAND: |
-        ${CALL_TARGET} \
-          --log-enable-console \
-          --log-level debug \
-          publish \
-            --user ${PYPI_API_USER} \
-            --password-file -
       PYPI_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
     needs:
       - build-packages
