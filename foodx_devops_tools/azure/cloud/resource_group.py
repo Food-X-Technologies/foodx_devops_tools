@@ -179,6 +179,7 @@ async def deploy(
     location: str,
     mode: str,
     subscription: AzureSubscriptionConfiguration,
+    deployment_name: typing.Optional[str] = None,
     override_parameters: typing.Optional[dict] = None,
     validate: bool = False,
 ) -> None:
@@ -218,6 +219,11 @@ async def deploy(
             "--parameters",
             "@{0}".format(arm_parameters_path),
         ]
+        if deployment_name:
+            this_command += [
+                "--name",
+                deployment_name,
+            ]
         log.debug("az command, {0}".format(str(this_command)))
         if override_parameters:
             # WARNING: these external parameters may be sensitive content
@@ -232,6 +238,7 @@ async def deploy(
                     json.dumps(_make_arm_parameter_values(override_parameters))
                 ),
             ]
+
         result = await run_async_command(this_command)
         log.info(
             "resource group deployment succeeded, {0} ({1})".format(

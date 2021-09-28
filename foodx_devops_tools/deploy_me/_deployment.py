@@ -176,6 +176,46 @@ def _construct_arm_paths(
     return template_path, puff_path, parameters_path
 
 
+def _construct_deployment_name(
+    deployment_data: FlattenedDeployment, step_name: str
+) -> str:
+    """
+    Construct the deployment name for use in az CLI.
+
+    Note Azure deployment name have specific limitations:
+
+    * limited to 64 characters
+    * must only contain alphanumerics and the characters ".-_"
+    """
+    assert deployment_data.context.application_name is not None
+    assert deployment_data.context.client is not None
+    assert deployment_data.context.pipeline_id is not None
+    assert deployment_data.context.release_id is not None
+
+    substitution_value = "-"
+    # reserving underscore here for segmentation of deployment name.
+    regex = re.compile(r"[^A-Za-z0-9.\-]")
+
+    client_id = deployment_data.context.client
+    filtered_app_name = regex.sub(
+        substitution_value, deployment_data.context.application_name
+    )[0:20]
+    filtered_pipeline_id = regex.sub(
+        substitution_value, deployment_data.context.pipeline_id
+    )
+    filtered_step_name = regex.sub(substitution_value, step_name)[0:20]
+
+    result = "{0}_{1}_{2}".format(
+        client_id,
+        filtered_app_name
+        if filtered_app_name == filtered_step_name
+        else "{0}_{1}".format(filtered_app_name, filtered_step_name),
+        filtered_pipeline_id,
+    )
+
+    return result[0:64]
+
+
 async def _do_step_deployment(
     this_step: ApplicationDeploymentDefinition,
     deployment_data: FlattenedDeployment,
@@ -262,6 +302,9 @@ async def _do_step_deployment(
             step_context, target_arm_path
         )
     )
+    deployment_name = _construct_deployment_name(
+        deployment_data, this_step.name
+    )
     try:
         await asyncio.gather(
             run_puff(puff_file_path, False, False, disable_ascii_art=True),
@@ -278,6 +321,7 @@ async def _do_step_deployment(
             deployment_data.data.location_primary,
             this_step.mode.value,
             this_subscription,
+            deployment_name=deployment_name,
             override_parameters=parameters,
             validate=enable_validation,
         )
