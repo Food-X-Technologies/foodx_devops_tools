@@ -255,17 +255,18 @@ jobs:
           path: dist
       - if: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/') }}
         name: Publish package
+        # something seems to be broken with `build-harness publish` so use twine directly instead, for now
         run: |
           git --version
 
           echo ${PYPI_TOKEN} |
-          ${CALL_TARGET} \
-            --log-enable-console \
-            --log-level debug \
-            publish \
-              --user ${PYPI_API_USER} \
-              --password-file - \
-              --publish yes
+          ${{ env.VENV_BIN }}/twine upload \
+            --disable-progress-bar \
+            --non-interactive \
+            --password ${PYPI_TOKEN} \
+            --username ${{ env.PYPI_API_USER }} \
+            --verbose \
+            dist/*.whl dist/*.tar.gz
       - if: ${{ github.ref != 'refs/heads/main' && !startsWith(github.ref, 'refs/tags/') }}
         name: Publish package dryrun
         run: |
@@ -276,7 +277,7 @@ jobs:
             --log-enable-console \
             --log-level debug \
             publish \
-              --user ${PYPI_API_USER} \
+              --user ${{ env.PYPI_API_USER }} \
               --password-file - \
               --publish dryrun
       - if: failure()
