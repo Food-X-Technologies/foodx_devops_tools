@@ -265,13 +265,27 @@ jobs:
         run: |
           git --version
 
-          echo ${PYPI_TOKEN} | ${{ env.PUBLISH_COMMAND }} --publish yes
+          echo ${PYPI_TOKEN} |
+          ${CALL_TARGET} \
+            --log-enable-console \
+            --log-level debug \
+            publish \
+              --user ${PYPI_API_USER} \
+              --password-file - \
+              --publish yes
       - if: ${{ github.ref != 'refs/heads/main' && !startsWith(github.ref, 'refs/tags/') }}
         name: Publish package dryrun
         run: |
           git --version
 
-          echo ${PYPI_TOKEN} | ${{ env.PUBLISH_COMMAND }} --publish dryrun
+          echo ${PYPI_TOKEN} |
+          ${CALL_TARGET} \
+            --log-enable-console \
+            --log-level debug \
+            publish \
+              --user ${PYPI_API_USER} \
+              --password-file - \
+              --publish dryrun
       - if: failure()
         uses: actions/upload-artifact@v2
         with:
