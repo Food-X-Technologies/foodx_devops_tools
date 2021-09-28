@@ -5,10 +5,23 @@
 #  You should have received a copy of the MIT License along with
 #  foodx_devops_tools. If not, see <https://opensource.org/licenses/MIT>.
 
+import copy
+import pathlib
+
 import pytest
 
-from foodx_devops_tools.deploy_me._deployment import PipelineCliOptions
+from foodx_devops_tools.deploy_me._deployment import (
+    ApplicationDeploymentDefinition,
+    FlattenedDeployment,
+    PipelineCliOptions,
+)
 from foodx_devops_tools.patterns import SubscriptionData
+from foodx_devops_tools.pipeline_config.frames import DeploymentMode
+from foodx_devops_tools.pipeline_config.views import (
+    AzureCredentials,
+    DeployDataView,
+)
+from tests.ci.support.pipeline_config import MOCK_CONTEXT
 
 
 @pytest.fixture()
@@ -66,3 +79,48 @@ def default_override_parameters():
         return result
 
     return _apply
+
+
+@pytest.fixture()
+def mock_deploystep_context():
+    mock_context = copy.deepcopy(MOCK_CONTEXT)
+    mock_context.application_name = "app-name"
+    mock_context.azure_tenant_name = "t1"
+    mock_context.azure_subscription_name = "sys1_c1_r1a"
+    mock_context.client = "c1"
+    mock_context.system = "sys1"
+    mock_context.frame_name = "f1"
+
+    data_view = DeployDataView(
+        AzureCredentials(
+            userid="abc",
+            secret="verysecret",
+            subscription="sys1_c1_r1a",
+            name="n",
+            tenant="123abc",
+        ),
+        "a-b-c",
+        "uswest2",
+        "r1",
+        dict(),
+    )
+    data_view.frame_folder = pathlib.Path("frame/folder")
+
+    arguments = {
+        "this_step": ApplicationDeploymentDefinition(
+            mode=DeploymentMode.incremental,
+            name="this_step",
+            arm_file=pathlib.Path("arm.file"),
+            puff_file=None,
+            resource_group=None,
+        ),
+        "deployment_data": FlattenedDeployment(
+            context=mock_context, data=data_view
+        ),
+        "puff_parameter_data": {
+            "this_step": pathlib.Path("puff.path"),
+        },
+        "this_context": "some.context",
+        "enable_validation": False,
+    }
+    return arguments

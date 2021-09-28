@@ -7,24 +7,11 @@
 
 import copy
 import logging
-import pathlib
 
 import pytest
 
 from foodx_devops_tools._to import StructuredTo
-from foodx_devops_tools.deploy_me._deployment import (
-    ApplicationDeploymentDefinition,
-    DeploymentState,
-    DeploymentStatus,
-    FlattenedDeployment,
-    _deploy_step,
-)
-from foodx_devops_tools.pipeline_config.frames import DeploymentMode
-from foodx_devops_tools.pipeline_config.views import (
-    AzureCredentials,
-    DeployDataView,
-)
-from tests.ci.support.pipeline_config import MOCK_CONTEXT
+from foodx_devops_tools.deploy_me._deployment import _deploy_step
 
 
 @pytest.fixture()
@@ -56,51 +43,6 @@ def mock_login(mock_async_method):
     mock_async_method(
         "foodx_devops_tools.deploy_me._deployment.login_service_principal"
     )
-
-
-@pytest.fixture()
-def mock_deploystep_context():
-    mock_context = copy.deepcopy(MOCK_CONTEXT)
-    mock_context.application_name = "app-name"
-    mock_context.azure_tenant_name = "t1"
-    mock_context.azure_subscription_name = "sys1_c1_r1a"
-    mock_context.client = "c1"
-    mock_context.system = "sys1"
-    mock_context.frame_name = "f1"
-
-    data_view = DeployDataView(
-        AzureCredentials(
-            userid="abc",
-            secret="verysecret",
-            subscription="sys1_c1_r1a",
-            name="n",
-            tenant="123abc",
-        ),
-        "a-b-c",
-        "uswest2",
-        "r1",
-        dict(),
-    )
-    data_view.frame_folder = pathlib.Path("frame/folder")
-
-    arguments = {
-        "this_step": ApplicationDeploymentDefinition(
-            mode=DeploymentMode.incremental,
-            name="this_step",
-            arm_file=pathlib.Path("arm.file"),
-            puff_file=None,
-            resource_group=None,
-        ),
-        "deployment_data": FlattenedDeployment(
-            context=mock_context, data=data_view
-        ),
-        "puff_parameter_data": {
-            "this_step": pathlib.Path("puff.path"),
-        },
-        "this_context": "some.context",
-        "enable_validation": False,
-    }
-    return arguments
 
 
 @pytest.mark.asyncio
@@ -141,6 +83,7 @@ async def test_default_override_parameters(
         mocker.ANY,
         mocker.ANY,
         mocker.ANY,
+        deployment_name="app-name_this-step_12345",
         override_parameters=expected_defaults,
         validate=mocker.ANY,
     )
@@ -192,6 +135,7 @@ async def test_secrets_enabled(
         mocker.ANY,
         mocker.ANY,
         mocker.ANY,
+        deployment_name="app-name_this-step_12345",
         override_parameters=expected_parameters,
         validate=mocker.ANY,
     )
