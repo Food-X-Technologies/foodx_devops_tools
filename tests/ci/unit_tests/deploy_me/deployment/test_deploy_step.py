@@ -83,7 +83,7 @@ async def test_default_override_parameters(
         mocker.ANY,
         mocker.ANY,
         mocker.ANY,
-        deployment_name="c1_app-name_this-step_12345",
+        deployment_name="app-name_this-step_12345",
         override_parameters=expected_defaults,
         validate=mocker.ANY,
     )
@@ -135,7 +135,7 @@ async def test_secrets_enabled(
         mocker.ANY,
         mocker.ANY,
         mocker.ANY,
-        deployment_name="c1_app-name_this-step_12345",
+        deployment_name="app-name_this-step_12345",
         override_parameters=expected_parameters,
         validate=mocker.ANY,
     )

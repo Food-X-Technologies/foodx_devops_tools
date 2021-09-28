@@ -16,7 +16,7 @@ def test_clean(mock_deploystep_context):
 
     result = _construct_deployment_name(mock_data, "stepname")
 
-    assert result == "c1_app-name_stepname_12345678.24"
+    assert result == "app-name_stepname_12345678.24"
 
 
 def test_plus(mock_deploystep_context):
@@ -25,7 +25,7 @@ def test_plus(mock_deploystep_context):
 
     result = _construct_deployment_name(mock_data, "stepname")
 
-    assert result == "c1_app-name_stepname_12345678-24"
+    assert result == "app-name_stepname_12345678-24"
 
 
 def test_underscore(mock_deploystep_context):
@@ -34,4 +34,4 @@ def test_underscore(mock_deploystep_context):
 
     result = _construct_deployment_name(mock_data, "stepname")
 
-    assert result == "c1_app-name_stepname_12345678-24"
+    assert result == "app-name_stepname_12345678-24"
