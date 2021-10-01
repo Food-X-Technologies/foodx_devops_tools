@@ -69,7 +69,8 @@ class TestPipelineConfiguration:
                                 "locations": [
                                     {"primary": "l1"},
                                     {"primary": "l2"},
-                                ]
+                                ],
+                                "root_fqdn": "some.where",
                             },
                         },
                     },
@@ -93,7 +94,8 @@ class TestPipelineConfiguration:
                                 "locations": [
                                     {"primary": "l1"},
                                     {"primary": "l2"},
-                                ]
+                                ],
+                                "root_fqdn": "some.where",
                             }
                         },
                     },
@@ -119,7 +121,8 @@ class TestPipelineConfiguration:
                                 "locations": [
                                     {"primary": "l1"},
                                     {"primary": "l2"},
-                                ]
+                                ],
+                                "root_fqdn": "some.where",
                             }
                         },
                     },
@@ -144,7 +147,8 @@ class TestPipelineConfiguration:
                                 "locations": [
                                     {"primary": "l1"},
                                     {"primary": "l2"},
-                                ]
+                                ],
+                                "root_fqdn": "some.where",
                             }
                         },
                     },
@@ -168,7 +172,8 @@ class TestPipelineConfiguration:
                                 "locations": [
                                     {"primary": "l1"},
                                     {"primary": "l2"},
-                                ]
+                                ],
+                                "root_fqdn": "some.where",
                             }
                         },
                     },

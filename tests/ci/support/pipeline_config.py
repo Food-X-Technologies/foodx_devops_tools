@@ -85,6 +85,7 @@ MOCK_RESULTS = {
             "subscriptions": {
                 "sys1_c1_r1a": {
                     "locations": [{"primary": "l1"}, {"primary": "l2"}],
+                    "root_fqdn": "some.where",
                 },
             },
         },

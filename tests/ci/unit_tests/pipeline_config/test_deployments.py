@@ -33,6 +33,7 @@ deployments:
           - primary: ploc1
             secondary: sloc1
           - primary: ploc2
+        root_fqdn: some.where
 """
 
     result = apply_deployments_test(file_text)
@@ -61,6 +62,10 @@ deployments:
         .primary
         == "ploc2"
     )
+    assert (
+        result.deployments["name"].subscriptions["some-name"].root_fqdn
+        == "some.where"
+    )
 
 
 def test_multiple(apply_deployments_test):
@@ -73,12 +78,14 @@ deployments:
         locations:
           - primary: loc1
           - primary: loc2
+        root_fqdn: some.where
   name2:
     subscriptions: 
       some-name:
         locations:
           - primary: loc1
           - primary: loc3
+        root_fqdn: some.where
   name3:
     subscriptions: 
       other-name:
@@ -86,6 +93,7 @@ deployments:
           - primary: loc1
           - primary: loc3
           - primary: loc4
+        root_fqdn: some.where
 """
 
     result = apply_deployments_test(file_text)
@@ -110,6 +118,10 @@ deployments:
         .locations[1]
         .primary
         == "loc2"
+    )
+    assert (
+        result.deployments["name1"].subscriptions["some-name"].root_fqdn
+        == "some.where"
     )
     assert (
         result.deployments["name3"]

@@ -29,6 +29,7 @@ class DeploymentSubscriptionReference(pydantic.BaseModel):
     """A subscription reference in a deployment definition."""
 
     locations: typing.List[DeploymentLocations]
+    root_fqdn: str
 
 
 class SingularDeployment(pydantic.BaseModel):
