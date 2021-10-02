@@ -10,7 +10,7 @@
 import pathlib
 import re
 
-import aiofiles  # type: ignore
+import aiofiles
 
 ESCOLAR_REGEX = r"(?P<reference>#(?P<file_path>.+?)#)"
 

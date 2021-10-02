@@ -13,8 +13,8 @@ import logging
 import pathlib
 import typing
 
-import aiofiles  # type: ignore
-import aiofiles.os  # type: ignore
+import aiofiles
+import aiofiles.os
 import click
 import pydantic
 import ruamel.yaml
