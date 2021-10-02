@@ -100,10 +100,19 @@ async def assess_results(
 
 
 def _construct_resource_group_name(
-    application_name: str, frame_name: str, client: str
+    application_name: str,
+    frame_name: str,
+    client: str,
+    user_resource_group_name: typing.Optional[str],
 ) -> str:
     """Construct a resource group name from deployment context."""
-    return "-".join([application_name, frame_name, client])
+    result = (
+        "-".join([application_name, frame_name, client])
+        if not user_resource_group_name
+        else user_resource_group_name
+    )
+
+    return result
 
 
 def _construct_fqdn(
@@ -146,12 +155,13 @@ def _make_secrets_object(key_values: dict) -> typing.List[dict]:
     return result
 
 
-def _construct_arm_paths(
+def _construct_deployment_paths(
     this_step: ApplicationDeploymentDefinition,
     arm_parameter_path: pathlib.Path,
     application_name: str,
     frame_folder: typing.Optional[pathlib.Path],
-) -> typing.Tuple[pathlib.Path, pathlib.Path, pathlib.Path]:
+    step_context: str,
+) -> typing.Tuple[pathlib.Path, pathlib.Path, pathlib.Path, pathlib.Path]:
     """Construct paths for ARM template files."""
     if not frame_folder:
         raise DeploymentError("frame_folder not defined for application step")
@@ -173,7 +183,22 @@ def _construct_arm_paths(
 
     parameters_path = frame_folder / arm_parameter_path
 
-    return template_path, puff_path, parameters_path
+    # use the same directory as puff files for escolar file to avoid
+    # confusion over reused arm templates in the configuration dir.
+    target_arm_path = puff_path.parent / "{0}.escolar".format(
+        template_path.name
+    )
+    log.info(
+        "step escolar source ARM template, {0}, {1}".format(
+            step_context, template_path
+        )
+    )
+    log.info(
+        "step escolar target ARM template, {0}, {1}".format(
+            step_context, target_arm_path
+        )
+    )
+    return template_path, puff_path, parameters_path, target_arm_path
 
 
 def _construct_deployment_name(
@@ -213,6 +238,37 @@ def _construct_deployment_name(
     return result[0:64]
 
 
+def _construct_override_parameters(
+    deployment_data: FlattenedDeployment,
+    static_secrets_enabled: typing.Optional[bool],
+    step_context: str,
+) -> typing.Dict[str, typing.Any]:
+    result: typing.Dict[str, typing.Any] = {
+        "locations": {
+            "primary": deployment_data.data.location_primary,
+            "secondary": deployment_data.data.location_secondary,
+        },
+        "tags": deployment_data.context.as_dict(),
+    }
+    if static_secrets_enabled:
+        if deployment_data.data.static_secrets:
+            # pass static secrets as a single object containing all the
+            # secret key-value pairs.
+            parameter_object: typing.Dict[str, typing.Any] = {
+                "staticSecrets": _make_secrets_object(
+                    deployment_data.data.static_secrets
+                )
+            }
+            result.update(parameter_object)
+        else:
+            log.warning(
+                "There are no static_secrets even though secrets have been"
+                " enabled, {0}".format(step_context)
+            )
+
+    return result
+
+
 async def _do_step_deployment(
     this_step: ApplicationDeploymentDefinition,
     deployment_data: FlattenedDeployment,
@@ -221,24 +277,23 @@ async def _do_step_deployment(
     enable_validation: bool,
 ) -> None:
     step_context = "{0}.{1}".format(this_context, this_step.name)
-    resource_group = (
-        _construct_resource_group_name(
-            deployment_data.context.application_name,
-            deployment_data.context.frame_name,
-            deployment_data.context.client,
-        )
-        if not this_step.resource_group
-        else this_step.resource_group
+    resource_group = _construct_resource_group_name(
+        deployment_data.context.application_name,
+        deployment_data.context.frame_name,
+        deployment_data.context.client,
+        this_step.resource_group,
     )
     (
         arm_template_path,
         puff_file_path,
         arm_parameters_path,
-    ) = _construct_arm_paths(
+        target_arm_path,
+    ) = _construct_deployment_paths(
         this_step,
         puff_parameter_data[this_step.name],
         deployment_data.context.application_name,
         deployment_data.data.frame_folder,
+        step_context,
     )
 
     log.debug(
@@ -261,48 +316,15 @@ async def _do_step_deployment(
     else:
         log.info("deployment enabled, {0}".format(step_context))
 
-    parameters: typing.Dict[str, typing.Any] = {
-        "locations": {
-            "primary": deployment_data.data.location_primary,
-            "secondary": deployment_data.data.location_secondary,
-        },
-        "tags": deployment_data.context.as_dict(),
-    }
-    if this_step.static_secrets:
-        if deployment_data.data.static_secrets:
-            # pass static secrets as a single object containing all the
-            # secret key-value pairs.
-            parameter_object: typing.Dict[str, typing.Any] = {
-                "staticSecrets": _make_secrets_object(
-                    deployment_data.data.static_secrets
-                )
-            }
-            parameters.update(parameter_object)
-        else:
-            log.warning(
-                "There are no static_secrets even though secrets have been"
-                " enabled, {0}".format(step_context)
-            )
+    override_parameters = _construct_override_parameters(
+        deployment_data, this_step.static_secrets, step_context
+    )
 
-    # use the same directory as puff files for escolar file to avoid
-    # confusion over reused arm templates in the configuration dir.
-    target_arm_path = puff_file_path.parent / "{0}.escolar".format(
-        arm_template_path.name
-    )
-    log.info(
-        "step escolar source ARM template, {0}, {1}".format(
-            step_context, arm_template_path
-        )
-    )
-    log.info(
-        "step escolar target ARM template, {0}, {1}".format(
-            step_context, target_arm_path
-        )
-    )
     deployment_name = _construct_deployment_name(
         deployment_data, this_step.name
     )
     try:
+
         await asyncio.gather(
             run_puff(puff_file_path, False, False, disable_ascii_art=True),
             do_snippet_substitution(arm_template_path, target_arm_path),
@@ -319,7 +341,7 @@ async def _do_step_deployment(
             this_step.mode.value,
             this_subscription,
             deployment_name=deployment_name,
-            override_parameters=parameters,
+            override_parameters=override_parameters,
             validate=enable_validation,
         )
     except Exception as e:

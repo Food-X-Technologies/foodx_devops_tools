@@ -16,7 +16,7 @@ import pytest
 from foodx_devops_tools.deploy_me._deployment import (
     ApplicationDeploymentDefinition,
     DeploymentState,
-    _construct_arm_paths,
+    _construct_deployment_paths,
     _construct_fqdn,
     _construct_resource_group_name,
     assess_results,
@@ -41,10 +41,17 @@ class TestConstructFqdn:
 
 
 class TestConstructResourceGroupName:
-    def test_clean(self):
-        result = _construct_resource_group_name("app", "frame", "client")
+    def test_clean_none_user(self):
+        result = _construct_resource_group_name("app", "frame", "client", None)
 
         assert result == "app-frame-client"
+
+    def test_clean_user_precedence(self):
+        result = _construct_resource_group_name(
+            "app", "frame", "client", "some_name"
+        )
+
+        assert result == "some_name"
 
 
 class TestAssessResults:
@@ -72,6 +79,8 @@ class TestAssessResults:
 
 
 class TestConstructArmPaths:
+    MOCK_CONTEXT = "some_context"
+
     def test_none_arm_file_puff_file(self):
         mock_app_name = "this_app"
         mock_puff_parameter_name = "some.puff.file.json"
@@ -83,11 +92,17 @@ class TestConstructArmPaths:
             puff_file=None,
         )
 
-        result_template, result_puff, result_parameters = _construct_arm_paths(
+        (
+            result_template,
+            result_puff,
+            result_parameters,
+            result_target,
+        ) = _construct_deployment_paths(
             mock_step,
             mock_puff_parameter_name,
             mock_app_name,
             mock_frame_folder,
+            self.MOCK_CONTEXT,
         )
 
         assert result_template == pathlib.Path("some/path/this_app.json")
@@ -102,11 +117,17 @@ class TestConstructArmPaths:
             name="somename",
         )
 
-        result_template, result_puff, result_parameters = _construct_arm_paths(
+        (
+            result_template,
+            result_puff,
+            result_parameters,
+            result_target,
+        ) = _construct_deployment_paths(
             mock_step,
             mock_puff_parameter_name,
             mock_app_name,
             mock_frame_folder,
+            self.MOCK_CONTEXT,
         )
 
         assert result_parameters == pathlib.Path(
@@ -124,11 +145,17 @@ class TestConstructArmPaths:
             puff_file=None,
         )
 
-        result_template, result_puff, result_parameters = _construct_arm_paths(
+        (
+            result_template,
+            result_puff,
+            result_parameters,
+            result_target,
+        ) = _construct_deployment_paths(
             mock_step,
             mock_puff_parameter_name,
             mock_app_name,
             mock_frame_folder,
+            self.MOCK_CONTEXT,
         )
 
         assert result_template == pathlib.Path("some/path/arm_file.json")
@@ -145,11 +172,17 @@ class TestConstructArmPaths:
             puff_file=pathlib.Path("puff_file.yml"),
         )
 
-        result_template, result_puff, result_parameters = _construct_arm_paths(
+        (
+            result_template,
+            result_puff,
+            result_parameters,
+            result_target,
+        ) = _construct_deployment_paths(
             mock_step,
             mock_puff_parameter_name,
             mock_app_name,
             mock_frame_folder,
+            self.MOCK_CONTEXT,
         )
 
         assert result_template == pathlib.Path("some/path/arm_file.json")
