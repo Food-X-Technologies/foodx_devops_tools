@@ -269,6 +269,18 @@ def _construct_override_parameters(
     return result
 
 
+async def _prepare_deployment_files(
+    puff_file_path: pathlib.Path,
+    arm_template_path: pathlib.Path,
+    target_arm_path: pathlib.Path,
+) -> None:
+    """Prepare final ARM template and parameter files for deployment."""
+    await asyncio.gather(
+        run_puff(puff_file_path, False, False, disable_ascii_art=True),
+        do_snippet_substitution(arm_template_path, target_arm_path),
+    )
+
+
 async def _do_step_deployment(
     this_step: ApplicationDeploymentDefinition,
     deployment_data: FlattenedDeployment,
@@ -324,10 +336,8 @@ async def _do_step_deployment(
         deployment_data, this_step.name
     )
     try:
-
-        await asyncio.gather(
-            run_puff(puff_file_path, False, False, disable_ascii_art=True),
-            do_snippet_substitution(arm_template_path, target_arm_path),
+        await _prepare_deployment_files(
+            puff_file_path, arm_template_path, target_arm_path
         )
 
         this_subscription = AzureSubscriptionConfiguration(
