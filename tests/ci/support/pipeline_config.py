@@ -81,14 +81,17 @@ MOCK_RESULTS = {
         },
     },
     "deployments": {
-        "sys1-c1-r1": {
-            "subscriptions": {
-                "sys1_c1_r1a": {
-                    "locations": [{"primary": "l1"}, {"primary": "l2"}],
-                    "root_fqdn": "some.where",
+        "deployment_tuples": {
+            "sys1-c1-r1": {
+                "subscriptions": {
+                    "sys1_c1_r1a": {
+                        "locations": [{"primary": "l1"}, {"primary": "l2"}],
+                        "root_fqdn": "some.where",
+                    },
                 },
             },
         },
+        "url_endpoints": ["a", "p"],
     },
     "frames": {
         "frames": {

@@ -38,22 +38,32 @@ class SingularDeployment(pydantic.BaseModel):
     subscriptions: typing.Dict[str, DeploymentSubscriptionReference]
 
 
-T = typing.TypeVar("T", bound="DeploymentsDefinition")
-
 ValueType = typing.Dict[str, SingularDeployment]
+
+
+class DeploymentsEndpointsDefinitions(pydantic.BaseModel):
+    """Definition of deployment tuples and URL endpoints."""
+
+    url_endpoints: typing.List[str]
+    deployment_tuples: ValueType
+
+
+T = typing.TypeVar("T", bound="DeploymentsDefinition")
 
 
 class DeploymentsDefinition(pydantic.BaseModel):
     """Definition of deployments."""
 
-    deployments: ValueType
+    deployments: DeploymentsEndpointsDefinitions
 
     @pydantic.validator(ENTITY_NAME)
     def check_deployments(
-        cls: pydantic.BaseModel, value: ValueType
-    ) -> ValueType:
-        """Validate ``deployments`` field."""
+        cls: pydantic.BaseModel, value: DeploymentsEndpointsDefinitions
+    ) -> DeploymentsEndpointsDefinitions:
+        """Validate ``deployment_tuples`` field."""
         if not value:
+            raise ValueError("Empty deployment prohibited")
+        if not value.deployment_tuples:
             raise ValueError("Empty deployment names prohibited")
 
         return value

@@ -205,7 +205,9 @@ class DeployDataView:
     deployment_tuple: str
     location_primary: str
     release_state: str
+    root_fqdn: str
     static_secrets: dict
+    url_endpoints: typing.List[str]
 
     frame_folder: typing.Optional[pathlib.Path] = None
 
@@ -220,8 +222,10 @@ class DeployDataView:
         azure_credentials: AzureCredentials,
         deployment_tuple: str,
         location_primary: str,
+        root_fqdn: str,
         release_state: str,
         static_secrets: dict,
+        url_endpoints: typing.List[str],
         location_secondary: typing.Optional[str] = None,
     ) -> None:
         """Construct ``DeployDataView`` object."""
@@ -229,7 +233,9 @@ class DeployDataView:
         self.deployment_tuple = deployment_tuple
         self.location_primary = location_primary
         self.release_state = release_state
+        self.root_fqdn = root_fqdn
         self.static_secrets = static_secrets
+        self.url_endpoints = url_endpoints
         self.__location_secondary = location_secondary
 
         self.iteration_context = IterationContext()
@@ -340,13 +346,11 @@ class SubscriptionView:
             ]
         )
         result: typing.List[DeployDataView] = list()
-        this_deployment = (
-            self.deployment_view.release_view.configuration.deployments[
-                str(self.deployment_view.deployment_tuple)
-            ]
-        )
+        this_deployment = self.deployment_view.release_view.configuration.deployments.deployment_tuples[  # noqa: E501
+            str(self.deployment_view.deployment_tuple)
+        ]
         this_service_principals = (
-            self.deployment_view.release_view.configuration.service_principals  # noqa E501
+            self.deployment_view.release_view.configuration.service_principals  # noqa: E501
         )
         if not this_service_principals:
             raise PipelineViewError("Missing service principal credentials")
@@ -372,9 +376,13 @@ class SubscriptionView:
                 "azure_credentials": this_credentials,
                 "deployment_tuple": str(self.deployment_view.deployment_tuple),
                 "location_primary": this_locations.primary,
-                "location_secondary": None,
-                "release_state": self.deployment_view.release_view.deployment_context.release_state,  # noqa E501
+                "location_secondary": this_locations.secondary,
+                "root_fqdn": this_deployment.subscriptions[
+                    self.subscription_name
+                ].root_fqdn,
+                "release_state": self.deployment_view.release_view.deployment_context.release_state,  # noqa: E501
                 "static_secrets": static_secrets,
+                "url_endpoints": self.deployment_view.release_view.configuration.deployments.url_endpoints,  # noqa: E501
             }
             if this_locations.secondary:
                 this_data["location_secondary"] = this_locations.secondary
@@ -414,11 +422,11 @@ class DeploymentView:
         result: typing.List[SubscriptionView] = list()
         if (
             str(self.deployment_tuple)
-            in self.release_view.configuration.deployments
+            in self.release_view.configuration.deployments.deployment_tuples
         ):
             for (
                 this_subscription
-            ) in self.release_view.configuration.deployments[
+            ) in self.release_view.configuration.deployments.deployment_tuples[
                 str(self.deployment_tuple)
             ].subscriptions.keys():
                 result.append(SubscriptionView(self, this_subscription))
@@ -479,7 +487,10 @@ class ReleaseView:
                     release_state=self.deployment_context.release_state,
                     system=this_system,
                 )
-                if str(this_state) in self.configuration.deployments.keys():
+                if (
+                    str(this_state)
+                    in self.configuration.deployments.deployment_tuples.keys()
+                ):
                     result.append(DeploymentView(self, this_state))
 
         return result
