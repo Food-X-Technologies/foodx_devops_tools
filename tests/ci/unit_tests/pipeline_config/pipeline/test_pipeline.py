@@ -63,18 +63,21 @@ class TestPipelineConfiguration:
         mock_results.deployments = DeploymentsDefinition.parse_obj(
             {
                 "deployments": {
-                    "badname": {
-                        "subscriptions": {
-                            "sys1_c1_r1a": {
-                                "locations": [
-                                    {"primary": "l1"},
-                                    {"primary": "l2"},
-                                ],
-                                "root_fqdn": "some.where",
+                    "deployment_tuples": {
+                        "badname": {
+                            "subscriptions": {
+                                "sys1_c1_r1a": {
+                                    "locations": [
+                                        {"primary": "l1"},
+                                        {"primary": "l2"},
+                                    ],
+                                    "root_fqdn": "some.where",
+                                },
                             },
                         },
                     },
-                }
+                    "url_endpoints": ["a", "p"],
+                },
             }
         ).deployments
         mock_loads(mock_results)
@@ -88,17 +91,20 @@ class TestPipelineConfiguration:
         mock_results.deployments = DeploymentsDefinition.parse_obj(
             {
                 "deployments": {
-                    "sys1-bad-r1": {
-                        "subscriptions": {
-                            "sys1_c1_r1a": {
-                                "locations": [
-                                    {"primary": "l1"},
-                                    {"primary": "l2"},
-                                ],
-                                "root_fqdn": "some.where",
-                            }
+                    "deployment_tuples": {
+                        "sys1-bad-r1": {
+                            "subscriptions": {
+                                "sys1_c1_r1a": {
+                                    "locations": [
+                                        {"primary": "l1"},
+                                        {"primary": "l2"},
+                                    ],
+                                    "root_fqdn": "some.where",
+                                }
+                            },
                         },
                     },
+                    "url_endpoints": ["a", "p"],
                 }
             }
         ).deployments
@@ -115,17 +121,20 @@ class TestPipelineConfiguration:
         mock_results.deployments = DeploymentsDefinition.parse_obj(
             {
                 "deployments": {
-                    "s1-c1-bad": {
-                        "subscriptions": {
-                            "subname": {
-                                "locations": [
-                                    {"primary": "l1"},
-                                    {"primary": "l2"},
-                                ],
-                                "root_fqdn": "some.where",
-                            }
+                    "deployment_tuples": {
+                        "s1-c1-bad": {
+                            "subscriptions": {
+                                "subname": {
+                                    "locations": [
+                                        {"primary": "l1"},
+                                        {"primary": "l2"},
+                                    ],
+                                    "root_fqdn": "some.where",
+                                }
+                            },
                         },
                     },
+                    "url_endpoints": ["a", "p"],
                 }
             }
         ).deployments
@@ -141,17 +150,20 @@ class TestPipelineConfiguration:
         mock_results.deployments = DeploymentsDefinition.parse_obj(
             {
                 "deployments": {
-                    "bad-c1-r1": {
-                        "subscriptions": {
-                            "subname": {
-                                "locations": [
-                                    {"primary": "l1"},
-                                    {"primary": "l2"},
-                                ],
-                                "root_fqdn": "some.where",
-                            }
+                    "deployment_tuples": {
+                        "bad-c1-r1": {
+                            "subscriptions": {
+                                "subname": {
+                                    "locations": [
+                                        {"primary": "l1"},
+                                        {"primary": "l2"},
+                                    ],
+                                    "root_fqdn": "some.where",
+                                }
+                            },
                         },
                     },
+                    "url_endpoints": ["a", "p"],
                 }
             }
         ).deployments
@@ -166,17 +178,20 @@ class TestPipelineConfiguration:
         mock_results.deployments = DeploymentsDefinition.parse_obj(
             {
                 "deployments": {
-                    "sys1-c1-r1": {
-                        "subscriptions": {
-                            "bad_name": {
-                                "locations": [
-                                    {"primary": "l1"},
-                                    {"primary": "l2"},
-                                ],
-                                "root_fqdn": "some.where",
-                            }
+                    "deployment_tuples": {
+                        "sys1-c1-r1": {
+                            "subscriptions": {
+                                "bad_name": {
+                                    "locations": [
+                                        {"primary": "l1"},
+                                        {"primary": "l2"},
+                                    ],
+                                    "root_fqdn": "some.where",
+                                }
+                            },
                         },
                     },
+                    "url_endpoints": ["a", "p"],
                 }
             }
         ).deployments

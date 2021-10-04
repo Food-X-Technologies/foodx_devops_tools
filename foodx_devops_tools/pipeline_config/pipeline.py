@@ -17,7 +17,7 @@ from ._exceptions import PipelineConfigurationError
 from ._paths import PipelineConfigurationPaths
 from .clients import ValueType as ClientsData
 from .clients import load_clients
-from .deployments import ValueType as DeploymentsData
+from .deployments import DeploymentsEndpointsDefinitions as DeploymentsData
 from .deployments import load_deployments
 from .frames import ValueType as FramesData
 from .frames import load_frames
@@ -171,7 +171,9 @@ class PipelineConfiguration(pydantic.BaseModel):
     @pydantic.root_validator()
     def check_deployments(cls: pydantic.BaseModel, loaded_data: dict) -> dict:
         """Cross-check loaded deployment data."""
-        deployment_names = set(loaded_data["deployments"].keys())
+        deployment_names = set(
+            loaded_data["deployments"].deployment_tuples.keys()
+        )
         this_re = re.compile(DEPLOYMENT_NAME_REGEX)
         for this_name in deployment_names:
             result = this_re.match(this_name)
@@ -217,9 +219,11 @@ class PipelineConfiguration(pydantic.BaseModel):
                 )
                 raise PipelineConfigurationError(message)
 
-            this_subscriptions = loaded_data["deployments"][
-                this_name
-            ].subscriptions
+            this_subscriptions = (
+                loaded_data["deployments"]
+                .deployment_tuples[this_name]
+                .subscriptions
+            )
             for subscription_name in this_subscriptions.keys():
                 if subscription_name not in loaded_data["subscriptions"]:
                     message = "Bad subscription in deployment, {0}".format(

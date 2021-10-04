@@ -102,7 +102,9 @@ def mock_deploystep_context():
         "a-b-c",
         "uswest2",
         "r1",
+        "some.where",
         dict(),
+        ["a", "p"],
     )
     data_view.frame_folder = pathlib.Path("frame/folder")
 
