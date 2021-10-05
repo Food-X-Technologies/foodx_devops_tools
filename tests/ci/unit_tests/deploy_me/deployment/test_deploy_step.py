@@ -23,14 +23,6 @@ def mock_run_puff(mock_async_method):
 
 
 @pytest.fixture()
-def mock_do_snippets(mock_async_method):
-    this_mock = mock_async_method(
-        "foodx_devops_tools.deploy_me._deployment.do_snippet_substitution"
-    )
-    return this_mock
-
-
-@pytest.fixture()
 def mock_rg_deploy(mock_async_method):
     this_mock = mock_async_method(
         "foodx_devops_tools.deploy_me._deployment.deploy_resource_group"
@@ -51,7 +43,6 @@ async def test_clean(
     mock_login,
     mock_rg_deploy,
     mock_run_puff,
-    mock_do_snippets,
 ):
     await _deploy_step(**mock_deploystep_context)
 
@@ -65,7 +56,6 @@ async def test_default_override_parameters(
     mock_login,
     mock_rg_deploy,
     mock_run_puff,
-    mock_do_snippets,
     mocker,
 ):
     this_context = copy.deepcopy(mock_deploystep_context)
@@ -96,7 +86,6 @@ async def test_secrets_enabled(
     mock_login,
     mock_rg_deploy,
     mock_run_puff,
-    mock_do_snippets,
     mocker,
 ):
     this_context = copy.deepcopy(mock_deploystep_context)

@@ -16,7 +16,7 @@ import ruamel.yaml
 from foodx_devops_tools.utilities.jinja2 import FrameTemplates
 
 MOCK_TEMPLATE = """---
-this_field: {{ parameters.this_parameter }}
+this_field: {{ this_parameter }}
 """
 
 

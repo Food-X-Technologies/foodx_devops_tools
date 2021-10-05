@@ -13,13 +13,15 @@ import typing
 import aiofiles
 import jinja2
 
+TemplateParameters = typing.Dict[str, typing.Any]
+
 T = typing.TypeVar("T", bound="FrameTemplates")
 
 
 class FrameTemplates:
     """Manage the template environment for a frame."""
 
-    __environment: jinja2.Environment
+    environment: jinja2.Environment
 
     def __init__(
         self: T, template_search_paths: typing.List[pathlib.Path]
@@ -30,7 +32,7 @@ class FrameTemplates:
         Args:
             template_search_paths: Directory paths where templates may be found.
         """
-        self.__environment = jinja2.Environment(
+        self.environment = jinja2.Environment(
             loader=jinja2.FileSystemLoader(template_search_paths),
             autoescape=jinja2.select_autoescape(),
         )
@@ -39,7 +41,7 @@ class FrameTemplates:
         self: T,
         source_template: str,
         target_path: pathlib.Path,
-        parameters: dict,
+        parameters: TemplateParameters,
     ) -> None:
         """
         Apply jinja2 template to a target file.
@@ -49,7 +51,7 @@ class FrameTemplates:
             target_path: Target fulfilled file.
             parameters: Parameters to be consumed by the template.
         """
-        template = self.__environment.get_template(source_template)
-        content = template.render(parameters=parameters)
+        template = self.environment.get_template(source_template)
+        content = template.render(**parameters)
         async with aiofiles.open(target_path, mode="w") as f:
             await f.write(content)

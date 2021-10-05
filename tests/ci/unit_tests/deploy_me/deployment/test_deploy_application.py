@@ -57,9 +57,6 @@ def prep_data(mock_async_method, mock_flattened_deployment):
         "foodx_devops_tools.deploy_me._deployment.run_puff"
     )
     mock_async_method(
-        "foodx_devops_tools.deploy_me._deployment.do_snippet_substitution"
-    )
-    mock_async_method(
         "foodx_devops_tools.deploy_me._deployment.login_service_principal"
     )
 
@@ -126,7 +123,7 @@ class TestValidation(DeploymentChecks):
         expected_parameters = default_override_parameters(prep_data[2])
         mock_deploy.assert_called_once_with(
             "a1_group-123456",
-            pathlib.Path("some/path/a1.json.escolar"),
+            pathlib.Path("some/path/a1.json"),
             pathlib.Path("some/path/some/puff_map/path"),
             "l1",
             "Incremental",
@@ -149,7 +146,7 @@ class TestValidation(DeploymentChecks):
         expected_parameters = default_override_parameters(prep_data[2])
         mock_deploy.assert_called_once_with(
             "a1-f1-c1-123456",
-            pathlib.Path("some/path/a1.json.escolar"),
+            pathlib.Path("some/path/a1.json"),
             pathlib.Path("some/path/some/puff_map/path"),
             "l1",
             "Incremental",
@@ -174,7 +171,7 @@ class TestDeployment(DeploymentChecks):
         expected_parameters = default_override_parameters(prep_data[2])
         mock_deploy.assert_called_once_with(
             "a1_group",
-            pathlib.Path("some/path/a1.json.escolar"),
+            pathlib.Path("some/path/a1.json"),
             pathlib.Path("some/path/some/puff_map/path"),
             "l1",
             "Incremental",
@@ -197,7 +194,7 @@ class TestDeployment(DeploymentChecks):
         expected_parameters = default_override_parameters(prep_data[2])
         mock_deploy.assert_called_once_with(
             "a1-f1-c1",
-            pathlib.Path("some/path/a1.json.escolar"),
+            pathlib.Path("some/path/a1.json"),
             pathlib.Path("some/path/some/puff_map/path"),
             "l1",
             "Incremental",

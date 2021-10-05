@@ -22,7 +22,7 @@ def prep_frame_data(mock_flattened_deployment):
     deployment_data.data.iteration_context.append("f1")
     deployment_data.context.frame_name = "f1"
     deployment_data.context.release_state = "r1"
-    deployment_data.context.azure_subscription_name = "sub1"
+    deployment_data.context.azure_subscription_name = "sys1_c1_r1a"
     deployment_data.data.puff_map = pipeline_config.puff_map
 
     return deployment_data, frame_data
