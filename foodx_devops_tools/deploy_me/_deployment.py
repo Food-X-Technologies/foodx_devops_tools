@@ -24,7 +24,6 @@ from foodx_devops_tools.azure.cloud.resource_group import (
 from foodx_devops_tools.azure.cloud.resource_group import (
     deploy as deploy_resource_group,
 )
-from foodx_devops_tools.patterns import SubscriptionData
 from foodx_devops_tools.pipeline_config import (
     ApplicationDeploymentSteps,
     ApplicationStepDelay,
@@ -118,25 +117,6 @@ def _construct_resource_group_name(
     )
 
     return result
-
-
-def _construct_fqdn(
-    leaf_name: str, domain_root: str, client: str, subscription_name: str
-) -> str:
-    """
-    Construct an FQDN from deployment context.
-
-    Raises:
-        SubscriptionNameError: If the subscription name cannot be parsed to
-            extract the resource suffix.
-    """
-    subscription_data = SubscriptionData.from_subscription_name(
-        subscription_name
-    )
-
-    return ".".join(
-        [leaf_name, subscription_data.resource_suffix, client, domain_root]
-    )
 
 
 def _mangle_validation_resource_group(current_name: str, suffix: str) -> str:
@@ -345,53 +325,19 @@ async def _prepare_deployment_files(
     return templated_arm
 
 
-def _construct_app_fqdns(
-    deployment_data: FlattenedDeployment,
-    step_context: str,
-) -> TemplateParameters:
-    result: TemplateParameters = {
-        x: _construct_fqdn(
-            x,
-            deployment_data.data.root_fqdn,
-            deployment_data.context.client,
-            deployment_data.context.azure_subscription_name,
-        )
-        for x in deployment_data.data.url_endpoints
-    }
-    result["root"] = deployment_data.data.root_fqdn
-    result["support"] = "support.{0}.{1}".format(
-        deployment_data.context.client, deployment_data.data.root_fqdn
-    )
-    log.debug(f"constructed endpoint fqdns, {step_context},{str(result)}")
-
-    return result
-
-
-def _construct_app_urls(
-    deployment_data: FlattenedDeployment,
-    step_context: str,
-) -> TemplateParameters:
-    fqdns = _construct_app_fqdns(deployment_data, step_context)
-    result: TemplateParameters = {
-        x: "https://{0}".format(y) for x, y in fqdns.items() if x != "root"
-    }
-    log.debug(f"constructed endpoint urls, {step_context},{str(result)}")
-
-    return result
-
-
 def _construct_template_parameters(
     deployment_data: FlattenedDeployment, step_context: str
 ) -> TemplateParameters:
     result: TemplateParameters = {
         "context": {
             "network": {
-                "fqdns": _construct_app_fqdns(deployment_data, step_context),
-                "urls": _construct_app_urls(deployment_data, step_context),
+                "fqdns": deployment_data.construct_app_fqdns(),
+                "urls": deployment_data.construct_app_urls(),
             },
             "tags": deployment_data.context.as_dict(),
         },
     }
+
     log.debug(f"template parameters, {step_context}, {result}")
 
     return result

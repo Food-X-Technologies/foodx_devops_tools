@@ -59,6 +59,36 @@ class TestFlattenedDeployment:
         assert expected_name in result.data.iteration_context
         assert result.context.application_name == expected_name
 
+    def test_construct_app_fqdns(self, mock_flattened_deployment):
+        under_test = mock_flattened_deployment[0]
+
+        result = under_test.construct_app_fqdns()
+
+        assert result == {
+            "a": "a.r1a.c1.some.where",
+            "p": "p.r1a.c1.some.where",
+            "root": "some.where",
+            "support": "support.c1.some.where",
+        }
+
+    def test_construct_app_urls(self, mock_flattened_deployment):
+        under_test = mock_flattened_deployment[0]
+
+        result = under_test.construct_app_urls()
+
+        assert result == {
+            "a": "https://a.r1a.c1.some.where",
+            "p": "https://p.r1a.c1.some.where",
+            "support": "https://support.c1.some.where",
+        }
+
+    def test_construct_fqdn(self, mock_flattened_deployment):
+        under_test = mock_flattened_deployment[0]
+
+        result = under_test.construct_fqdn("api")
+
+        assert result == "api.r1a.c1.some.where"
+
 
 class TestSubscriptionView:
     def test_clean(self, mock_pipeline_config):

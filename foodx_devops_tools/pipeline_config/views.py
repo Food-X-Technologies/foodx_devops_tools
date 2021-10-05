@@ -16,6 +16,7 @@ import typing
 from foodx_devops_tools._to import StructuredTo
 from foodx_devops_tools.azure.cloud import AzureCredentials
 from foodx_devops_tools.patterns import SubscriptionData
+from foodx_devops_tools.utilities.jinja2 import TemplateParameters
 
 from ..deployment import DeploymentTuple
 from ._exceptions import PipelineViewError
@@ -317,6 +318,47 @@ class FlattenedDeployment:
         x.context.application_name = application_name
         x.data.iteration_context.append(application_name)
         return x
+
+    def construct_fqdn(self: W, leaf_name: str) -> str:
+        """
+        Construct an FQDN from deployment context.
+
+        Raises:
+            SubscriptionNameError: If the subscription name cannot be parsed to
+                extract the resource suffix.
+        """
+        subscription_data = SubscriptionData.from_subscription_name(
+            self.context.azure_subscription_name
+        )
+
+        return ".".join(
+            [
+                leaf_name,
+                subscription_data.resource_suffix,
+                self.context.client,
+                self.data.root_fqdn,
+            ]
+        )
+
+    def construct_app_fqdns(self: W) -> TemplateParameters:
+        """Construct endpoint FQDNs for deployyment."""
+        result: TemplateParameters = {
+            x: self.construct_fqdn(x) for x in self.data.url_endpoints
+        }
+        result["root"] = self.data.root_fqdn
+        result["support"] = "support.{0}.{1}".format(
+            self.context.client, self.data.root_fqdn
+        )
+        return result
+
+    def construct_app_urls(self: W) -> TemplateParameters:
+        """Construct endpoint URLs for deployment."""
+        fqdns = self.construct_app_fqdns()
+        result: TemplateParameters = {
+            x: "https://{0}".format(y) for x, y in fqdns.items() if x != "root"
+        }
+
+        return result
 
 
 V = typing.TypeVar("V", bound="SubscriptionView")

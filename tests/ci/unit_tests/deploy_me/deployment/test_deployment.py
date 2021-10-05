@@ -17,10 +17,7 @@ import pytest
 from foodx_devops_tools.deploy_me._deployment import (
     ApplicationDeploymentDefinition,
     DeploymentState,
-    _construct_app_fqdns,
-    _construct_app_urls,
     _construct_deployment_paths,
-    _construct_fqdn,
     _construct_resource_group_name,
     _prepare_deployment_files,
     assess_results,
@@ -50,36 +47,6 @@ class TestAssessResults:
         result = await assess_results(mock_results)
 
         assert result.code == DeploymentState.ResultType.failed
-
-
-class TestConstructAppFqdns:
-    def test_clean(self, mocker):
-        mock_data = mocker.MagicMock()
-        mock_data.data.root_fqdn = "some.where"
-        mock_data.context.client = "c1"
-        mock_data.context.azure_subscription_name = "sys1_c1_r1a"
-        mock_data.data.url_endpoints = ["a", "p"]
-
-        result = _construct_app_fqdns(mock_data, "some_context")
-
-        assert result == {
-            "a": "a.r1a.c1.some.where",
-            "p": "p.r1a.c1.some.where",
-            "root": "some.where",
-            "support": "support.c1.some.where",
-        }
-
-
-class TestConstructAppUrls:
-    def test_clean(self, prep_frame_data):
-        deployment_data, _ = prep_frame_data
-        result = _construct_app_urls(deployment_data, "some_context")
-
-        assert result == {
-            "a": "https://a.r1a.c1.some.where",
-            "p": "https://p.r1a.c1.some.where",
-            "support": "https://support.c1.some.where",
-        }
 
 
 class TestConstructArmPaths:
@@ -191,22 +158,6 @@ class TestConstructArmPaths:
 
         assert result_template == pathlib.Path("some/path/arm_file.json")
         assert result_puff == pathlib.Path("some/path/puff_file.yml")
-
-
-class TestConstructFqdn:
-    def test_structured_subscription(self):
-        result = _construct_fqdn(
-            "api", "some.where", "client", "system_client_stub"
-        )
-
-        assert result == "api.stub.client.some.where"
-
-    def test_unstructured_subscription(self):
-        result = _construct_fqdn(
-            "api", "some.where", "client", "system_client_stub"
-        )
-
-        assert result == "api.stub.client.some.where"
 
 
 class TestConstructResourceGroupName:
