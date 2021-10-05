@@ -9,7 +9,7 @@ import asyncio
 import pathlib
 import typing
 
-import aiofiles  # type: ignore
+import aiofiles
 
 from foodx_devops_tools.puff import run_puff
 

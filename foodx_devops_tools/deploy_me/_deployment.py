@@ -37,7 +37,11 @@ from foodx_devops_tools.pipeline_config.frames import (
 )
 from foodx_devops_tools.pipeline_config.puff_map import PuffMapPaths
 from foodx_devops_tools.puff import PuffError, run_puff
-from foodx_devops_tools.templates import do_snippet_substitution
+from foodx_devops_tools.utilities.jinja2 import (
+    FrameTemplates,
+    TemplateParameters,
+)
+from foodx_devops_tools.utilities.templates import json_inlining
 
 from ._dependency_monitor import process_dependencies
 from ._exceptions import DeploymentError
@@ -46,6 +50,7 @@ from ._status import DeploymentState, DeploymentStatus, all_success
 
 log = logging.getLogger(__name__)
 
+JINJA_FILE_PREFIX = "jinja2."
 STATUS_SLEEP_SECONDS = 1
 
 
@@ -100,10 +105,19 @@ async def assess_results(
 
 
 def _construct_resource_group_name(
-    application_name: str, frame_name: str, client: str
+    application_name: str,
+    frame_name: str,
+    client: str,
+    user_resource_group_name: typing.Optional[str],
 ) -> str:
     """Construct a resource group name from deployment context."""
-    return "-".join([application_name, frame_name, client])
+    result = (
+        "-".join([application_name, frame_name, client])
+        if not user_resource_group_name
+        else user_resource_group_name
+    )
+
+    return result
 
 
 def _construct_fqdn(
@@ -146,12 +160,13 @@ def _make_secrets_object(key_values: dict) -> typing.List[dict]:
     return result
 
 
-def _construct_arm_paths(
+def _construct_deployment_paths(
     this_step: ApplicationDeploymentDefinition,
     arm_parameter_path: pathlib.Path,
     application_name: str,
     frame_folder: typing.Optional[pathlib.Path],
-) -> typing.Tuple[pathlib.Path, pathlib.Path, pathlib.Path]:
+    step_context: str,
+) -> typing.Tuple[pathlib.Path, pathlib.Path, pathlib.Path, pathlib.Path]:
     """Construct paths for ARM template files."""
     if not frame_folder:
         raise DeploymentError("frame_folder not defined for application step")
@@ -173,7 +188,22 @@ def _construct_arm_paths(
 
     parameters_path = frame_folder / arm_parameter_path
 
-    return template_path, puff_path, parameters_path
+    # use the same directory as puff files for escolar file to avoid
+    # confusion over reused arm templates in the configuration dir.
+    target_arm_path = puff_path.parent / "{0}.escolar".format(
+        template_path.name
+    )
+    log.info(
+        "step escolar source ARM template, {0}, {1}".format(
+            step_context, template_path
+        )
+    )
+    log.info(
+        "step escolar target ARM template, {0}, {1}".format(
+            step_context, target_arm_path
+        )
+    )
+    return template_path, puff_path, parameters_path, target_arm_path
 
 
 def _construct_deployment_name(
@@ -213,62 +243,19 @@ def _construct_deployment_name(
     return result[0:64]
 
 
-async def _do_step_deployment(
-    this_step: ApplicationDeploymentDefinition,
+def _construct_override_parameters(
     deployment_data: FlattenedDeployment,
-    puff_parameter_data: PuffMapPaths,
-    this_context: str,
-    enable_validation: bool,
-) -> None:
-    step_context = "{0}.{1}".format(this_context, this_step.name)
-    resource_group = (
-        _construct_resource_group_name(
-            deployment_data.context.application_name,
-            deployment_data.context.frame_name,
-            deployment_data.context.client,
-        )
-        if not this_step.resource_group
-        else this_step.resource_group
-    )
-    (
-        arm_template_path,
-        puff_file_path,
-        arm_parameters_path,
-    ) = _construct_arm_paths(
-        this_step,
-        puff_parameter_data[this_step.name],
-        deployment_data.context.application_name,
-        deployment_data.data.frame_folder,
-    )
-
-    log.debug(
-        "deployment_data.context, {0}, {1}".format(
-            step_context, str(deployment_data.context)
-        )
-    )
-    log.debug(
-        "deployment_data.data, {0}, {1}".format(
-            step_context, str(deployment_data.data)
-        )
-    )
-    await login_service_principal(deployment_data.data.azure_credentials)
-    if enable_validation:
-        log.info("validation deployment enabled, {0}".format(step_context))
-        resource_group = _mangle_validation_resource_group(
-            resource_group,
-            deployment_data.context.pipeline_id,
-        )
-    else:
-        log.info("deployment enabled, {0}".format(step_context))
-
-    parameters: typing.Dict[str, typing.Any] = {
+    static_secrets_enabled: typing.Optional[bool],
+    step_context: str,
+) -> typing.Dict[str, typing.Any]:
+    result: typing.Dict[str, typing.Any] = {
         "locations": {
             "primary": deployment_data.data.location_primary,
             "secondary": deployment_data.data.location_secondary,
         },
         "tags": deployment_data.context.as_dict(),
     }
-    if this_step.static_secrets:
+    if static_secrets_enabled:
         if deployment_data.data.static_secrets:
             # pass static secrets as a single object containing all the
             # secret key-value pairs.
@@ -277,35 +264,199 @@ async def _do_step_deployment(
                     deployment_data.data.static_secrets
                 )
             }
-            parameters.update(parameter_object)
+            result.update(parameter_object)
         else:
             log.warning(
                 "There are no static_secrets even though secrets have been"
                 " enabled, {0}".format(step_context)
             )
 
-    # use the same directory as puff files for escolar file to avoid
-    # confusion over reused arm templates in the configuration dir.
-    target_arm_path = puff_file_path.parent / "{0}.escolar".format(
-        arm_template_path.name
+    return result
+
+
+async def _apply_template(
+    template_environment: FrameTemplates,
+    source_file: pathlib.Path,
+    target_directory: pathlib.Path,
+    parameters: TemplateParameters,
+) -> pathlib.Path:
+    """
+    Apply frame-specific template and parameters ready for deployment.
+
+    Args:
+        template_environment:   Frame-specific template environment.
+        source_file:            Source template file.
+        target_directory:       Target directory in which to store fulfilled
+                                template file.
+        parameters:             Parameter to apply to the template file.
+
+    Returns:
+        Target file path of the fulfilled template.
+    """
+    target_name = source_file.name.replace(JINJA_FILE_PREFIX, "")
+    target_file = target_directory / target_name
+
+    log.debug(
+        "Applying jinja2 templating, {0} (source), "
+        "{1} (destination)".format(source_file, target_file)
     )
-    log.info(
-        "step escolar source ARM template, {0}, {1}".format(
-            step_context, arm_template_path
+    await template_environment.apply_template(
+        source_file.name, target_file, parameters
+    )
+
+    return target_file
+
+
+async def _prepare_deployment_files(
+    puff_file_path: pathlib.Path,
+    arm_template_path: pathlib.Path,
+    target_arm_path: pathlib.Path,
+    parameters: TemplateParameters,
+) -> pathlib.Path:
+    """Prepare final ARM template and parameter files for deployment."""
+    template_environment = FrameTemplates(
+        [puff_file_path.parent, arm_template_path.parent]
+    )
+    template_environment.environment.filters["json_inlining"] = json_inlining
+
+    target_directory = target_arm_path.parent
+    log.debug(f"templating output target directory, {target_directory}")
+    if puff_file_path.name.startswith(JINJA_FILE_PREFIX):
+        log.info(f"applying jinja2 to puff file, {puff_file_path}")
+        templated_puff = await _apply_template(
+            template_environment, puff_file_path, target_directory, parameters
         )
-    )
-    log.info(
-        "step escolar target ARM template, {0}, {1}".format(
-            step_context, target_arm_path
+    else:
+        templated_puff = puff_file_path
+
+    if arm_template_path.name.startswith(JINJA_FILE_PREFIX):
+        log.info(f"applying jinja2 to ARM template file, {arm_template_path}")
+        templated_arm = await _apply_template(
+            template_environment,
+            arm_template_path,
+            target_directory,
+            parameters,
         )
+    else:
+        templated_arm = arm_template_path
+
+    await run_puff(templated_puff, False, False, disable_ascii_art=True)
+
+    return templated_arm
+
+
+def _construct_app_fqdns(
+    deployment_data: FlattenedDeployment,
+    step_context: str,
+) -> TemplateParameters:
+    result: TemplateParameters = {
+        x: _construct_fqdn(
+            x,
+            deployment_data.data.root_fqdn,
+            deployment_data.context.client,
+            deployment_data.context.azure_subscription_name,
+        )
+        for x in deployment_data.data.url_endpoints
+    }
+    result["root"] = deployment_data.data.root_fqdn
+    result["support"] = "support.{0}.{1}".format(
+        deployment_data.context.client, deployment_data.data.root_fqdn
     )
-    deployment_name = _construct_deployment_name(
-        deployment_data, this_step.name
+    log.debug(f"constructed endpoint fqdns, {step_context},{str(result)}")
+
+    return result
+
+
+def _construct_app_urls(
+    deployment_data: FlattenedDeployment,
+    step_context: str,
+) -> TemplateParameters:
+    fqdns = _construct_app_fqdns(deployment_data, step_context)
+    result: TemplateParameters = {
+        x: "https://{0}".format(y) for x, y in fqdns.items() if x != "root"
+    }
+    log.debug(f"constructed endpoint urls, {step_context},{str(result)}")
+
+    return result
+
+
+def _construct_template_parameters(
+    deployment_data: FlattenedDeployment, step_context: str
+) -> TemplateParameters:
+    result: TemplateParameters = {
+        "context": {
+            "network": {
+                "fqdns": _construct_app_fqdns(deployment_data, step_context),
+                "urls": _construct_app_urls(deployment_data, step_context),
+            },
+            "tags": deployment_data.context.as_dict(),
+        },
+    }
+    log.debug(f"template parameters, {step_context}, {result}")
+
+    return result
+
+
+async def _do_step_deployment(
+    this_step: ApplicationDeploymentDefinition,
+    deployment_data: FlattenedDeployment,
+    puff_parameter_data: PuffMapPaths,
+    this_context: str,
+    enable_validation: bool,
+) -> None:
+    step_context = f"{this_context}.{this_step.name}"
+
+    log.debug(
+        f"deployment_data.context, {step_context}, {str(deployment_data.context)}"  # noqa: E501
+    )
+    log.debug(
+        f"deployment_data.data, {step_context}, {str(deployment_data.data)}"
     )
     try:
-        await asyncio.gather(
-            run_puff(puff_file_path, False, False, disable_ascii_art=True),
-            do_snippet_substitution(arm_template_path, target_arm_path),
+        resource_group = _construct_resource_group_name(
+            deployment_data.context.application_name,
+            deployment_data.context.frame_name,
+            deployment_data.context.client,
+            this_step.resource_group,
+        )
+        (
+            arm_template_path,
+            puff_file_path,
+            arm_parameters_path,
+            target_arm_path,
+        ) = _construct_deployment_paths(
+            this_step,
+            puff_parameter_data[this_step.name],
+            deployment_data.context.application_name,
+            deployment_data.data.frame_folder,
+            step_context,
+        )
+
+        await login_service_principal(deployment_data.data.azure_credentials)
+        if enable_validation:
+            log.info(f"validation deployment enabled, {step_context}")
+            resource_group = _mangle_validation_resource_group(
+                resource_group,
+                deployment_data.context.pipeline_id,
+            )
+        else:
+            log.info(f"deployment enabled, {step_context}")
+
+        override_parameters = _construct_override_parameters(
+            deployment_data, this_step.static_secrets, step_context
+        )
+
+        deployment_name = _construct_deployment_name(
+            deployment_data, this_step.name
+        )
+        template_parameters = _construct_template_parameters(
+            deployment_data, step_context
+        )
+        templated_arm = await _prepare_deployment_files(
+            puff_file_path,
+            arm_template_path,
+            target_arm_path,
+            template_parameters,
         )
 
         this_subscription = AzureSubscriptionConfiguration(
@@ -313,19 +464,17 @@ async def _do_step_deployment(
         )
         await deploy_resource_group(
             resource_group,
-            target_arm_path,
+            templated_arm,
             arm_parameters_path,
             deployment_data.data.location_primary,
             this_step.mode.value,
             this_subscription,
             deployment_name=deployment_name,
-            override_parameters=parameters,
+            override_parameters=override_parameters,
             validate=enable_validation,
         )
     except Exception as e:
-        message = "step deployment failed, {0}, {1}, {2}".format(
-            step_context, target_arm_path, str(e)
-        )
+        message = f"step deployment failed, {step_context}, {str(e)}"
         log.error(message)
         click.echo(click.style(message, fg="red"), err=True)
         raise

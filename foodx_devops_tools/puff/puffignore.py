@@ -12,7 +12,7 @@ import logging
 import pathlib
 import typing
 
-import aiofiles  # type: ignore
+import aiofiles
 
 log = logging.getLogger(__name__)
 
