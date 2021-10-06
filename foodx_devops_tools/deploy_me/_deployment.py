@@ -186,43 +186,6 @@ def _construct_deployment_paths(
     return template_path, puff_path, parameters_path, target_arm_path
 
 
-def _construct_deployment_name(
-    deployment_data: FlattenedDeployment, step_name: str
-) -> str:
-    """
-    Construct the deployment name for use in az CLI.
-
-    Note Azure deployment name have specific limitations:
-
-    * limited to 64 characters
-    * must only contain alphanumerics and the characters ".-_"
-    """
-    assert deployment_data.context.application_name is not None
-    assert deployment_data.context.pipeline_id is not None
-    assert deployment_data.context.release_id is not None
-
-    substitution_value = "-"
-    # reserving underscore here for segmentation of deployment name.
-    regex = re.compile(r"[^A-Za-z0-9.\-]")
-
-    filtered_app_name = regex.sub(
-        substitution_value, deployment_data.context.application_name
-    )[0:20]
-    filtered_pipeline_id = regex.sub(
-        substitution_value, deployment_data.context.pipeline_id
-    )
-    filtered_step_name = regex.sub(substitution_value, step_name)[0:20]
-
-    result = "{0}_{1}".format(
-        filtered_app_name
-        if filtered_app_name == filtered_step_name
-        else "{0}_{1}".format(filtered_app_name, filtered_step_name),
-        filtered_pipeline_id,
-    )
-
-    return result[0:64]
-
-
 def _construct_override_parameters(
     deployment_data: FlattenedDeployment,
     static_secrets_enabled: typing.Optional[bool],
@@ -325,24 +288,6 @@ async def prepare_deployment_files(
     return templated_arm, templated_puff
 
 
-def _construct_template_parameters(
-    deployment_data: FlattenedDeployment, step_context: str
-) -> TemplateParameters:
-    result: TemplateParameters = {
-        "context": {
-            "network": {
-                "fqdns": deployment_data.construct_app_fqdns(),
-                "urls": deployment_data.construct_app_urls(),
-            },
-            "tags": deployment_data.context.as_dict(),
-        },
-    }
-
-    log.debug(f"template parameters, {step_context}, {result}")
-
-    return result
-
-
 async def _do_step_deployment(
     this_step: ApplicationDeploymentDefinition,
     deployment_data: FlattenedDeployment,
@@ -388,16 +333,9 @@ async def _do_step_deployment(
         else:
             log.info(f"deployment enabled, {step_context}")
 
-        override_parameters = _construct_override_parameters(
-            deployment_data, this_step.static_secrets, step_context
-        )
+        template_parameters = deployment_data.construct_template_parameters()
+        log.debug(f"template parameters, {step_context}, {template_parameters}")
 
-        deployment_name = _construct_deployment_name(
-            deployment_data, this_step.name
-        )
-        template_parameters = _construct_template_parameters(
-            deployment_data, step_context
-        )
         templated_arm, _ = await prepare_deployment_files(
             puff_file_path,
             arm_template_path,
@@ -405,6 +343,12 @@ async def _do_step_deployment(
             template_parameters,
         )
 
+        override_parameters = _construct_override_parameters(
+            deployment_data, this_step.static_secrets, step_context
+        )
+        deployment_name = deployment_data.construct_deployment_name(
+            this_step.name
+        )
         this_subscription = AzureSubscriptionConfiguration(
             subscription_id=deployment_data.context.azure_subscription_name
         )

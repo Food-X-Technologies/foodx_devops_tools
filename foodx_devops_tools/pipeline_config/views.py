@@ -11,6 +11,7 @@ import copy
 import dataclasses
 import logging
 import pathlib
+import re
 import typing
 
 from foodx_devops_tools._to import StructuredTo
@@ -359,6 +360,54 @@ class FlattenedDeployment:
         }
 
         return result
+
+    def construct_template_parameters(self: W) -> TemplateParameters:
+        """Construct set of parameters for jinja2 templates."""
+        result: TemplateParameters = {
+            "context": {
+                "network": {
+                    "fqdns": self.construct_app_fqdns(),
+                    "urls": self.construct_app_urls(),
+                },
+                "tags": self.context.as_dict(),
+            },
+        }
+
+        return result
+
+    def construct_deployment_name(self: W, step_name: str) -> str:
+        """
+        Construct the deployment name for use in az CLI.
+
+        Note Azure deployment name have specific limitations:
+
+        * limited to 64 characters
+        * must only contain alphanumerics and the characters ".-_"
+        """
+        assert self.context.application_name is not None
+        assert self.context.pipeline_id is not None
+        assert self.context.release_id is not None
+
+        substitution_value = "-"
+        # reserving underscore here for segmentation of deployment name.
+        regex = re.compile(r"[^A-Za-z0-9.\-]")
+
+        filtered_app_name = regex.sub(
+            substitution_value, self.context.application_name
+        )[0:20]
+        filtered_pipeline_id = regex.sub(
+            substitution_value, self.context.pipeline_id
+        )
+        filtered_step_name = regex.sub(substitution_value, step_name)[0:20]
+
+        result = "{0}_{1}".format(
+            filtered_app_name
+            if filtered_app_name == filtered_step_name
+            else "{0}_{1}".format(filtered_app_name, filtered_step_name),
+            filtered_pipeline_id,
+        )
+
+        return result[0:64]
 
 
 V = typing.TypeVar("V", bound="SubscriptionView")
