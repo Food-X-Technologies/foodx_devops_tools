@@ -409,6 +409,61 @@ class FlattenedDeployment:
 
         return result[0:64]
 
+    def construct_deployment_paths(
+        self: W,
+        specified_arm_file: typing.Optional[pathlib.Path],
+        specified_puff_file: typing.Optional[pathlib.Path],
+        target_arm_parameter_path: pathlib.Path,
+    ) -> typing.Tuple[pathlib.Path, pathlib.Path, pathlib.Path, pathlib.Path]:
+        """
+        Construct paths for ARM template files.
+
+        Args:
+            specified_arm_file:
+            specified_puff_file:
+            target_arm_parameter_path:
+
+        Returns:
+            Tuple of necessary paths.
+        Raises:
+            PipelineViewError:  If any errors occur due to undefined deployment
+                                data.
+        """
+        application_name = self.context.application_name
+        frame_folder = self.data.frame_folder
+        if not frame_folder:
+            raise PipelineViewError(
+                "frame_folder not defined for application step"
+            )
+
+        source_arm_template_path = (
+            (frame_folder / specified_arm_file)
+            if specified_arm_file
+            else (frame_folder / "{0}.json".format(application_name))
+        )
+        if specified_puff_file:
+            puff_path = frame_folder / specified_puff_file
+        elif specified_arm_file:
+            puff_path = frame_folder / str(specified_arm_file).replace(
+                "json", "yml"
+            )
+        else:
+            puff_path = frame_folder / "{0}.yml".format(application_name)
+
+        parameters_path = frame_folder / target_arm_parameter_path
+
+        # use the same directory as puff files for escolar file to avoid
+        # confusion over reused arm templates in the configuration dir.
+        target_arm_template_path = puff_path.parent / "{0}.escolar".format(
+            source_arm_template_path.name
+        )
+        return (
+            source_arm_template_path,
+            target_arm_template_path,
+            puff_path,
+            parameters_path,
+        )
+
 
 V = typing.TypeVar("V", bound="SubscriptionView")
 U = typing.TypeVar("U", bound="DeploymentView")

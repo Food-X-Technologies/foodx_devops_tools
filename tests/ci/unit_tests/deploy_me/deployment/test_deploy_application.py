@@ -124,7 +124,7 @@ class TestValidation(DeploymentChecks):
         mock_deploy.assert_called_once_with(
             "a1_group-123456",
             pathlib.Path("some/path/a1.json"),
-            pathlib.Path("some/path/some/puff_map/path"),
+            pathlib.Path("some/path/a1.yml"),
             "l1",
             "Incremental",
             AzureSubscriptionConfiguration(subscription_id="sys1_c1_r1a"),
@@ -147,7 +147,7 @@ class TestValidation(DeploymentChecks):
         mock_deploy.assert_called_once_with(
             "a1-f1-c1-123456",
             pathlib.Path("some/path/a1.json"),
-            pathlib.Path("some/path/some/puff_map/path"),
+            pathlib.Path("some/path/a1.yml"),
             "l1",
             "Incremental",
             AzureSubscriptionConfiguration(subscription_id="sys1_c1_r1a"),
@@ -172,7 +172,7 @@ class TestDeployment(DeploymentChecks):
         mock_deploy.assert_called_once_with(
             "a1_group",
             pathlib.Path("some/path/a1.json"),
-            pathlib.Path("some/path/some/puff_map/path"),
+            pathlib.Path("some/path/a1.yml"),
             "l1",
             "Incremental",
             AzureSubscriptionConfiguration(subscription_id="sys1_c1_r1a"),
@@ -195,7 +195,7 @@ class TestDeployment(DeploymentChecks):
         mock_deploy.assert_called_once_with(
             "a1-f1-c1",
             pathlib.Path("some/path/a1.json"),
-            pathlib.Path("some/path/some/puff_map/path"),
+            pathlib.Path("some/path/a1.yml"),
             "l1",
             "Incremental",
             AzureSubscriptionConfiguration(subscription_id="sys1_c1_r1a"),

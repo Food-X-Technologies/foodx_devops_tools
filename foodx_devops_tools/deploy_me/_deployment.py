@@ -140,52 +140,6 @@ def _make_secrets_object(key_values: dict) -> typing.List[dict]:
     return result
 
 
-def _construct_deployment_paths(
-    this_step: ApplicationDeploymentDefinition,
-    arm_parameter_path: pathlib.Path,
-    application_name: str,
-    frame_folder: typing.Optional[pathlib.Path],
-    step_context: str,
-) -> typing.Tuple[pathlib.Path, pathlib.Path, pathlib.Path, pathlib.Path]:
-    """Construct paths for ARM template files."""
-    if not frame_folder:
-        raise DeploymentError("frame_folder not defined for application step")
-
-    frame_folder = frame_folder
-    template_path = (
-        (frame_folder / this_step.arm_file)
-        if this_step.arm_file
-        else (frame_folder / "{0}.json".format(application_name))
-    )
-    if this_step.puff_file:
-        puff_path = frame_folder / this_step.puff_file
-    elif this_step.arm_file:
-        puff_path = frame_folder / str(this_step.arm_file).replace(
-            "json", "yml"
-        )
-    else:
-        puff_path = frame_folder / "{0}.yml".format(application_name)
-
-    parameters_path = frame_folder / arm_parameter_path
-
-    # use the same directory as puff files for escolar file to avoid
-    # confusion over reused arm templates in the configuration dir.
-    target_arm_path = puff_path.parent / "{0}.escolar".format(
-        template_path.name
-    )
-    log.info(
-        "step escolar source ARM template, {0}, {1}".format(
-            step_context, template_path
-        )
-    )
-    log.info(
-        "step escolar target ARM template, {0}, {1}".format(
-            step_context, target_arm_path
-        )
-    )
-    return template_path, puff_path, parameters_path, target_arm_path
-
-
 def _construct_override_parameters(
     deployment_data: FlattenedDeployment,
     static_secrets_enabled: typing.Optional[bool],
@@ -315,12 +269,20 @@ async def _do_step_deployment(
             puff_file_path,
             arm_parameters_path,
             target_arm_path,
-        ) = _construct_deployment_paths(
-            this_step,
+        ) = deployment_data.construct_deployment_paths(
+            this_step.arm_file,
+            this_step.puff_file,
             puff_parameter_data[this_step.name],
-            deployment_data.context.application_name,
-            deployment_data.data.frame_folder,
-            step_context,
+        )
+        log.info(
+            "step escolar source ARM template, {0}, {1}".format(
+                step_context, arm_template_path
+            )
+        )
+        log.info(
+            "step escolar target ARM template, {0}, {1}".format(
+                step_context, target_arm_path
+            )
         )
 
         await login_service_principal(deployment_data.data.azure_credentials)

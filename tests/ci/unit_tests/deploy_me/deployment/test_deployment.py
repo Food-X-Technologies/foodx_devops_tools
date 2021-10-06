@@ -15,14 +15,11 @@ import pathlib
 import pytest
 
 from foodx_devops_tools.deploy_me._deployment import (
-    ApplicationDeploymentDefinition,
     DeploymentState,
-    _construct_deployment_paths,
     _construct_resource_group_name,
     assess_results,
     prepare_deployment_files,
 )
-from foodx_devops_tools.pipeline_config.frames import DeploymentMode
 
 
 class TestAssessResults:
@@ -47,117 +44,6 @@ class TestAssessResults:
         result = await assess_results(mock_results)
 
         assert result.code == DeploymentState.ResultType.failed
-
-
-class TestConstructArmPaths:
-    MOCK_CONTEXT = "some_context"
-
-    def test_none_arm_file_puff_file(self):
-        mock_app_name = "this_app"
-        mock_puff_parameter_name = pathlib.Path("some.puff.file.json")
-        mock_frame_folder = pathlib.Path("some/path")
-        mock_step = ApplicationDeploymentDefinition(
-            mode=DeploymentMode.incremental,
-            name="somename",
-            arm_file=None,
-            puff_file=None,
-        )
-
-        (
-            result_template,
-            result_puff,
-            result_parameters,
-            result_target,
-        ) = _construct_deployment_paths(
-            mock_step,
-            mock_puff_parameter_name,
-            mock_app_name,
-            mock_frame_folder,
-            self.MOCK_CONTEXT,
-        )
-
-        assert result_template == pathlib.Path("some/path/this_app.json")
-        assert result_puff == pathlib.Path("some/path/this_app.yml")
-
-    def test_parameter_file(self):
-        mock_app_name = "this_app"
-        mock_puff_parameter_name = pathlib.Path("some.puff.file.json")
-        mock_frame_folder = pathlib.Path("some/path")
-        mock_step = ApplicationDeploymentDefinition(
-            mode=DeploymentMode.incremental,
-            name="somename",
-        )
-
-        (
-            result_template,
-            result_puff,
-            result_parameters,
-            result_target,
-        ) = _construct_deployment_paths(
-            mock_step,
-            mock_puff_parameter_name,
-            mock_app_name,
-            mock_frame_folder,
-            self.MOCK_CONTEXT,
-        )
-
-        assert result_parameters == pathlib.Path(
-            "some/path/some.puff.file.json"
-        )
-
-    def test_arm_file_none_puff_file(self):
-        mock_app_name = "this_app"
-        mock_puff_parameter_name = pathlib.Path("some.puff.file.json")
-        mock_frame_folder = pathlib.Path("some/path")
-        mock_step = ApplicationDeploymentDefinition(
-            mode=DeploymentMode.incremental,
-            name="somename",
-            arm_file=pathlib.Path("arm_file.json"),
-            puff_file=None,
-        )
-
-        (
-            result_template,
-            result_puff,
-            result_parameters,
-            result_target,
-        ) = _construct_deployment_paths(
-            mock_step,
-            mock_puff_parameter_name,
-            mock_app_name,
-            mock_frame_folder,
-            self.MOCK_CONTEXT,
-        )
-
-        assert result_template == pathlib.Path("some/path/arm_file.json")
-        assert result_puff == pathlib.Path("some/path/arm_file.yml")
-
-    def test_independent_arm_file_puff_file(self):
-        mock_app_name = "this_app"
-        mock_puff_parameter_name = pathlib.Path("some.puff.file.json")
-        mock_frame_folder = pathlib.Path("some/path")
-        mock_step = ApplicationDeploymentDefinition(
-            mode=DeploymentMode.incremental,
-            name="somename",
-            arm_file=pathlib.Path("arm_file.json"),
-            puff_file=pathlib.Path("puff_file.yml"),
-        )
-
-        (
-            result_template,
-            result_puff,
-            result_parameters,
-            result_target,
-        ) = _construct_deployment_paths(
-            mock_step,
-            mock_puff_parameter_name,
-            mock_app_name,
-            mock_frame_folder,
-            self.MOCK_CONTEXT,
-        )
-
-        assert result_template == pathlib.Path("some/path/arm_file.json")
-        assert result_puff == pathlib.Path("some/path/puff_file.yml")
 
 
 class TestConstructResourceGroupName:
