@@ -7,5 +7,6 @@
 
 """FoodX core deployment utility."""
 
+from ._deployment import prepare_deployment_files  # noqa: F401
 from ._main import deploy_me  # noqa: F401
 from ._state import ExitState  # noqa: F401

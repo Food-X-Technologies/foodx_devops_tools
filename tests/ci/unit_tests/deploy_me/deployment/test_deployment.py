@@ -19,8 +19,8 @@ from foodx_devops_tools.deploy_me._deployment import (
     DeploymentState,
     _construct_deployment_paths,
     _construct_resource_group_name,
-    _prepare_deployment_files,
     assess_results,
+    prepare_deployment_files,
 )
 from foodx_devops_tools.pipeline_config.frames import DeploymentMode
 
@@ -187,11 +187,12 @@ class TestPrepareDeploymentFiles:
             "foodx_devops_tools.deploy_me._deployment.run_puff"
         )
 
-        result = await _prepare_deployment_files(
+        actual_arm, actual_puff = await prepare_deployment_files(
             mock_path, mock_path, mock_path, self.MOCK_PARAMETERS
         )
 
-        assert result == mock_path
+        assert actual_puff == mock_path
+        assert actual_arm == mock_path
         mock_puff.assert_called_once_with(
             mock_path, False, False, disable_ascii_art=True
         )
@@ -209,14 +210,15 @@ class TestPrepareDeploymentFiles:
             ".apply_template"
         )
 
-        result = await _prepare_deployment_files(
+        actual_arm, actual_puff = await prepare_deployment_files(
             mock_puff_path,
             mock_other_paths,
             mock_other_paths,
             self.MOCK_PARAMETERS,
         )
 
-        assert result == mock_other_paths
+        assert actual_puff == expected_target
+        assert actual_arm == mock_other_paths
         mock_puff.assert_called_once_with(
             expected_target, False, False, disable_ascii_art=True
         )
@@ -237,14 +239,15 @@ class TestPrepareDeploymentFiles:
             ".apply_template"
         )
 
-        result = await _prepare_deployment_files(
+        actual_arm, actual_puff = await prepare_deployment_files(
             mock_other_paths,
             mock_arm_path,
             mock_other_paths,
             self.MOCK_PARAMETERS,
         )
 
-        assert result == expected_target
+        assert actual_arm == expected_target
+        assert actual_puff == mock_other_paths
         mock_puff.assert_called_once_with(
             mock_other_paths, False, False, disable_ascii_art=True
         )

@@ -287,12 +287,12 @@ async def _apply_template(
     return target_file
 
 
-async def _prepare_deployment_files(
+async def prepare_deployment_files(
     puff_file_path: pathlib.Path,
     arm_template_path: pathlib.Path,
     target_arm_path: pathlib.Path,
     parameters: TemplateParameters,
-) -> pathlib.Path:
+) -> typing.Tuple[pathlib.Path, pathlib.Path]:
     """Prepare final ARM template and parameter files for deployment."""
     template_environment = FrameTemplates(
         [puff_file_path.parent, arm_template_path.parent]
@@ -322,7 +322,7 @@ async def _prepare_deployment_files(
 
     await run_puff(templated_puff, False, False, disable_ascii_art=True)
 
-    return templated_arm
+    return templated_arm, templated_puff
 
 
 def _construct_template_parameters(
@@ -398,7 +398,7 @@ async def _do_step_deployment(
         template_parameters = _construct_template_parameters(
             deployment_data, step_context
         )
-        templated_arm = await _prepare_deployment_files(
+        templated_arm, _ = await prepare_deployment_files(
             puff_file_path,
             arm_template_path,
             target_arm_path,
