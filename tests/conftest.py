@@ -91,3 +91,8 @@ def mock_context(mocker):
         return this_mock
 
     return _apply
+
+
+@pytest.fixture()
+def mock_puff_mkdirs(mocker):
+    mocker.patch("foodx_devops_tools.puff.arm.os.makedirs")

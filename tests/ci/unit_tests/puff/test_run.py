@@ -125,7 +125,8 @@ class TestRunPuff:
         mock_path = mocker.create_autospec(pathlib.Path)
         mock_path.is_dir.return_value = False
         mock_path.is_file.return_value = True
-        mock_path.stem.return_value = "this_file"
+        mock_path.stem = "this_file"
+        mock_path.parent = pathlib.Path(".")
         mocker.patch(
             "foodx_devops_tools.puff.run.load_puffignore",
             side_effect=AsyncMock(return_value=list()),
@@ -134,12 +135,59 @@ class TestRunPuff:
             "foodx_devops_tools.puff.arm.load_yaml",
             return_value={"environments": dict()},
         )
-        mock_async_method("foodx_devops_tools.puff.arm._save_parameter_file")
+        mock_save = mock_async_method(
+            "foodx_devops_tools.puff.arm._save_parameter_file"
+        )
 
         await run_puff(mock_path, False, False)
 
         result = capsys.readouterr().out
         assert GENERATING_MESSAGE in result
+
+        mock_save.assert_has_calls(
+            [
+                mocker.call(
+                    pathlib.Path("this_file.json"), mocker.ANY, mocker.ANY
+                )
+            ]
+        )
+
+    @pytest.mark.asyncio
+    async def test_output_dir_clean(self, capsys, mocker, mock_async_method):
+        """Output directory specified for output."""
+        mock_path = mocker.create_autospec(pathlib.Path)
+        mock_path.is_dir.return_value = False
+        mock_path.is_file.return_value = True
+        mock_path.stem = "this_file"
+        mock_path.parent = pathlib.Path(".")
+        mocker.patch(
+            "foodx_devops_tools.puff.run.load_puffignore",
+            side_effect=AsyncMock(return_value=list()),
+        )
+        mock_async_method(
+            "foodx_devops_tools.puff.arm.load_yaml",
+            return_value={"environments": dict()},
+        )
+        mock_save = mock_async_method(
+            "foodx_devops_tools.puff.arm._save_parameter_file"
+        )
+
+        await run_puff(
+            mock_path, False, False, output_dir=pathlib.Path("some/dir")
+        )
+
+        result = capsys.readouterr().out
+        assert GENERATING_MESSAGE in result
+
+        mock_save.assert_has_calls(
+            [
+                mocker.call(
+                    pathlib.Path("some/dir/this_file.json"),
+                    mocker.ANY,
+                    mocker.ANY,
+                )
+            ]
+        )
 
     @pytest.mark.asyncio
     async def test_delete_clean(self, capsys, mocker, mock_async_method):

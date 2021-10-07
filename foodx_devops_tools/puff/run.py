@@ -81,6 +81,7 @@ async def run_puff(
     is_delete_files: bool,
     is_pretty: bool,
     disable_ascii_art: bool = False,
+    output_dir: typing.Optional[pathlib.Path] = None,
 ) -> None:
     """
     Search filesystem for YAML files and create or delete ARM template files.
@@ -89,6 +90,8 @@ async def run_puff(
         source_path: Root path to search recursively for YAML files.
         is_delete_files: Enable/disable delete instead of create action.
         is_pretty: Create nicely formatted JSON for humans.
+        disable_ascii_art: Disable console ASCII art output.
+        output_dir: Directory to save output files.
     """
     if is_delete_files:
         this_action = PuffActions.delete
@@ -120,7 +123,9 @@ async def run_puff(
 
     await asyncio.gather(
         *[
-            do_arm_template_parameter_action(x, is_delete_files, is_pretty)
+            do_arm_template_parameter_action(
+                x, output_dir, is_delete_files, is_pretty
+            )
             for x in yaml_filenames
         ]
     )
