@@ -7,8 +7,30 @@
 
 """Generalized structured name for deep referencing objects in data model."""
 
+import dataclasses
 import pathlib
 import typing
+
+U = typing.TypeVar("U", bound="FrameFile")
+
+
+@dataclasses.dataclass
+class FrameFile:
+    """
+    Record directory and file paths of a frame separately.
+
+    In a frame the frame folder must eventually be combined with a relative
+    file path to access a file, but preprocessing often requires the two to
+    be separate, but conceptually linked until needed.
+    """
+
+    dir: pathlib.Path
+    file: pathlib.Path
+
+    def path(self: U) -> pathlib.Path:
+        """Combine the directory and file paths."""
+        return self.dir / self.file
+
 
 T = typing.TypeVar("T", bound="StructuredName")
 
@@ -25,4 +47,4 @@ class StructuredName(typing.List[str]):
         return ".".join(self)
 
 
-StructuredPathCollection = typing.Dict[StructuredName, pathlib.Path]
+StructuredPathCollection = typing.Dict[StructuredName, FrameFile]

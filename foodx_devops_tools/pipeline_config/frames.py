@@ -17,7 +17,7 @@ import pydantic
 
 from ._exceptions import FrameDefinitionsError
 from ._loader import load_configuration
-from ._structure import StructuredName, StructuredPathCollection
+from ._structure import FrameFile, StructuredName, StructuredPathCollection
 
 log = logging.getLogger(__name__)
 
@@ -160,9 +160,10 @@ class FramesTriggersDefinition(pydantic.BaseModel):
                             arm_name = this_step.arm_file
                         else:
                             arm_name = pathlib.Path(f"{application_name}.json")
-                        this_file = this_folder / arm_name
 
-                        result[step_structure] = this_file
+                        result[step_structure] = FrameFile(
+                            dir=this_folder, file=arm_name
+                        )
         return result
 
     def puff_file_paths(self: U) -> StructuredPathCollection:
@@ -193,9 +194,10 @@ class FramesTriggersDefinition(pydantic.BaseModel):
                             puff_name = this_step.puff_file
                         else:
                             puff_name = pathlib.Path(f"{application_name}.json")
-                        this_file = this_folder / puff_name
 
-                        result[step_structure] = this_file
+                        result[step_structure] = FrameFile(
+                            dir=this_folder, file=puff_name
+                        )
         return result
 
     def frame_folders(self: U) -> StructuredPathCollection:
@@ -209,7 +211,9 @@ class FramesTriggersDefinition(pydantic.BaseModel):
         for frame_name, frame_data in self.frames.items():
             this_structure = StructuredName()
             this_structure.append(frame_name)
-            result[this_structure] = frame_data.folder
+            result[this_structure] = FrameFile(
+                dir=frame_data.folder, file=pathlib.Path("")
+            )
 
         return result
 

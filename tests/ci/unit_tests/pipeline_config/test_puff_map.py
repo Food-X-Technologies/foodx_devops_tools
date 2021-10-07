@@ -10,6 +10,7 @@ import pathlib
 import pytest
 
 from foodx_devops_tools.pipeline_config import StructuredName, load_puff_map
+from foodx_devops_tools.pipeline_config._structure import FrameFile
 
 
 @pytest.fixture
@@ -66,8 +67,12 @@ puff_map:
 
 class TestPuffFiles:
     mock_folders = {
-        StructuredName(["f1"]): pathlib.Path("this/dir"),
-        StructuredName(["f2"]): pathlib.Path("other/dir"),
+        StructuredName(["f1"]): FrameFile(
+            dir=pathlib.Path("this/dir"), file=pathlib.Path("")
+        ),
+        StructuredName(["f2"]): FrameFile(
+            dir=pathlib.Path("other/dir"), file=pathlib.Path("")
+        ),
     }
 
     def test_single(self, apply_puffmap_test):
@@ -89,8 +94,9 @@ class TestPuffFiles:
         )
 
         assert result == {
-            StructuredName(["f1", "a1", "r1", "sub1", "label1"]): pathlib.Path(
-                "this/dir/some/puff1.json"
+            StructuredName(["f1", "a1", "r1", "sub1", "label1"]): FrameFile(
+                dir=pathlib.Path("this/dir/"),
+                file=pathlib.Path("some/puff1.json"),
             ),
         }
 
@@ -114,11 +120,11 @@ class TestPuffFiles:
         )
 
         assert result == {
-            StructuredName(["f1", "a1", "r1", "sub1", "label1"]): pathlib.Path(
-                "this/dir/puff1.json"
+            StructuredName(["f1", "a1", "r1", "sub1", "label1"]): FrameFile(
+                dir=pathlib.Path("this/dir/"), file=pathlib.Path("puff1.json")
             ),
-            StructuredName(["f1", "a1", "r1", "sub1", "label2"]): pathlib.Path(
-                "this/dir/puff2.json"
+            StructuredName(["f1", "a1", "r1", "sub1", "label2"]): FrameFile(
+                dir=pathlib.Path("this/dir/"), file=pathlib.Path("puff2.json")
             ),
         }
 
@@ -148,11 +154,13 @@ class TestPuffFiles:
         )
 
         assert result == {
-            StructuredName(["f1", "a1", "r1", "sub1", "label1"]): pathlib.Path(
-                "this/dir/some/path/puff1.json"
+            StructuredName(["f1", "a1", "r1", "sub1", "label1"]): FrameFile(
+                dir=pathlib.Path("this/dir/"),
+                file=pathlib.Path("some/path/puff1.json"),
             ),
-            StructuredName(["f2", "a1", "r1", "sub1", "label1"]): pathlib.Path(
-                "other/dir/some/path/puff1.json"
+            StructuredName(["f2", "a1", "r1", "sub1", "label1"]): FrameFile(
+                dir=pathlib.Path("other/dir/"),
+                file=pathlib.Path("some/path/puff1.json"),
             ),
         }
 
@@ -180,11 +188,12 @@ class TestPuffFiles:
         )
 
         assert result == {
-            StructuredName(["f1", "a1", "r1", "sub1", "label1"]): pathlib.Path(
-                "this/dir/path/puff1.json"
+            StructuredName(["f1", "a1", "r1", "sub1", "label1"]): FrameFile(
+                dir=pathlib.Path("this/dir/"),
+                file=pathlib.Path("path/puff1.json"),
             ),
-            StructuredName(["f1", "a2", "r1", "sub1", "label1"]): pathlib.Path(
-                "this/dir/puff2.json"
+            StructuredName(["f1", "a2", "r1", "sub1", "label1"]): FrameFile(
+                dir=pathlib.Path("this/dir/"), file=pathlib.Path("puff2.json")
             ),
         }
 
@@ -224,19 +233,19 @@ class TestPuffFiles:
         )
 
         assert result == {
-            StructuredName(["f1", "a1", "r1", "sub1", "label1"]): pathlib.Path(
-                "this/dir/puff1.json"
+            StructuredName(["f1", "a1", "r1", "sub1", "label1"]): FrameFile(
+                dir=pathlib.Path("this/dir/"), file=pathlib.Path("puff1.json")
             ),
-            StructuredName(["f1", "a2", "r1", "sub1", "label2"]): pathlib.Path(
-                "this/dir/puff2.json"
+            StructuredName(["f1", "a2", "r1", "sub1", "label2"]): FrameFile(
+                dir=pathlib.Path("this/dir/"), file=pathlib.Path("puff2.json")
             ),
-            StructuredName(["f1", "a2", "r1", "sub2", "label3"]): pathlib.Path(
-                "this/dir/puff3.json"
+            StructuredName(["f1", "a2", "r1", "sub2", "label3"]): FrameFile(
+                dir=pathlib.Path("this/dir/"), file=pathlib.Path("puff3.json")
             ),
-            StructuredName(["f1", "a2", "r2", "sub1", "label4"]): pathlib.Path(
-                "this/dir/puff4.json"
+            StructuredName(["f1", "a2", "r2", "sub1", "label4"]): FrameFile(
+                dir=pathlib.Path("this/dir/"), file=pathlib.Path("puff4.json")
             ),
-            StructuredName(["f2", "a1", "r1", "sub1", "label1"]): pathlib.Path(
-                "other/dir/puff5.json"
+            StructuredName(["f2", "a1", "r1", "sub1", "label1"]): FrameFile(
+                dir=pathlib.Path("other/dir/"), file=pathlib.Path("puff5.json")
             ),
         }

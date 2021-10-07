@@ -16,7 +16,7 @@ import pydantic
 
 from ._exceptions import FolderPathError, PuffMapDefinitionsError
 from ._loader import load_configuration
-from ._structure import StructuredName, StructuredPathCollection
+from ._structure import FrameFile, StructuredName, StructuredPathCollection
 
 log = logging.getLogger(__name__)
 
@@ -89,12 +89,13 @@ class PuffMap(pydantic.BaseModel):
                             step_structure.append(step_name)
 
                             try:
-                                results[step_structure] = (
-                                    folder_paths[frame_structure] / puff_file
+                                results[step_structure] = FrameFile(
+                                    dir=folder_paths[frame_structure].dir,
+                                    file=puff_file,
                                 )
                             except KeyError as e:
                                 raise FolderPathError(
-                                    "Structure for specified foldet path does "
+                                    "Structure for specified folder path does "
                                     "not exist, {0}, {1}".format(
                                         str(frame_structure),
                                         str(step_structure),

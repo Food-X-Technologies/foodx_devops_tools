@@ -110,7 +110,7 @@ async def _prepare_deployment_files(
                 this_iteration.context.application_name = structure_name[1]
                 this_iteration.data.frame_folder = frame_folders[
                     StructuredName([this_iteration.context.frame_name])
-                ]
+                ].dir
 
                 puff_map_structure_name = StructuredName(
                     [
@@ -127,9 +127,9 @@ async def _prepare_deployment_files(
                     arm_parameters_path,
                     target_arm_path,
                 ) = this_iteration.construct_deployment_paths(
-                    arm_paths[structure_name],
-                    puff_paths[structure_name],
-                    puff_parameter_paths[puff_map_structure_name],
+                    arm_paths[structure_name].file,
+                    puff_paths[structure_name].file,
+                    puff_parameter_paths[puff_map_structure_name].file,
                 )
                 templated_arm, templated_puff = await prepare_deployment_files(
                     arm_template_path,
