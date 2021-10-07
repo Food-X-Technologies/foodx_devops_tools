@@ -54,7 +54,7 @@ def prep_data(mock_async_method, mock_flattened_deployment):
         "foodx_devops_tools.deploy_me._deployment.deploy_resource_group"
     )
     mock_puff = mock_async_method(
-        "foodx_devops_tools.deploy_me._deployment.run_puff"
+        "foodx_devops_tools.utilities.templates.run_puff"
     )
     mock_async_method(
         "foodx_devops_tools.deploy_me._deployment.login_service_principal"

@@ -58,7 +58,7 @@ class TestDoPathCheck:
         mock_loads(mock_results)
         mock_config = PipelineConfiguration.from_files(MOCK_PATHS, MOCK_SECRET)
 
-        await do_path_check(mock_config, MOCK_SYSTEM_PATH)
+        await do_path_check(mock_config)
 
     @pytest.mark.asyncio
     async def test_missing_file(
@@ -66,31 +66,31 @@ class TestDoPathCheck:
     ):
         mock_async_method(
             "foodx_devops_tools.pipeline_config._checks._file_exists",
-            side_effect=[True, False],
+            side_effect=[True, False, True, True, True],
         )
         mock_loads(mock_results)
         mock_config = PipelineConfiguration.from_files(MOCK_PATHS, MOCK_SECRET)
 
         with pytest.raises(
-            FileNotFoundError, match=r"files missing from " r"deployment"
+            FileNotFoundError, match=r"files missing from deployment"
         ):
-            await do_path_check(mock_config, MOCK_SYSTEM_PATH)
+            await do_path_check(mock_config)
 
     @pytest.mark.asyncio
     async def test_multiple_missing_files(
         self, mock_loads, mock_results, mock_async_method, mock_run_puff_check
     ):
         mock_async_method(
-            "foodx_devops_tools.pipeline_config._checks" "._file_exists",
-            side_effect=[False, False],
+            "foodx_devops_tools.pipeline_config._checks._file_exists",
+            side_effect=[False, False, False, False, False],
         )
         mock_loads(mock_results)
         mock_config = PipelineConfiguration.from_files(MOCK_PATHS, MOCK_SECRET)
 
         with pytest.raises(
-            FileNotFoundError, match=r"files missing from " r"deployment"
+            FileNotFoundError, match=r"files missing from deployment"
         ):
-            await do_path_check(mock_config, MOCK_SYSTEM_PATH)
+            await do_path_check(mock_config)
 
     @pytest.mark.asyncio
     async def test_failed_check(
@@ -113,4 +113,4 @@ class TestDoPathCheck:
         mock_config = PipelineConfiguration.from_files(MOCK_PATHS, MOCK_SECRET)
 
         with pytest.raises(RuntimeError):
-            await do_path_check(mock_config, MOCK_SYSTEM_PATH)
+            await do_path_check(mock_config)

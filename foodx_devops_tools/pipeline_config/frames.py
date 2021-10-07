@@ -165,6 +165,39 @@ class FramesTriggersDefinition(pydantic.BaseModel):
                         result[step_structure] = this_file
         return result
 
+    def puff_file_paths(self: U) -> StructuredPathCollection:
+        """
+        Generate collection of puff file paths.
+
+        Returns:
+            Collection of puff file paths indexed by structured name.
+        """
+        result: StructuredPathCollection = dict()
+        for frame_name, frame_data in self.frames.items():
+            frame_structure = StructuredName()
+            frame_structure.append(frame_name)
+
+            this_folder = frame_data.folder
+            for (
+                application_name,
+                application_data,
+            ) in frame_data.applications.items():
+                app_structure = copy.deepcopy(frame_structure)
+                app_structure.append(application_name)
+                for this_step in application_data:
+                    if isinstance(this_step, ApplicationDeploymentDefinition):
+                        step_structure = copy.deepcopy(app_structure)
+                        step_structure.append(this_step.name)
+
+                        if this_step.puff_file:
+                            puff_name = this_step.puff_file
+                        else:
+                            puff_name = pathlib.Path(f"{application_name}.json")
+                        this_file = this_folder / puff_name
+
+                        result[step_structure] = this_file
+        return result
+
     def frame_folders(self: U) -> StructuredPathCollection:
         """
         Generate collection of frame folder paths.

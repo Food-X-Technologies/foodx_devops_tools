@@ -10,6 +10,7 @@
 #  You should have received a copy of the MIT License along with
 #  foodx_devops_tools. If not, see <https://opensource.org/licenses/MIT>.
 
+import copy
 import logging
 
 import pytest
@@ -101,7 +102,7 @@ def mock_loads(mocker):
 
 @pytest.fixture()
 def mock_results():
-    results_copy = MOCK_RESULTS.copy()
+    results_copy = copy.deepcopy(MOCK_RESULTS)
     pipeline_config = PipelineConfiguration.parse_obj(results_copy)
 
     return pipeline_config

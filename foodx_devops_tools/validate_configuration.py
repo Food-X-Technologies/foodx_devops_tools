@@ -124,7 +124,7 @@ def _main(
         )
 
         if check_paths:
-            asyncio.run(do_path_check(pipeline_configuration, system_path))
+            asyncio.run(do_path_check(pipeline_configuration))
 
         report_success("pipeline configuration validated")
     except FileNotFoundError as e:
