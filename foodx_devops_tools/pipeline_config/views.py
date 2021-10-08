@@ -413,7 +413,7 @@ class FlattenedDeployment:
         self: W,
         specified_arm_file: typing.Optional[pathlib.Path],
         specified_puff_file: typing.Optional[pathlib.Path],
-        target_arm_parameter_path: pathlib.Path,
+        target_arm_parameter_path: typing.Optional[pathlib.Path],
     ) -> typing.Tuple[pathlib.Path, pathlib.Path, pathlib.Path, pathlib.Path]:
         """
         Construct paths for ARM template files.
@@ -434,6 +434,10 @@ class FlattenedDeployment:
         if not frame_folder:
             raise PipelineViewError(
                 "frame_folder not defined for application step"
+            )
+        if not target_arm_parameter_path:
+            raise PipelineViewError(
+                "target_arm_parameter_path not defined for application step"
             )
 
         source_arm_template_path = (

@@ -24,12 +24,21 @@ class FrameFile:
     be separate, but conceptually linked until needed.
     """
 
-    dir: pathlib.Path
-    file: pathlib.Path
+    dir: typing.Optional[pathlib.Path]
+    file: typing.Optional[pathlib.Path]
 
-    def path(self: U) -> pathlib.Path:
+    @property
+    def path(self: U) -> typing.Optional[pathlib.Path]:
         """Combine the directory and file paths."""
-        return self.dir / self.file
+        result = None
+        if self.dir and self.file:
+            result = self.dir / self.file
+        elif self.dir:
+            result = self.dir
+        elif self.file:
+            result = self.file
+
+        return result
 
 
 T = typing.TypeVar("T", bound="StructuredName")
