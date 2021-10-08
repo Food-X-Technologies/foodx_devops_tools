@@ -425,7 +425,7 @@ frames:
         apply_applications_test(file_text)
 
 
-class TestArmFiles:
+class TestArmFilePaths:
     def test_default(self, apply_applications_test):
         file_text = """---
 frames:
@@ -498,6 +498,128 @@ frames:
                 dir=pathlib.Path("some/path/"),
                 file=pathlib.Path("arm_file.json"),
             ),
+        }
+
+    def test_subpath(self, apply_applications_test):
+        file_text = """---
+frames:
+  frames:
+    f1:
+      applications:
+        a1: 
+          - name: a1l1
+            mode: Incremental
+            arm_file: other/path/arm_file.json
+      folder: some/path
+"""
+
+        under_test = apply_applications_test(file_text)
+        result = under_test.frames.arm_file_paths()
+
+        assert result == {
+            StructuredName(["f1", "a1", "a1l1"]): FrameFile(
+                dir=pathlib.Path("some/path/"),
+                file=pathlib.Path("other/path/arm_file.json"),
+            )
+        }
+
+
+class TestPuffFilePaths:
+    def test_default(self, apply_applications_test):
+        file_text = """---
+frames:
+  frames:
+    f1:
+      applications:
+        a1: 
+          - name: a1l1
+            mode: Incremental
+      folder: some/path
+"""
+
+        under_test = apply_applications_test(file_text)
+        result = under_test.frames.puff_file_paths()
+
+        assert result == {
+            StructuredName(["f1", "a1", "a1l1"]): FrameFile(
+                dir=pathlib.Path("some/path/"),
+                file=pathlib.Path("a1.yml"),
+            ),
+        }
+
+    def test_explicit(self, apply_applications_test):
+        file_text = """---
+frames:
+  frames:
+    f1:
+      applications:
+        a1: 
+          - name: a1l1
+            mode: Incremental
+            puff_file: puff_file.yml
+      folder: some/path
+"""
+
+        under_test = apply_applications_test(file_text)
+        result = under_test.frames.puff_file_paths()
+
+        assert result == {
+            StructuredName(["f1", "a1", "a1l1"]): FrameFile(
+                dir=pathlib.Path("some/path/"),
+                file=pathlib.Path("puff_file.yml"),
+            )
+        }
+
+    def test_mixed(self, apply_applications_test):
+        file_text = """---
+frames:
+  frames:
+    f1:
+      applications:
+        a1: 
+          - name: a1l1
+            mode: Incremental
+        a2: 
+          - name: a2l1
+            mode: Incremental
+            puff_file: puff/file.yml
+      folder: some/path
+"""
+
+        under_test = apply_applications_test(file_text)
+        result = under_test.frames.puff_file_paths()
+
+        assert result == {
+            StructuredName(["f1", "a1", "a1l1"]): FrameFile(
+                dir=pathlib.Path("some/path/"), file=pathlib.Path("a1.yml")
+            ),
+            StructuredName(["f1", "a2", "a2l1"]): FrameFile(
+                dir=pathlib.Path("some/path/"),
+                file=pathlib.Path("puff/file.yml"),
+            ),
+        }
+
+    def test_subpath(self, apply_applications_test):
+        file_text = """---
+frames:
+  frames:
+    f1:
+      applications:
+        a1: 
+          - name: a1l1
+            mode: Incremental
+            puff_file: other/path/puff_file.yml
+      folder: some/path
+"""
+
+        under_test = apply_applications_test(file_text)
+        result = under_test.frames.puff_file_paths()
+
+        assert result == {
+            StructuredName(["f1", "a1", "a1l1"]): FrameFile(
+                dir=pathlib.Path("some/path/"),
+                file=pathlib.Path("other/path/puff_file.yml"),
+            )
         }
 
 
