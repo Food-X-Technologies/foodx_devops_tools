@@ -103,6 +103,7 @@ async def run_puff(
     click.echo(ACTION_MESSAGES[this_action].message)
 
     ignore_patterns = await load_puffignore(DEFAULT_PUFFIGNORE_PATH)
+    yaml_filenames: typing.Set[pathlib.Path]
     if source_path.is_dir():
         yaml_filenames = _acquire_yaml_filenames(source_path, ignore_patterns)
     elif source_path.is_file():
