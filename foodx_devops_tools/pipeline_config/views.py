@@ -566,10 +566,23 @@ class SubscriptionView:
                 tenant=this_tenants[base_data.tenant].azure_id,
             )
             static_secrets = dict()
-            if self.deployment_view.release_view.configuration.static_secrets:
-                static_secrets = self.deployment_view.release_view.configuration.static_secrets[  # noqa E501
-                    self.subscription_name
-                ]
+            secrets_collection = (
+                self.deployment_view.release_view.configuration.static_secrets
+            )
+            if secrets_collection and (
+                self.subscription_name in secrets_collection
+            ):
+                log.debug(
+                    "static secret keys, {0}".format(secrets_collection.keys())
+                )
+                static_secrets = secrets_collection[self.subscription_name]
+            elif secrets_collection and (
+                self.subscription_name not in secrets_collection
+            ):
+                raise PipelineViewError(
+                    "subscription not defined in static "
+                    "secrets, {0}".format(self.subscription_name)
+                )
 
             this_data: typing.Dict[str, typing.Any] = {
                 "azure_credentials": this_credentials,
