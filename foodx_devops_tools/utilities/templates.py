@@ -156,7 +156,7 @@ async def _apply_template(
     return target_file
 
 
-async def _apply_jinja2_arm_file(
+async def _apply_jinja2_file(
     template_environment: FrameTemplates,
     source_file: pathlib.Path,
     target_directory: pathlib.Path,
@@ -164,13 +164,13 @@ async def _apply_jinja2_arm_file(
 ) -> pathlib.Path:
     """Apply Jinja2 to an ARM template related file."""
     if source_file.name.startswith(JINJA_FILE_PREFIX):
-        templated_puff = await _apply_template(
+        templated_file = await _apply_template(
             template_environment, source_file, target_directory, parameters
         )
     else:
-        templated_puff = source_file
+        templated_file = source_file
 
-    return templated_puff
+    return templated_file
 
 
 async def prepare_deployment_files(
@@ -198,13 +198,13 @@ async def prepare_deployment_files(
         f"applying jinja2 to ARM template file, {source_arm_template_path}"
     )
     futures = await asyncio.gather(
-        _apply_jinja2_arm_file(
+        _apply_jinja2_file(
             template_environment,
             source_puff_file_path,
             puff_target_directory,
             parameters,
         ),
-        _apply_jinja2_arm_file(
+        _apply_jinja2_file(
             template_environment,
             source_arm_template_path,
             arm_target_directory,
