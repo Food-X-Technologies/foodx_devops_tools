@@ -47,9 +47,12 @@ def load_static_secrets(
                         yaml_data["static_secrets"]
                     )
                 else:
-                    log.error(
-                        f"static_secrets field not present in file, {this_path}"
+                    message = (
+                        f"static_secrets object not present in "
+                        f"file, {this_path}"
                     )
+                    log.error(message)
+                    raise StaticSecretsError(message)
 
         this_object = StaticSecrets.parse_obj(secrets_data)
 
