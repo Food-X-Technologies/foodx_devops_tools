@@ -10,8 +10,10 @@
 
 import asyncio
 import enum
+import logging
 import pathlib
 import sys
+import traceback
 import typing
 
 import click
@@ -43,6 +45,8 @@ from .pipeline_config.exceptions import (
     TenantsDefinitionError,
 )
 from .utilities import acquire_token
+
+log = logging.getLogger(__name__)
 
 DEFAULT_LOG_FILE = pathlib.Path("validate_configuration.log")
 
@@ -142,6 +146,7 @@ def _main(
     PASSWORD_FILE:  The path to a file where the service principal decryption
                     password is stored, or "-" for stdin.
     """
+    log_file = DEFAULT_LOG_FILE
     try:
         # currently no need to change logging configuration at run time,
         # so no need to preserve the object.
@@ -149,7 +154,7 @@ def _main(
             disable_file_logging=disable_file_log,
             enable_console_logging=enable_console_log,
             log_level_text=log_level,
-            default_log_file=DEFAULT_LOG_FILE,
+            default_log_file=log_file,
         )
 
         client_config = client_path / "configuration"
@@ -193,7 +198,12 @@ def _main(
         report_failure("Configuration schema error, {0}".format(e))
         sys.exit(ExitState.BAD_CONFIGURATION_PATHS.value)
     except Exception as e:
-        report_failure("unknown error, {0}".format(str(e)))
+        this_traceback = traceback.format_exc()
+        log.debug(this_traceback)
+        report_failure(
+            "unknown error, {0}. See log for more details, "
+            "{1}.".format(str(e), log_file)
+        )
         sys.exit(ExitState.UNKNOWN.value)
 
 
