@@ -202,7 +202,7 @@ def _main(
         log.debug(this_traceback)
         report_failure(
             "unknown error, {0}. See log for more details, "
-            "{1}.".format(str(e), log_file)
+            "{1}.".format(str(e), log_file.resolve())
         )
         sys.exit(ExitState.UNKNOWN.value)
 
