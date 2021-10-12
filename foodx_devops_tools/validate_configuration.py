@@ -16,6 +16,13 @@ import typing
 
 import click
 
+from ._declarations import (
+    DEFAULT_CONSOLE_LOGGING_ENABLED,
+    DEFAULT_FILE_LOGGING_DISABLED,
+    DEFAULT_LOG_LEVEL,
+    VALID_LOG_LEVELS,
+)
+from ._logging import LoggingState
 from ._version import acquire_version
 from .console import report_failure, report_success
 from .pipeline_config import (
@@ -36,6 +43,8 @@ from .pipeline_config.exceptions import (
     TenantsDefinitionError,
 )
 from .utilities import acquire_token
+
+DEFAULT_LOG_FILE = pathlib.Path("validate_configuration.log")
 
 
 @enum.unique
@@ -79,12 +88,37 @@ to avoid having to specify the decryption password.
 """,
     is_flag=True,
 )
+@click.option(
+    "--log-disable-file",
+    "disable_file_log",
+    default=DEFAULT_FILE_LOGGING_DISABLED,
+    help="Disable file logging.",
+    is_flag=True,
+)
+@click.option(
+    "--log-enable-console",
+    "enable_console_log",
+    default=DEFAULT_CONSOLE_LOGGING_ENABLED,
+    help="Log to console.",
+    is_flag=True,
+)
+@click.option(
+    "--log-level",
+    "log_level",
+    default=DEFAULT_LOG_LEVEL,
+    help="Select logging level to apply to all enabled log sinks.",
+    show_default=True,
+    type=click.Choice(VALID_LOG_LEVELS, case_sensitive=False),
+)
 def _main(
     client_path: pathlib.Path,
     system_path: pathlib.Path,
     password_file: typing.IO,
     check_paths: bool,
     disable_vaults: bool,
+    disable_file_log: bool,
+    enable_console_log: bool,
+    log_level: str,
 ) -> None:
     """
     Validate pipeline configuration files.
@@ -109,6 +143,15 @@ def _main(
                     password is stored, or "-" for stdin.
     """
     try:
+        # currently no need to change logging configuration at run time,
+        # so no need to preserve the object.
+        LoggingState(
+            disable_file_logging=disable_file_log,
+            enable_console_logging=enable_console_log,
+            log_level_text=log_level,
+            default_log_file=DEFAULT_LOG_FILE,
+        )
+
         client_config = client_path / "configuration"
         system_config = system_path / "configuration"
         configuration_paths = PipelineConfigurationPaths.from_paths(
