@@ -18,7 +18,12 @@ from foodx_devops_tools._to import StructuredTo
 from foodx_devops_tools.azure.cloud import AzureCredentials
 from foodx_devops_tools.patterns import SubscriptionData
 from foodx_devops_tools.utilities.jinja2 import TemplateParameters
-from foodx_devops_tools.utilities.templates import JINJA_FILE_PREFIX
+from foodx_devops_tools.utilities.templates import (
+    JINJA_FILE_PREFIX,
+    ArmTemplateParameters,
+    ArmTemplates,
+    TemplateFiles,
+)
 
 from ..deployment import DeploymentTuple
 from ._exceptions import PipelineViewError
@@ -415,7 +420,7 @@ class FlattenedDeployment:
         specified_arm_file: typing.Optional[pathlib.Path],
         specified_puff_file: typing.Optional[pathlib.Path],
         target_arm_parameter_path: typing.Optional[pathlib.Path],
-    ) -> typing.Tuple[pathlib.Path, pathlib.Path, pathlib.Path, pathlib.Path]:
+    ) -> TemplateFiles:
         """
         Construct paths for ARM template files.
 
@@ -446,38 +451,71 @@ class FlattenedDeployment:
             if specified_arm_file
             else (frame_folder / "{0}.json".format(application_name))
         )
+        log.debug(f"source arm template path, {source_arm_template_path}")
 
         # Assume that the source arm template path can be used for the other
         # files. In the case that the ARM template path is "out of frame"
         # then the user must explicitly define the puff file path
         if specified_puff_file:
-            puff_path = frame_folder / specified_puff_file
+            puff_prompt = "user specified puff file"
+            source_puff_path = frame_folder / specified_puff_file
         elif specified_arm_file:
-            puff_path = source_arm_template_path.parent / str(
+            puff_prompt = "puff file inferred from arm file"
+            source_puff_path = source_arm_template_path.parent / str(
                 specified_arm_file.name
             ).replace("json", "yml")
         else:
-            puff_path = source_arm_template_path.parent / "{0}.yml".format(
-                application_name
+            puff_prompt = "puff file inferred from application name"
+            source_puff_path = (
+                source_arm_template_path.parent
+                / "{0}.yml".format(application_name)
             )
+        log.debug(f"{puff_prompt}, {source_puff_path}")
 
-        working_dir = puff_path.parent
-        parameters_path = working_dir / target_arm_parameter_path
+        working_dir = source_puff_path.parent
+        log.debug(f"working directory, {working_dir}")
+        # Assume arm template parameters file has been specified with any sub
+        # directories in it's path in puff_map.yml, so only frame_folder is
+        # used here.
+        parameters_path = frame_folder / target_arm_parameter_path
+        log.debug(f"arm parameters path, {parameters_path}")
 
-        if source_arm_template_path.name.startswith(JINJA_FILE_PREFIX):
+        target_arm_template_path = self.__screen_jinja_template(
+            source_arm_template_path, working_dir, "arm"
+        )
+        target_puff_path = self.__screen_jinja_template(
+            source_puff_path, working_dir, "puff"
+        )
+
+        template_files = TemplateFiles(
+            arm_template=ArmTemplates(
+                source=source_arm_template_path, target=target_arm_template_path
+            ),
+            arm_template_parameters=ArmTemplateParameters(
+                source_puff=source_puff_path,
+                templated_puff=target_puff_path,
+                target=parameters_path,
+            ),
+        )
+
+        return template_files
+
+    @staticmethod
+    def __screen_jinja_template(
+        source_path: pathlib.Path, working_dir: pathlib.Path, keyword: str
+    ) -> pathlib.Path:
+        if source_path.name.startswith(JINJA_FILE_PREFIX):
             # A jinja template file needs to have a target in the working dir.
-            target_arm_template_path = working_dir / "{0}".format(
-                source_arm_template_path.name.replace(JINJA_FILE_PREFIX, "")
+            target_prompt = f"jinja output {keyword} target"
+            target_path = working_dir / "{0}".format(
+                source_path.name.replace(JINJA_FILE_PREFIX, "")
             )
         else:
-            target_arm_template_path = source_arm_template_path
+            target_prompt = f"{keyword} target unchanged from {keyword} source"
+            target_path = source_path
+        log.debug(f"{target_prompt}, {target_path}")
 
-        return (
-            source_arm_template_path,
-            target_arm_template_path,
-            puff_path,
-            parameters_path,
-        )
+        return target_path
 
 
 V = typing.TypeVar("V", bound="SubscriptionView")

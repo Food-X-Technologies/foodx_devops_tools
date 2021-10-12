@@ -444,7 +444,7 @@ frames:
         assert result == {
             StructuredName(["f1", "a1", "a1l1"]): FrameFile(
                 dir=pathlib.Path("some/path/"),
-                file=pathlib.Path("a1.json"),
+                file=None,
             ),
         }
 
@@ -492,7 +492,7 @@ frames:
 
         assert result == {
             StructuredName(["f1", "a1", "a1l1"]): FrameFile(
-                dir=pathlib.Path("some/path/"), file=pathlib.Path("a1.json")
+                dir=pathlib.Path("some/path/"), file=None
             ),
             StructuredName(["f1", "a2", "a2l1"]): FrameFile(
                 dir=pathlib.Path("some/path/"),
@@ -543,7 +543,7 @@ frames:
         assert result == {
             StructuredName(["f1", "a1", "a1l1"]): FrameFile(
                 dir=pathlib.Path("some/path/"),
-                file=pathlib.Path("a1.yml"),
+                file=None,
             ),
         }
 
@@ -591,7 +591,8 @@ frames:
 
         assert result == {
             StructuredName(["f1", "a1", "a1l1"]): FrameFile(
-                dir=pathlib.Path("some/path/"), file=pathlib.Path("a1.yml")
+                dir=pathlib.Path("some/path/"),
+                file=None,
             ),
             StructuredName(["f1", "a2", "a2l1"]): FrameFile(
                 dir=pathlib.Path("some/path/"),

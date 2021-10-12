@@ -11,6 +11,11 @@ import pathlib
 import pytest
 
 from foodx_devops_tools.pipeline_config.views import FlattenedDeployment
+from foodx_devops_tools.utilities.templates import (
+    ArmTemplateParameters,
+    ArmTemplates,
+    TemplateFiles,
+)
 
 
 @pytest.fixture()
@@ -34,12 +39,8 @@ class TestConstructDeploymentPaths:
             "arm_parameters",
         ]
         result = under_test.construct_deployment_paths(*parameters["input"])
-        result_parameterized = dict(zip(labels, result))
-        for this_label in labels:
-            actual = result_parameterized[this_label]
-            expected = parameters["expected"][this_label]
-            if actual != expected:
-                pytest.fail(f"expectations mismatched, {expected}, {actual}")
+
+        assert result == parameters["expected"]
 
     def test_none_arm_file_puff_file(self, mock_test_data):
         parameters = {
@@ -51,18 +52,19 @@ class TestConstructDeploymentPaths:
                 # target_arm_parameters_file
                 pathlib.Path("some/arm_parameters.json"),
             ],
-            "expected": {
-                "source_arm_template": pathlib.Path(
-                    "frame/folder/this_app.json"
+            "expected": TemplateFiles(
+                arm_template=ArmTemplates(
+                    source=pathlib.Path("frame/folder/this_app.json"),
+                    target=pathlib.Path("frame/folder/this_app.json"),
                 ),
-                "target_arm_template": pathlib.Path(
-                    "frame/folder/this_app.json"
+                arm_template_parameters=ArmTemplateParameters(
+                    source_puff=pathlib.Path("frame/folder/this_app.yml"),
+                    templated_puff=pathlib.Path("frame/folder/this_app.yml"),
+                    target=pathlib.Path(
+                        "frame/folder/some/arm_parameters.json"
+                    ),
                 ),
-                "puff": pathlib.Path("frame/folder/this_app.yml"),
-                "arm_parameters": pathlib.Path(
-                    "frame/folder/some/arm_parameters.json"
-                ),
-            },
+            ),
         }
 
         self._do_check(parameters, mock_test_data)
@@ -77,18 +79,19 @@ class TestConstructDeploymentPaths:
                 # target_arm_parameters_file
                 pathlib.Path("some.generated.puff.file.json"),
             ],
-            "expected": {
-                "source_arm_template": pathlib.Path(
-                    "frame/folder/arm_file.json"
+            "expected": TemplateFiles(
+                arm_template=ArmTemplates(
+                    source=pathlib.Path("frame/folder/arm_file.json"),
+                    target=pathlib.Path("frame/folder/arm_file.json"),
                 ),
-                "target_arm_template": pathlib.Path(
-                    "frame/folder/arm_file.json"
+                arm_template_parameters=ArmTemplateParameters(
+                    source_puff=pathlib.Path("frame/folder/arm_file.yml"),
+                    templated_puff=pathlib.Path("frame/folder/arm_file.yml"),
+                    target=pathlib.Path(
+                        "frame/folder/some.generated.puff.file.json"
+                    ),
                 ),
-                "puff": pathlib.Path("frame/folder/arm_file.yml"),
-                "arm_parameters": pathlib.Path(
-                    "frame/folder/some.generated.puff.file.json"
-                ),
-            },
+            ),
         }
 
         self._do_check(parameters, mock_test_data)
@@ -103,18 +106,48 @@ class TestConstructDeploymentPaths:
                 # target_arm_parameters_file
                 pathlib.Path("some.generated.puff.file.json"),
             ],
-            "expected": {
-                "source_arm_template": pathlib.Path(
-                    "frame/folder/sub/arm_file.json"
+            "expected": TemplateFiles(
+                arm_template=ArmTemplates(
+                    source=pathlib.Path("frame/folder/sub/arm_file.json"),
+                    target=pathlib.Path("frame/folder/sub/arm_file.json"),
                 ),
-                "target_arm_template": pathlib.Path(
-                    "frame/folder/sub/arm_file.json"
+                arm_template_parameters=ArmTemplateParameters(
+                    source_puff=pathlib.Path("frame/folder/sub/arm_file.yml"),
+                    templated_puff=pathlib.Path(
+                        "frame/folder/sub/arm_file.yml"
+                    ),
+                    target=pathlib.Path(
+                        "frame/folder/some.generated.puff.file.json"
+                    ),
                 ),
-                "puff": pathlib.Path("frame/folder/sub/arm_file.yml"),
-                "arm_parameters": pathlib.Path(
-                    "frame/folder/sub/some.generated.puff.file.json"
+            ),
+        }
+
+        self._do_check(parameters, mock_test_data)
+
+    def test_pathed_arm_parameters_file(self, mock_test_data):
+        parameters = {
+            "input": [
+                # arm_file
+                None,
+                # puff_file
+                None,
+                # target_arm_parameters_file
+                pathlib.Path("sub/some.generated.puff.file.json"),
+            ],
+            "expected": TemplateFiles(
+                arm_template=ArmTemplates(
+                    source=pathlib.Path("frame/folder/this_app.json"),
+                    target=pathlib.Path("frame/folder/this_app.json"),
                 ),
-            },
+                arm_template_parameters=ArmTemplateParameters(
+                    source_puff=pathlib.Path("frame/folder/this_app.yml"),
+                    templated_puff=pathlib.Path("frame/folder/this_app.yml"),
+                    target=pathlib.Path(
+                        "frame/folder/sub/some.generated.puff.file.json"
+                    ),
+                ),
+            ),
         }
 
         self._do_check(parameters, mock_test_data)
@@ -129,18 +162,17 @@ class TestConstructDeploymentPaths:
                 # target_arm_parameters_file
                 pathlib.Path("some.puff.file.json"),
             ],
-            "expected": {
-                "source_arm_template": pathlib.Path(
-                    "frame/folder/arm_file.json"
+            "expected": TemplateFiles(
+                arm_template=ArmTemplates(
+                    source=pathlib.Path("frame/folder/arm_file.json"),
+                    target=pathlib.Path("frame/folder/arm_file.json"),
                 ),
-                "target_arm_template": pathlib.Path(
-                    "frame/folder/arm_file.json"
+                arm_template_parameters=ArmTemplateParameters(
+                    source_puff=pathlib.Path("frame/folder/puff_file.yml"),
+                    templated_puff=pathlib.Path("frame/folder/puff_file.yml"),
+                    target=pathlib.Path("frame/folder/some.puff.file.json"),
                 ),
-                "puff": pathlib.Path("frame/folder/puff_file.yml"),
-                "arm_parameters": pathlib.Path(
-                    "frame/folder/some.puff.file.json"
-                ),
-            },
+            ),
         }
 
         self._do_check(parameters, mock_test_data)
@@ -155,18 +187,19 @@ class TestConstructDeploymentPaths:
                 # target_arm_parameters_file
                 pathlib.Path("some.puff.file.json"),
             ],
-            "expected": {
-                "source_arm_template": pathlib.Path(
-                    "frame/folder/arm_file.json"
+            "expected": TemplateFiles(
+                arm_template=ArmTemplates(
+                    source=pathlib.Path("frame/folder/arm_file.json"),
+                    target=pathlib.Path("frame/folder/arm_file.json"),
                 ),
-                "target_arm_template": pathlib.Path(
-                    "frame/folder/arm_file.json"
+                arm_template_parameters=ArmTemplateParameters(
+                    source_puff=pathlib.Path("frame/folder/puff/puff_file.yml"),
+                    templated_puff=pathlib.Path(
+                        "frame/folder/puff/puff_file.yml"
+                    ),
+                    target=pathlib.Path("frame/folder/some.puff.file.json"),
                 ),
-                "puff": pathlib.Path("frame/folder/puff/puff_file.yml"),
-                "arm_parameters": pathlib.Path(
-                    "frame/folder/puff/some.puff.file.json"
-                ),
-            },
+            ),
         }
 
         self._do_check(parameters, mock_test_data)
@@ -181,18 +214,21 @@ class TestConstructDeploymentPaths:
                 # target_arm_parameters_file
                 pathlib.Path("some.puff.file.json"),
             ],
-            "expected": {
-                "source_arm_template": pathlib.Path(
-                    "frame/folder/../common/files/arm_file.json"
+            "expected": TemplateFiles(
+                arm_template=ArmTemplates(
+                    source=pathlib.Path(
+                        "frame/folder/../common/files/arm_file.json"
+                    ),
+                    target=pathlib.Path(
+                        "frame/folder/../common/files/arm_file.json"
+                    ),
                 ),
-                "target_arm_template": pathlib.Path(
-                    "frame/folder/../common/files/arm_file.json"
+                arm_template_parameters=ArmTemplateParameters(
+                    source_puff=pathlib.Path("frame/folder/puff_file.yml"),
+                    templated_puff=pathlib.Path("frame/folder/puff_file.yml"),
+                    target=pathlib.Path("frame/folder/some.puff.file.json"),
                 ),
-                "puff": pathlib.Path("frame/folder/puff_file.yml"),
-                "arm_parameters": pathlib.Path(
-                    "frame/folder/some.puff.file.json"
-                ),
-            },
+            ),
         }
 
         self._do_check(parameters, mock_test_data)
@@ -207,18 +243,106 @@ class TestConstructDeploymentPaths:
                 # target_arm_parameters_file
                 pathlib.Path("some.puff.file.json"),
             ],
-            "expected": {
-                "source_arm_template": pathlib.Path(
-                    "frame/folder/../common/files/jinja2.arm_file.json"
+            "expected": TemplateFiles(
+                arm_template=ArmTemplates(
+                    source=pathlib.Path(
+                        "frame/folder/../common/files/jinja2.arm_file.json"
+                    ),
+                    target=pathlib.Path("frame/folder/arm_file.json"),
                 ),
-                "target_arm_template": pathlib.Path(
-                    "frame/folder/arm_file.json"
+                arm_template_parameters=ArmTemplateParameters(
+                    source_puff=pathlib.Path("frame/folder/puff_file.yml"),
+                    templated_puff=pathlib.Path("frame/folder/puff_file.yml"),
+                    target=pathlib.Path("frame/folder/some.puff.file.json"),
                 ),
-                "puff": pathlib.Path("frame/folder/puff_file.yml"),
-                "arm_parameters": pathlib.Path(
-                    "frame/folder/some.puff.file.json"
+            ),
+        }
+
+        self._do_check(parameters, mock_test_data)
+
+    def test_out_of_frame_nonjinja_puff_file(self, mock_test_data):
+        parameters = {
+            "input": [
+                # arm_file
+                None,
+                # puff_file
+                pathlib.Path("../common/files/puff_file.yml"),
+                # target_arm_parameters_file
+                pathlib.Path("some.puff.file.json"),
+            ],
+            "expected": TemplateFiles(
+                arm_template=ArmTemplates(
+                    source=pathlib.Path("frame/folder/this_app.json"),
+                    target=pathlib.Path("frame/folder/this_app.json"),
                 ),
-            },
+                arm_template_parameters=ArmTemplateParameters(
+                    source_puff=pathlib.Path(
+                        "frame/folder/../common/files/puff_file.yml"
+                    ),
+                    templated_puff=pathlib.Path(
+                        "frame/folder/../common/files/puff_file.yml"
+                    ),
+                    target=pathlib.Path("frame/folder/some.puff.file.json"),
+                ),
+            ),
+        }
+
+        self._do_check(parameters, mock_test_data)
+
+    def test_out_of_frame_jinja_puff_file(self, mock_test_data):
+        parameters = {
+            "input": [
+                # arm_file
+                None,
+                # puff_file
+                pathlib.Path("../common/files/jinja2.puff_file.yml"),
+                # target_arm_parameters_file
+                pathlib.Path("some.puff.file.json"),
+            ],
+            "expected": TemplateFiles(
+                arm_template=ArmTemplates(
+                    source=pathlib.Path("frame/folder/this_app.json"),
+                    target=pathlib.Path("frame/folder/this_app.json"),
+                ),
+                arm_template_parameters=ArmTemplateParameters(
+                    source_puff=pathlib.Path(
+                        "frame/folder/../common/files/jinja2.puff_file.yml"
+                    ),
+                    templated_puff=pathlib.Path(
+                        "frame/folder/../common/files/puff_file.yml"
+                    ),
+                    target=pathlib.Path("frame/folder/some.puff.file.json"),
+                ),
+            ),
+        }
+
+        self._do_check(parameters, mock_test_data)
+
+    def test_pathed_jinja_puff_file(self, mock_test_data):
+        parameters = {
+            "input": [
+                # arm_file
+                None,
+                # puff_file
+                pathlib.Path("sub/jinja2.puff_file.yml"),
+                # target_arm_parameters_file
+                pathlib.Path("some.puff.file.json"),
+            ],
+            "expected": TemplateFiles(
+                arm_template=ArmTemplates(
+                    source=pathlib.Path("frame/folder/this_app.json"),
+                    target=pathlib.Path("frame/folder/this_app.json"),
+                ),
+                arm_template_parameters=ArmTemplateParameters(
+                    source_puff=pathlib.Path(
+                        "frame/folder/sub/jinja2.puff_file.yml"
+                    ),
+                    templated_puff=pathlib.Path(
+                        "frame/folder/sub/puff_file.yml"
+                    ),
+                    target=pathlib.Path("frame/folder/some.puff.file.json"),
+                ),
+            ),
         }
 
         self._do_check(parameters, mock_test_data)

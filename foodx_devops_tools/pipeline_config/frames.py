@@ -136,6 +136,9 @@ class FramesTriggersDefinition(pydantic.BaseModel):
         """
         Generate collection of ARM template file paths.
 
+        Paths not specified are defined as ``None``. Default path inferences
+        are calculated elsewhere in the application.
+
         Returns:
             Collection of ARM template file paths indexed by structured name.
         """
@@ -156,10 +159,12 @@ class FramesTriggersDefinition(pydantic.BaseModel):
                         step_structure = copy.deepcopy(app_structure)
                         step_structure.append(this_step.name)
 
+                        arm_name: typing.Optional[pathlib.Path]
                         if this_step.arm_file:
                             arm_name = this_step.arm_file
                         else:
-                            arm_name = pathlib.Path(f"{application_name}.json")
+                            # default names are inferred elsewhere
+                            arm_name = None
 
                         result[step_structure] = FrameFile(
                             dir=this_folder, file=arm_name
@@ -169,6 +174,9 @@ class FramesTriggersDefinition(pydantic.BaseModel):
     def puff_file_paths(self: U) -> StructuredPathCollection:
         """
         Generate collection of source puff file paths.
+
+        Paths not specified are defined as ``None``. Default path inferences
+        are calculated elsewhere in the application.
 
         Returns:
             Collection of YAML puff file paths indexed by structured name.
@@ -190,10 +198,12 @@ class FramesTriggersDefinition(pydantic.BaseModel):
                         step_structure = copy.deepcopy(app_structure)
                         step_structure.append(this_step.name)
 
+                        puff_name: typing.Optional[pathlib.Path]
                         if this_step.puff_file:
                             puff_name = this_step.puff_file
                         else:
-                            puff_name = pathlib.Path(f"{application_name}.yml")
+                            # default names are inferred elsewhere
+                            puff_name = None
 
                         result[step_structure] = FrameFile(
                             dir=this_folder, file=puff_name
