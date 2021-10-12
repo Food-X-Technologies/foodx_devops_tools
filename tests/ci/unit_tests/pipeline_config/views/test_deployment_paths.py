@@ -42,7 +42,7 @@ class TestConstructDeploymentPaths:
         assert result_puff == pathlib.Path("frame/folder/this_app.yml")
 
         assert result_target_arm_template == pathlib.Path(
-            "frame/folder/this_app.json.escolar"
+            "frame/folder/this_app.json"
         )
         assert result_parameters == pathlib.Path(
             "frame/folder/some/arm_parameters.json"
@@ -77,7 +77,7 @@ class TestConstructDeploymentPaths:
         assert result_puff == pathlib.Path("frame/folder/arm_file.yml")
 
         assert result_target_arm_template == pathlib.Path(
-            "frame/folder/arm_file.json.escolar"
+            "frame/folder/arm_file.json"
         )
         assert result_parameters == pathlib.Path(
             "frame/folder/some.generated.puff.file.json"
@@ -110,7 +110,7 @@ class TestConstructDeploymentPaths:
         assert result_puff == pathlib.Path("frame/folder/puff_file.yml")
 
         assert result_target_arm_template == pathlib.Path(
-            "frame/folder/arm_file.json.escolar"
+            "frame/folder/arm_file.json"
         )
         assert result_parameters == pathlib.Path(
             "frame/folder/some.puff.file.json"

@@ -13,7 +13,12 @@ import typing
 import aiofiles
 
 from foodx_devops_tools._to import StructuredTo
-from foodx_devops_tools.utilities.templates import prepare_deployment_files
+from foodx_devops_tools.utilities.templates import (
+    ArmTemplateParameters,
+    ArmTemplates,
+    TemplateFiles,
+    prepare_deployment_files,
+)
 
 from ._structure import StructuredName
 from .pipeline import PipelineConfiguration
@@ -123,23 +128,31 @@ async def _prepare_deployment_files(
                 )
                 (
                     arm_template_path,
+                    target_arm_path,
                     puff_file_path,
                     arm_parameters_path,
-                    target_arm_path,
                 ) = this_iteration.construct_deployment_paths(
                     arm_paths[structure_name].file,
                     puff_paths[structure_name].file,
                     puff_parameter_paths[puff_map_structure_name].file,
                 )
-                templated_arm, templated_puff = await prepare_deployment_files(
-                    arm_template_path,
-                    puff_file_path,
-                    target_arm_path,
+                template_files = TemplateFiles(
+                    arm_template=ArmTemplates(
+                        source=arm_template_path, target=target_arm_path
+                    ),
+                    arm_template_parameters=ArmTemplateParameters(
+                        source_puff=puff_paths[structure_name].path,
+                        templated_puff=puff_file_path,
+                        target=arm_parameters_path,
+                    ),
+                )
+                deployment_files = await prepare_deployment_files(
+                    template_files,
                     this_iteration.construct_template_parameters(),
                 )
 
-                templated_arm_files.append(templated_arm)
-                expected_arm_parameter_files.append(arm_parameters_path)
+                templated_arm_files.append(deployment_files.arm_template)
+                expected_arm_parameter_files.append(deployment_files.parameters)
 
     return templated_arm_files, expected_arm_parameter_files
 

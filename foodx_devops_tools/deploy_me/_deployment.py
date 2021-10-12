@@ -35,7 +35,12 @@ from foodx_devops_tools.pipeline_config.frames import (
 )
 from foodx_devops_tools.pipeline_config.puff_map import PuffMapPaths
 from foodx_devops_tools.puff import PuffError
-from foodx_devops_tools.utilities.templates import prepare_deployment_files
+from foodx_devops_tools.utilities.templates import (
+    ArmTemplateParameters,
+    ArmTemplates,
+    TemplateFiles,
+    prepare_deployment_files,
+)
 
 from ._dependency_monitor import process_dependencies
 from ._exceptions import DeploymentError
@@ -189,9 +194,9 @@ async def _do_step_deployment(
         )
         (
             arm_template_path,
+            target_arm_path,
             puff_file_path,
             arm_parameters_path,
-            target_arm_path,
         ) = deployment_data.construct_deployment_paths(
             this_step.arm_file,
             this_step.puff_file,
@@ -221,10 +226,18 @@ async def _do_step_deployment(
         template_parameters = deployment_data.construct_template_parameters()
         log.debug(f"template parameters, {step_context}, {template_parameters}")
 
-        templated_arm, _ = await prepare_deployment_files(
-            puff_file_path,
-            arm_template_path,
-            target_arm_path,
+        template_files = TemplateFiles(
+            arm_template=ArmTemplates(
+                source=arm_template_path, target=target_arm_path
+            ),
+            arm_template_parameters=ArmTemplateParameters(
+                source_puff=puff_file_path,
+                templated_puff=puff_file_path,
+                target=arm_parameters_path,
+            ),
+        )
+        deployment_files = await prepare_deployment_files(
+            template_files,
             template_parameters,
         )
 
@@ -239,8 +252,8 @@ async def _do_step_deployment(
         )
         await deploy_resource_group(
             resource_group,
-            templated_arm,
-            arm_parameters_path,
+            deployment_files.arm_template,
+            deployment_files.parameters,
             deployment_data.data.location_primary,
             this_step.mode.value,
             this_subscription,

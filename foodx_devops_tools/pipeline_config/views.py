@@ -458,7 +458,7 @@ class FlattenedDeployment:
 
         # use the same directory as puff files for escolar file to avoid
         # confusion over reused arm templates in the configuration dir.
-        target_arm_template_path = puff_path.parent / "{0}.escolar".format(
+        target_arm_template_path = puff_path.parent / "{0}".format(
             source_arm_template_path.name
         )
         return (
