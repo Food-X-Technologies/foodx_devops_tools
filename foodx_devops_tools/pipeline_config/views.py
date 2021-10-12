@@ -18,6 +18,7 @@ from foodx_devops_tools._to import StructuredTo
 from foodx_devops_tools.azure.cloud import AzureCredentials
 from foodx_devops_tools.patterns import SubscriptionData
 from foodx_devops_tools.utilities.jinja2 import TemplateParameters
+from foodx_devops_tools.utilities.templates import JINJA_FILE_PREFIX
 
 from ..deployment import DeploymentTuple
 from ._exceptions import PipelineViewError
@@ -445,22 +446,32 @@ class FlattenedDeployment:
             if specified_arm_file
             else (frame_folder / "{0}.json".format(application_name))
         )
+
+        # Assume that the source arm template path can be used for the other
+        # files. In the case that the ARM template path is "out of frame"
+        # then the user must explicitly define the puff file path
         if specified_puff_file:
             puff_path = frame_folder / specified_puff_file
         elif specified_arm_file:
-            puff_path = frame_folder / str(specified_arm_file).replace(
-                "json", "yml"
+            puff_path = source_arm_template_path.parent / str(
+                specified_arm_file.name
+            ).replace("json", "yml")
+        else:
+            puff_path = source_arm_template_path.parent / "{0}.yml".format(
+                application_name
+            )
+
+        working_dir = puff_path.parent
+        parameters_path = working_dir / target_arm_parameter_path
+
+        if source_arm_template_path.name.startswith(JINJA_FILE_PREFIX):
+            # A jinja template file needs to have a target in the working dir.
+            target_arm_template_path = working_dir / "{0}".format(
+                source_arm_template_path.name.replace(JINJA_FILE_PREFIX, "")
             )
         else:
-            puff_path = frame_folder / "{0}.yml".format(application_name)
+            target_arm_template_path = source_arm_template_path
 
-        parameters_path = frame_folder / target_arm_parameter_path
-
-        # use the same directory as puff files for escolar file to avoid
-        # confusion over reused arm templates in the configuration dir.
-        target_arm_template_path = puff_path.parent / "{0}".format(
-            source_arm_template_path.name
-        )
         return (
             source_arm_template_path,
             target_arm_template_path,
