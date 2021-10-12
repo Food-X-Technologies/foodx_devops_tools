@@ -17,7 +17,7 @@ from foodx_devops_tools.deploy_me._deployment import _deploy_step
 @pytest.fixture()
 def mock_run_puff(mock_async_method):
     this_mock = mock_async_method(
-        "foodx_devops_tools.deploy_me._deployment.run_puff"
+        "foodx_devops_tools.utilities.templates.run_puff"
     )
     return this_mock
 

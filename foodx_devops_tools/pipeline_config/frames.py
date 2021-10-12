@@ -17,7 +17,7 @@ import pydantic
 
 from ._exceptions import FrameDefinitionsError
 from ._loader import load_configuration
-from ._structure import StructuredName, StructuredPathCollection
+from ._structure import FrameFile, StructuredName, StructuredPathCollection
 
 log = logging.getLogger(__name__)
 
@@ -136,6 +136,9 @@ class FramesTriggersDefinition(pydantic.BaseModel):
         """
         Generate collection of ARM template file paths.
 
+        Paths not specified are defined as ``None``. Default path inferences
+        are calculated elsewhere in the application.
+
         Returns:
             Collection of ARM template file paths indexed by structured name.
         """
@@ -156,13 +159,55 @@ class FramesTriggersDefinition(pydantic.BaseModel):
                         step_structure = copy.deepcopy(app_structure)
                         step_structure.append(this_step.name)
 
+                        arm_name: typing.Optional[pathlib.Path]
                         if this_step.arm_file:
                             arm_name = this_step.arm_file
                         else:
-                            arm_name = pathlib.Path(f"{application_name}.json")
-                        this_file = this_folder / arm_name
+                            # default names are inferred elsewhere
+                            arm_name = None
 
-                        result[step_structure] = this_file
+                        result[step_structure] = FrameFile(
+                            dir=this_folder, file=arm_name
+                        )
+        return result
+
+    def puff_file_paths(self: U) -> StructuredPathCollection:
+        """
+        Generate collection of source puff file paths.
+
+        Paths not specified are defined as ``None``. Default path inferences
+        are calculated elsewhere in the application.
+
+        Returns:
+            Collection of YAML puff file paths indexed by structured name.
+        """
+        result: StructuredPathCollection = dict()
+        for frame_name, frame_data in self.frames.items():
+            frame_structure = StructuredName()
+            frame_structure.append(frame_name)
+
+            this_folder = frame_data.folder
+            for (
+                application_name,
+                application_data,
+            ) in frame_data.applications.items():
+                app_structure = copy.deepcopy(frame_structure)
+                app_structure.append(application_name)
+                for this_step in application_data:
+                    if isinstance(this_step, ApplicationDeploymentDefinition):
+                        step_structure = copy.deepcopy(app_structure)
+                        step_structure.append(this_step.name)
+
+                        puff_name: typing.Optional[pathlib.Path]
+                        if this_step.puff_file:
+                            puff_name = this_step.puff_file
+                        else:
+                            # default names are inferred elsewhere
+                            puff_name = None
+
+                        result[step_structure] = FrameFile(
+                            dir=this_folder, file=puff_name
+                        )
         return result
 
     def frame_folders(self: U) -> StructuredPathCollection:
@@ -176,7 +221,9 @@ class FramesTriggersDefinition(pydantic.BaseModel):
         for frame_name, frame_data in self.frames.items():
             this_structure = StructuredName()
             this_structure.append(frame_name)
-            result[this_structure] = frame_data.folder
+            result[this_structure] = FrameFile(
+                dir=frame_data.folder, file=pathlib.Path("")
+            )
 
         return result
 

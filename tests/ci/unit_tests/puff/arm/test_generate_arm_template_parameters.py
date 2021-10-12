@@ -36,7 +36,7 @@ environments:
         this_directory = pathlib.Path("some/path")
         puff_path = this_directory / "this_file.yml"
 
-        await do_arm_template_parameter_action(puff_path, False, False)
+        await do_arm_template_parameter_action(puff_path, None, False, False)
 
         out = capsys.readouterr().out
 
@@ -95,7 +95,7 @@ environments:
         puff_path = this_directory / "this_file.yml"
 
         await do_arm_template_parameter_action(
-            puff_path, is_delete_action, False
+            puff_path, None, is_delete_action, False
         )
 
         expected_paths = [this_directory / x for x in expected_files]
@@ -321,7 +321,9 @@ services:
         initialize_filesystem(puff_path, puff_content)
 
         with pytest.raises(ArmTemplateError):
-            await do_arm_template_parameter_action(puff_path, False, False)
+            await do_arm_template_parameter_action(
+                puff_path, None, False, False
+            )
 
     @pytest.mark.asyncio
     async def test_empty_services_raises(self, tmp_path_factory):
@@ -336,4 +338,6 @@ services:
         initialize_filesystem(puff_path, puff_content)
 
         with pytest.raises(ArmTemplateError):
-            await do_arm_template_parameter_action(puff_path, False, False)
+            await do_arm_template_parameter_action(
+                puff_path, None, False, False
+            )

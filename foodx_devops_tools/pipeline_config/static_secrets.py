@@ -40,15 +40,19 @@ def load_static_secrets(
         }
         for this_path in secrets_paths:
             if this_path.is_file():
+                log.info("loading static secrets, {0}".format(this_path))
                 yaml_data = load_encrypted_data(this_path, decrypt_token)
                 if "static_secrets" in yaml_data:
                     secrets_data["static_secrets"].update(
                         yaml_data["static_secrets"]
                     )
                 else:
-                    log.error(
-                        f"static_secrets field not present in file, {this_path}"
+                    message = (
+                        f"static_secrets object not present in "
+                        f"file, {this_path}"
                     )
+                    log.error(message)
+                    raise StaticSecretsError(message)
 
         this_object = StaticSecrets.parse_obj(secrets_data)
 

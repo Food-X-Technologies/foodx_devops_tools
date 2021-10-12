@@ -91,12 +91,14 @@ class PipelineConfigurationPaths:
                 and (x.name in PIPELINE_CONFIG_FILES)
                 and (x.stem != "static_secrets")
             ):
+                log.info("adding client configuration file, {0}".format(x))
                 setattr(this_object, x.stem, x)
                 client_files.append(x)
 
         system_files = list()
         for x in system_config.iterdir():
             if x.is_file() and (x.name in PIPELINE_CONFIG_FILES):
+                log.info("adding system configuration file, {0}".format(x))
                 setattr(this_object, x.stem, x)
                 system_files.append(x)
 
@@ -111,8 +113,17 @@ class PipelineConfigurationPaths:
         secrets_path = client_config / "static_secrets"
         this_object.static_secrets = set()
         if secrets_path.is_dir():
+            log.debug(
+                "static secrets directory, {0}, {1}".format(
+                    secrets_path, str(list(secrets_path.iterdir()))
+                )
+            )
             for x in secrets_path.iterdir():
                 if x.is_file():
+                    log.info(
+                        "adding static secret file to configuration, "
+                        "{0}".format(x)
+                    )
                     this_object.static_secrets.add(x)
 
         return this_object

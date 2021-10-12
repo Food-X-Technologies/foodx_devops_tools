@@ -127,17 +127,17 @@ eg.
     type=str,
 )
 @click.option(
-    "--log-enable-console",
-    "enable_console_log",
-    default=DEFAULT_CONSOLE_LOGGING_ENABLED,
-    help="Log to console.",
-    is_flag=True,
-)
-@click.option(
     "--log-disable-file",
     "disable_file_log",
     default=DEFAULT_FILE_LOGGING_DISABLED,
     help="Disable file logging.",
+    is_flag=True,
+)
+@click.option(
+    "--log-enable-console",
+    "enable_console_log",
+    default=DEFAULT_CONSOLE_LOGGING_ENABLED,
+    help="Log to console.",
     is_flag=True,
 )
 @click.option(

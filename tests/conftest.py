@@ -24,7 +24,7 @@ from tests.ci.support.pipeline_config import MOCK_RESULTS, MOCK_TO
 
 @pytest.fixture()
 def mock_run_puff_check(mock_async_method):
-    mock_async_method("foodx_devops_tools.pipeline_config._checks.run_puff")
+    mock_async_method("foodx_devops_tools.utilities.templates.run_puff")
 
 
 @pytest.fixture
@@ -91,3 +91,8 @@ def mock_context(mocker):
         return this_mock
 
     return _apply
+
+
+@pytest.fixture()
+def mock_puff_mkdirs(mocker):
+    mocker.patch("foodx_devops_tools.puff.arm.os.makedirs")

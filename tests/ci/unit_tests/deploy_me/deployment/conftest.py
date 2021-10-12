@@ -113,14 +113,14 @@ def mock_deploystep_context():
             mode=DeploymentMode.incremental,
             name="this_step",
             arm_file=pathlib.Path("arm.file"),
-            puff_file=None,
+            puff_file=pathlib.Path("puff.file"),
             resource_group=None,
         ),
         "deployment_data": FlattenedDeployment(
             context=mock_context, data=data_view
         ),
         "puff_parameter_data": {
-            "this_step": pathlib.Path("puff.path"),
+            "this_step": pathlib.Path("puff_generated.path"),
         },
         "this_context": "some.context",
         "enable_validation": False,

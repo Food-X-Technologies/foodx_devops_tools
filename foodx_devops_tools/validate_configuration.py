@@ -10,12 +10,21 @@
 
 import asyncio
 import enum
+import logging
 import pathlib
 import sys
+import traceback
 import typing
 
 import click
 
+from ._declarations import (
+    DEFAULT_CONSOLE_LOGGING_ENABLED,
+    DEFAULT_FILE_LOGGING_DISABLED,
+    DEFAULT_LOG_LEVEL,
+    VALID_LOG_LEVELS,
+)
+from ._logging import LoggingState
 from ._version import acquire_version
 from .console import report_failure, report_success
 from .pipeline_config import (
@@ -36,6 +45,10 @@ from .pipeline_config.exceptions import (
     TenantsDefinitionError,
 )
 from .utilities import acquire_token
+
+log = logging.getLogger(__name__)
+
+DEFAULT_LOG_FILE = pathlib.Path("validate_configuration.log")
 
 
 @enum.unique
@@ -79,12 +92,37 @@ to avoid having to specify the decryption password.
 """,
     is_flag=True,
 )
+@click.option(
+    "--log-disable-file",
+    "disable_file_log",
+    default=DEFAULT_FILE_LOGGING_DISABLED,
+    help="Disable file logging.",
+    is_flag=True,
+)
+@click.option(
+    "--log-enable-console",
+    "enable_console_log",
+    default=DEFAULT_CONSOLE_LOGGING_ENABLED,
+    help="Log to console.",
+    is_flag=True,
+)
+@click.option(
+    "--log-level",
+    "log_level",
+    default=DEFAULT_LOG_LEVEL,
+    help="Select logging level to apply to all enabled log sinks.",
+    show_default=True,
+    type=click.Choice(VALID_LOG_LEVELS, case_sensitive=False),
+)
 def _main(
     client_path: pathlib.Path,
     system_path: pathlib.Path,
     password_file: typing.IO,
     check_paths: bool,
     disable_vaults: bool,
+    disable_file_log: bool,
+    enable_console_log: bool,
+    log_level: str,
 ) -> None:
     """
     Validate pipeline configuration files.
@@ -108,7 +146,17 @@ def _main(
     PASSWORD_FILE:  The path to a file where the service principal decryption
                     password is stored, or "-" for stdin.
     """
+    log_file = DEFAULT_LOG_FILE
     try:
+        # currently no need to change logging configuration at run time,
+        # so no need to preserve the object.
+        LoggingState(
+            disable_file_logging=disable_file_log,
+            enable_console_logging=enable_console_log,
+            log_level_text=log_level,
+            default_log_file=log_file,
+        )
+
         client_config = client_path / "configuration"
         system_config = system_path / "configuration"
         configuration_paths = PipelineConfigurationPaths.from_paths(
@@ -124,7 +172,7 @@ def _main(
         )
 
         if check_paths:
-            asyncio.run(do_path_check(pipeline_configuration, system_path))
+            asyncio.run(do_path_check(pipeline_configuration))
 
         report_success("pipeline configuration validated")
     except FileNotFoundError as e:
@@ -150,7 +198,12 @@ def _main(
         report_failure("Configuration schema error, {0}".format(e))
         sys.exit(ExitState.BAD_CONFIGURATION_PATHS.value)
     except Exception as e:
-        report_failure("unknown error, {0}".format(str(e)))
+        this_traceback = traceback.format_exc()
+        log.debug(this_traceback)
+        report_failure(
+            "unknown error, {0}. See log for more details, "
+            "{1}.".format(str(e), log_file.resolve())
+        )
         sys.exit(ExitState.UNKNOWN.value)
 
 

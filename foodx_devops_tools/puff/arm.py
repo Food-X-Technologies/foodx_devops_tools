@@ -10,6 +10,7 @@
 import copy
 import json
 import logging
+import os
 import pathlib
 import typing
 
@@ -130,6 +131,9 @@ async def _save_parameter_file(
     dump_arguments: dict = dict()
     if is_pretty:
         dump_arguments = {"sort_keys": True, "indent": 2}
+
+    if not target_path.parent.exists():
+        os.makedirs(str(target_path.parent), exist_ok=True)
     async with aiofiles.open(target_path, mode="w") as f:
         log.info("saving parameter file, {0}".format(target_path))
         await f.write(json.dumps(generated_parameters, **dump_arguments))
@@ -302,6 +306,7 @@ def _linearize_parameters(yaml_data: dict, file_name: str) -> dict:
 
 async def do_arm_template_parameter_action(
     puff_file_path: pathlib.Path,
+    output_dir: typing.Optional[pathlib.Path],
     is_delete_action: bool,
     is_pretty: bool,
 ) -> None:
@@ -312,11 +317,15 @@ async def do_arm_template_parameter_action(
     puff file.
 
     Args:
-        puff_file_path: Path to source YAML parameter file.
-        is_delete_action: True if files should be deleted instead of created.
-        is_pretty: Create nicely formatted JSON for humans.
+        puff_file_path:     Path to source YAML parameter file.
+        output_dir:         Optional path to directory for storing output files.
+        is_delete_action:   True if files should be deleted instead of created.
+        is_pretty:          Create nicely formatted JSON for humans.
     """
-    target_path = puff_file_path.parent
+    if output_dir:
+        target_path = output_dir
+    else:
+        target_path = puff_file_path.parent
 
     click.echo("loading, {0}".format(puff_file_path))
     yaml_data = await load_yaml(puff_file_path)

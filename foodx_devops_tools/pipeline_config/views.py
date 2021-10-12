@@ -11,11 +11,19 @@ import copy
 import dataclasses
 import logging
 import pathlib
+import re
 import typing
 
 from foodx_devops_tools._to import StructuredTo
 from foodx_devops_tools.azure.cloud import AzureCredentials
 from foodx_devops_tools.patterns import SubscriptionData
+from foodx_devops_tools.utilities.jinja2 import TemplateParameters
+from foodx_devops_tools.utilities.templates import (
+    JINJA_FILE_PREFIX,
+    ArmTemplateParameters,
+    ArmTemplates,
+    TemplateFiles,
+)
 
 from ..deployment import DeploymentTuple
 from ._exceptions import PipelineViewError
@@ -318,6 +326,197 @@ class FlattenedDeployment:
         x.data.iteration_context.append(application_name)
         return x
 
+    def construct_fqdn(self: W, leaf_name: str) -> str:
+        """
+        Construct an FQDN from deployment context.
+
+        Raises:
+            SubscriptionNameError: If the subscription name cannot be parsed to
+                extract the resource suffix.
+        """
+        subscription_data = SubscriptionData.from_subscription_name(
+            self.context.azure_subscription_name
+        )
+
+        return ".".join(
+            [
+                leaf_name,
+                subscription_data.resource_suffix,
+                self.context.client,
+                self.data.root_fqdn,
+            ]
+        )
+
+    def construct_app_fqdns(self: W) -> TemplateParameters:
+        """Construct endpoint FQDNs for deployyment."""
+        result: TemplateParameters = {
+            x: self.construct_fqdn(x) for x in self.data.url_endpoints
+        }
+        result["root"] = self.data.root_fqdn
+        result["support"] = "support.{0}.{1}".format(
+            self.context.client, self.data.root_fqdn
+        )
+        return result
+
+    def construct_app_urls(self: W) -> TemplateParameters:
+        """Construct endpoint URLs for deployment."""
+        fqdns = self.construct_app_fqdns()
+        result: TemplateParameters = {
+            x: "https://{0}".format(y) for x, y in fqdns.items() if x != "root"
+        }
+
+        return result
+
+    def construct_template_parameters(self: W) -> TemplateParameters:
+        """Construct set of parameters for jinja2 templates."""
+        result: TemplateParameters = {
+            "context": {
+                "network": {
+                    "fqdns": self.construct_app_fqdns(),
+                    "urls": self.construct_app_urls(),
+                },
+                "tags": self.context.as_dict(),
+            },
+        }
+
+        return result
+
+    def construct_deployment_name(self: W, step_name: str) -> str:
+        """
+        Construct the deployment name for use in az CLI.
+
+        Note Azure deployment name have specific limitations:
+
+        * limited to 64 characters
+        * must only contain alphanumerics and the characters ".-_"
+        """
+        assert self.context.application_name is not None
+        assert self.context.pipeline_id is not None
+        assert self.context.release_id is not None
+
+        substitution_value = "-"
+        # reserving underscore here for segmentation of deployment name.
+        regex = re.compile(r"[^A-Za-z0-9.\-]")
+
+        filtered_app_name = regex.sub(
+            substitution_value, self.context.application_name
+        )[0:20]
+        filtered_pipeline_id = regex.sub(
+            substitution_value, self.context.pipeline_id
+        )
+        filtered_step_name = regex.sub(substitution_value, step_name)[0:20]
+
+        result = "{0}_{1}".format(
+            filtered_app_name
+            if filtered_app_name == filtered_step_name
+            else "{0}_{1}".format(filtered_app_name, filtered_step_name),
+            filtered_pipeline_id,
+        )
+
+        return result[0:64]
+
+    def construct_deployment_paths(
+        self: W,
+        specified_arm_file: typing.Optional[pathlib.Path],
+        specified_puff_file: typing.Optional[pathlib.Path],
+        target_arm_parameter_path: typing.Optional[pathlib.Path],
+    ) -> TemplateFiles:
+        """
+        Construct paths for ARM template files.
+
+        Args:
+            specified_arm_file:
+            specified_puff_file:
+            target_arm_parameter_path:
+
+        Returns:
+            Tuple of necessary paths.
+        Raises:
+            PipelineViewError:  If any errors occur due to undefined deployment
+                                data.
+        """
+        application_name = self.context.application_name
+        frame_folder = self.data.frame_folder
+        if not frame_folder:
+            raise PipelineViewError(
+                "frame_folder not defined for application step"
+            )
+        if not target_arm_parameter_path:
+            raise PipelineViewError(
+                "target_arm_parameter_path not defined for application step"
+            )
+
+        source_arm_template_path = (
+            (frame_folder / specified_arm_file)
+            if specified_arm_file
+            else (frame_folder / "{0}.json".format(application_name))
+        )
+        log.debug(f"source arm template path, {source_arm_template_path}")
+
+        # Assume that the source arm template path can be used for the other
+        # files. In the case that the ARM template path is "out of frame"
+        # then the user must explicitly define the puff file path
+        if specified_puff_file:
+            puff_prompt = "user specified puff file"
+            source_puff_path = frame_folder / specified_puff_file
+        elif specified_arm_file:
+            puff_prompt = "puff file inferred from arm file"
+            source_puff_path = source_arm_template_path.parent / str(
+                specified_arm_file.name
+            ).replace("json", "yml")
+        else:
+            puff_prompt = "puff file inferred from application name"
+            source_puff_path = (
+                source_arm_template_path.parent
+                / "{0}.yml".format(application_name)
+            )
+        log.debug(f"{puff_prompt}, {source_puff_path}")
+
+        working_dir = source_puff_path.parent
+        log.debug(f"working directory, {working_dir}")
+        # Assume arm template parameters file has been specified with any sub
+        # directories in it's path in puff_map.yml, so only frame_folder is
+        # used here.
+        parameters_path = frame_folder / target_arm_parameter_path
+        log.debug(f"arm parameters path, {parameters_path}")
+
+        target_arm_template_path = self.__screen_jinja_template(
+            source_arm_template_path, working_dir, "arm"
+        )
+        target_puff_path = self.__screen_jinja_template(
+            source_puff_path, working_dir, "puff"
+        )
+
+        template_files = TemplateFiles(
+            arm_template=ArmTemplates(
+                source=source_arm_template_path, target=target_arm_template_path
+            ),
+            arm_template_parameters=ArmTemplateParameters(
+                source_puff=source_puff_path,
+                templated_puff=target_puff_path,
+                target=parameters_path,
+            ),
+        )
+
+        return template_files
+
+    @staticmethod
+    def __screen_jinja_template(
+        source_path: pathlib.Path, working_dir: pathlib.Path, keyword: str
+    ) -> pathlib.Path:
+        if source_path.name.startswith(JINJA_FILE_PREFIX):
+            # A jinja template file needs to have a target in the working dir.
+            target_prompt = f"jinja output {keyword} target"
+            target_path = working_dir / "{0}".format(
+                source_path.name.replace(JINJA_FILE_PREFIX, "")
+            )
+        else:
+            target_prompt = f"{keyword} target unchanged from {keyword} source"
+            target_path = source_path
+        log.debug(f"{target_prompt}, {target_path}")
+
+        return target_path
+
 
 V = typing.TypeVar("V", bound="SubscriptionView")
 U = typing.TypeVar("U", bound="DeploymentView")
@@ -367,10 +566,23 @@ class SubscriptionView:
                 tenant=this_tenants[base_data.tenant].azure_id,
             )
             static_secrets = dict()
-            if self.deployment_view.release_view.configuration.static_secrets:
-                static_secrets = self.deployment_view.release_view.configuration.static_secrets[  # noqa E501
-                    self.subscription_name
-                ]
+            secrets_collection = (
+                self.deployment_view.release_view.configuration.static_secrets
+            )
+            if secrets_collection and (
+                self.subscription_name in secrets_collection
+            ):
+                log.debug(
+                    "static secret keys, {0}".format(secrets_collection.keys())
+                )
+                static_secrets = secrets_collection[self.subscription_name]
+            elif secrets_collection and (
+                self.subscription_name not in secrets_collection
+            ):
+                raise PipelineViewError(
+                    "subscription not defined in static "
+                    "secrets, {0}".format(self.subscription_name)
+                )
 
             this_data: typing.Dict[str, typing.Any] = {
                 "azure_credentials": this_credentials,

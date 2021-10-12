@@ -10,6 +10,7 @@ import pathlib
 import pytest
 
 from foodx_devops_tools.pipeline_config import StructuredName, load_frames
+from foodx_devops_tools.pipeline_config._structure import FrameFile
 from foodx_devops_tools.pipeline_config.exceptions import FrameDefinitionsError
 
 
@@ -424,7 +425,7 @@ frames:
         apply_applications_test(file_text)
 
 
-class TestArmFiles:
+class TestArmFilePaths:
     def test_default(self, apply_applications_test):
         file_text = """---
 frames:
@@ -441,9 +442,10 @@ frames:
         result = under_test.frames.arm_file_paths()
 
         assert result == {
-            StructuredName(["f1", "a1", "a1l1"]): pathlib.Path(
-                "some/path/a1.json"
-            )
+            StructuredName(["f1", "a1", "a1l1"]): FrameFile(
+                dir=pathlib.Path("some/path/"),
+                file=None,
+            ),
         }
 
     def test_explicit(self, apply_applications_test):
@@ -463,8 +465,9 @@ frames:
         result = under_test.frames.arm_file_paths()
 
         assert result == {
-            StructuredName(["f1", "a1", "a1l1"]): pathlib.Path(
-                "some/path/arm_file.json"
+            StructuredName(["f1", "a1", "a1l1"]): FrameFile(
+                dir=pathlib.Path("some/path/"),
+                file=pathlib.Path("arm_file.json"),
             )
         }
 
@@ -488,12 +491,136 @@ frames:
         result = under_test.frames.arm_file_paths()
 
         assert result == {
-            StructuredName(["f1", "a1", "a1l1"]): pathlib.Path(
-                "some/path/a1.json"
+            StructuredName(["f1", "a1", "a1l1"]): FrameFile(
+                dir=pathlib.Path("some/path/"), file=None
             ),
-            StructuredName(["f1", "a2", "a2l1"]): pathlib.Path(
-                "some/path/arm_file.json"
+            StructuredName(["f1", "a2", "a2l1"]): FrameFile(
+                dir=pathlib.Path("some/path/"),
+                file=pathlib.Path("arm_file.json"),
             ),
+        }
+
+    def test_subpath(self, apply_applications_test):
+        file_text = """---
+frames:
+  frames:
+    f1:
+      applications:
+        a1: 
+          - name: a1l1
+            mode: Incremental
+            arm_file: other/path/arm_file.json
+      folder: some/path
+"""
+
+        under_test = apply_applications_test(file_text)
+        result = under_test.frames.arm_file_paths()
+
+        assert result == {
+            StructuredName(["f1", "a1", "a1l1"]): FrameFile(
+                dir=pathlib.Path("some/path/"),
+                file=pathlib.Path("other/path/arm_file.json"),
+            )
+        }
+
+
+class TestPuffFilePaths:
+    def test_default(self, apply_applications_test):
+        file_text = """---
+frames:
+  frames:
+    f1:
+      applications:
+        a1: 
+          - name: a1l1
+            mode: Incremental
+      folder: some/path
+"""
+
+        under_test = apply_applications_test(file_text)
+        result = under_test.frames.puff_file_paths()
+
+        assert result == {
+            StructuredName(["f1", "a1", "a1l1"]): FrameFile(
+                dir=pathlib.Path("some/path/"),
+                file=None,
+            ),
+        }
+
+    def test_explicit(self, apply_applications_test):
+        file_text = """---
+frames:
+  frames:
+    f1:
+      applications:
+        a1: 
+          - name: a1l1
+            mode: Incremental
+            puff_file: puff_file.yml
+      folder: some/path
+"""
+
+        under_test = apply_applications_test(file_text)
+        result = under_test.frames.puff_file_paths()
+
+        assert result == {
+            StructuredName(["f1", "a1", "a1l1"]): FrameFile(
+                dir=pathlib.Path("some/path/"),
+                file=pathlib.Path("puff_file.yml"),
+            )
+        }
+
+    def test_mixed(self, apply_applications_test):
+        file_text = """---
+frames:
+  frames:
+    f1:
+      applications:
+        a1: 
+          - name: a1l1
+            mode: Incremental
+        a2: 
+          - name: a2l1
+            mode: Incremental
+            puff_file: puff/file.yml
+      folder: some/path
+"""
+
+        under_test = apply_applications_test(file_text)
+        result = under_test.frames.puff_file_paths()
+
+        assert result == {
+            StructuredName(["f1", "a1", "a1l1"]): FrameFile(
+                dir=pathlib.Path("some/path/"),
+                file=None,
+            ),
+            StructuredName(["f1", "a2", "a2l1"]): FrameFile(
+                dir=pathlib.Path("some/path/"),
+                file=pathlib.Path("puff/file.yml"),
+            ),
+        }
+
+    def test_subpath(self, apply_applications_test):
+        file_text = """---
+frames:
+  frames:
+    f1:
+      applications:
+        a1: 
+          - name: a1l1
+            mode: Incremental
+            puff_file: other/path/puff_file.yml
+      folder: some/path
+"""
+
+        under_test = apply_applications_test(file_text)
+        result = under_test.frames.puff_file_paths()
+
+        assert result == {
+            StructuredName(["f1", "a1", "a1l1"]): FrameFile(
+                dir=pathlib.Path("some/path/"),
+                file=pathlib.Path("other/path/puff_file.yml"),
+            )
         }
 
 
@@ -513,7 +640,11 @@ frames:
         under_test = apply_applications_test(file_text)
         result = under_test.frames.frame_folders()
 
-        assert result == {StructuredName(["f1"]): pathlib.Path("some/path")}
+        assert result == {
+            StructuredName(["f1"]): FrameFile(
+                dir=pathlib.Path("some/path"), file=pathlib.Path("")
+            )
+        }
 
     def test_multiple(self, apply_applications_test):
         file_text = """---
@@ -537,6 +668,10 @@ frames:
         result = under_test.frames.frame_folders()
 
         assert result == {
-            StructuredName(["f1"]): pathlib.Path("some/path"),
-            StructuredName(["f2"]): pathlib.Path("f2/path"),
+            StructuredName(["f1"]): FrameFile(
+                dir=pathlib.Path("some/path"), file=pathlib.Path("")
+            ),
+            StructuredName(["f2"]): FrameFile(
+                dir=pathlib.Path("f2/path"), file=pathlib.Path("")
+            ),
         }

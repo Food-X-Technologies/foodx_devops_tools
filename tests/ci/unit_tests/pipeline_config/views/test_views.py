@@ -4,6 +4,11 @@
 #
 #  You should have received a copy of the MIT License along with
 #  foodx_devops_tools. If not, see <https://opensource.org/licenses/MIT>.
+#
+#  This file is part of foodx_devops_tools.
+#
+#  You should have received a copy of the MIT License along with
+#  foodx_devops_tools. If not, see <https://opensource.org/licenses/MIT>.
 
 import copy
 
@@ -59,6 +64,73 @@ class TestFlattenedDeployment:
         assert expected_name in result.data.iteration_context
         assert result.context.application_name == expected_name
 
+    def test_construct_app_fqdns(self, mock_flattened_deployment):
+        under_test = mock_flattened_deployment[0]
+
+        result = under_test.construct_app_fqdns()
+
+        assert result == {
+            "a": "a.r1a.c1.some.where",
+            "p": "p.r1a.c1.some.where",
+            "root": "some.where",
+            "support": "support.c1.some.where",
+        }
+
+    def test_construct_app_urls(self, mock_flattened_deployment):
+        under_test = mock_flattened_deployment[0]
+
+        result = under_test.construct_app_urls()
+
+        assert result == {
+            "a": "https://a.r1a.c1.some.where",
+            "p": "https://p.r1a.c1.some.where",
+            "support": "https://support.c1.some.where",
+        }
+
+    def test_construct_fqdn(self, mock_flattened_deployment):
+        under_test = mock_flattened_deployment[0]
+
+        result = under_test.construct_fqdn("api")
+
+        assert result == "api.r1a.c1.some.where"
+
+    def test_construct_template_parameters(self, mock_flattened_deployment):
+        under_test = mock_flattened_deployment[0]
+        under_test.context.frame_name = "f1"
+
+        result = under_test.construct_template_parameters()
+
+        assert result == {
+            "context": {
+                "network": {
+                    "fqdns": {
+                        "a": "a.r1a.c1.some.where",
+                        "p": "p.r1a.c1.some.where",
+                        "root": "some.where",
+                        "support": "support.c1.some.where",
+                    },
+                    "urls": {
+                        "a": "https://a.r1a.c1.some.where",
+                        "p": "https://p.r1a.c1.some.where",
+                        "support": "https://support.c1.some.where",
+                    },
+                },
+                "tags": {
+                    "application_name": None,
+                    "client": "c1",
+                    "commit_sha": "abc123",
+                    "frame_name": "f1",
+                    "pipeline_id": "123456",
+                    "release_id": "3.1.4+local",
+                    "release_state": "r1",
+                    "resource_suffix": "r1a",
+                    "subscription_name": "sys1_c1_r1a",
+                    "system": "sys1",
+                    "tenant_name": "t1",
+                },
+            }
+        }
+
 
 class TestSubscriptionView:
     def test_clean(self, mock_pipeline_config):
@@ -67,7 +139,7 @@ class TestSubscriptionView:
             release_view,
             DeploymentTuple(client="c1", release_state="r1", system="sys1"),
         )
-        under_test = SubscriptionView(
+        SubscriptionView(
             deployment_view,
             "sys1_c1_r1a",
         )

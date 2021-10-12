@@ -77,18 +77,21 @@ def _acquire_yaml_filenames(
 
 
 async def run_puff(
-    path: pathlib.Path,
+    source_path: pathlib.Path,
     is_delete_files: bool,
     is_pretty: bool,
     disable_ascii_art: bool = False,
+    output_dir: typing.Optional[pathlib.Path] = None,
 ) -> None:
     """
     Search filesystem for YAML files and create or delete ARM template files.
 
     Args:
-        path: Root path to search recursively for YAML files.
+        source_path: Root path to search recursively for YAML files.
         is_delete_files: Enable/disable delete instead of create action.
         is_pretty: Create nicely formatted JSON for humans.
+        disable_ascii_art: Disable console ASCII art output.
+        output_dir: Directory to save output files.
     """
     if is_delete_files:
         this_action = PuffActions.delete
@@ -100,23 +103,30 @@ async def run_puff(
     click.echo(ACTION_MESSAGES[this_action].message)
 
     ignore_patterns = await load_puffignore(DEFAULT_PUFFIGNORE_PATH)
-    if path.is_dir():
-        yaml_filenames = _acquire_yaml_filenames(path, ignore_patterns)
-    elif path.is_file():
-        yaml_filenames = {path}
+    yaml_filenames: typing.Set[pathlib.Path]
+    if source_path.is_dir():
+        yaml_filenames = _acquire_yaml_filenames(source_path, ignore_patterns)
+    elif source_path.is_file():
+        yaml_filenames = {source_path}
     else:
-        raise PuffError("Path must be file or directory, {0}".format(path))
+        raise PuffError(
+            "Path must be file or directory, {0}".format(source_path)
+        )
 
     log.debug(str(yaml_filenames))
 
     if not yaml_filenames:
         log.warning(
-            "No puff parameter files found in directory, {0}".format(path)
+            "No puff parameter files found in directory, {0}".format(
+                source_path
+            )
         )
 
     await asyncio.gather(
         *[
-            do_arm_template_parameter_action(x, is_delete_files, is_pretty)
+            do_arm_template_parameter_action(
+                x, output_dir, is_delete_files, is_pretty
+            )
             for x in yaml_filenames
         ]
     )

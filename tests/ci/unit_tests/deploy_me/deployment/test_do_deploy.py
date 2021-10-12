@@ -26,7 +26,7 @@ def prep_data(mock_async_method, mock_flattened_deployment):
     mock_frame = mock_async_method(
         "foodx_devops_tools.deploy_me._deployment.deploy_frame"
     )
-    mock_async_method("foodx_devops_tools.deploy_me._deployment.run_puff")
+    mock_async_method("foodx_devops_tools.utilities.templates.run_puff")
 
     return mock_frame, deployment_data, pipeline_config
 
