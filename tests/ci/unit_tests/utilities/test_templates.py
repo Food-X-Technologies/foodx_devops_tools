@@ -13,12 +13,15 @@ from foodx_devops_tools.utilities.templates import (
     ArmTemplateParameters,
     ArmTemplates,
     TemplateFiles,
+    _apply_jinja2_file,
+    _apply_template,
+    json_inlining,
     prepare_deployment_files,
 )
 
 
 @pytest.fixture()
-def mock_run(mock_async_method):
+def mock_run(mock_async_method, mocker):
     mock_puff = mock_async_method(
         "foodx_devops_tools.utilities.templates.run_puff"
     )
@@ -26,6 +29,7 @@ def mock_run(mock_async_method):
         "foodx_devops_tools.utilities.templates.FrameTemplates"
         ".apply_template"
     )
+    mocker.patch("pathlib.Path.is_file", return_value=True)
 
     return mock_puff, mock_template
 

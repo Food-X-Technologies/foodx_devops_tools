@@ -43,6 +43,7 @@ async def test_clean(
     mock_login,
     mock_rg_deploy,
     mock_run_puff,
+    mock_verify_puff_target,
 ):
     await _deploy_step(**mock_deploystep_context)
 
@@ -56,6 +57,7 @@ async def test_default_override_parameters(
     mock_login,
     mock_rg_deploy,
     mock_run_puff,
+    mock_verify_puff_target,
     mocker,
 ):
     this_context = copy.deepcopy(mock_deploystep_context)
@@ -86,6 +88,7 @@ async def test_secrets_enabled(
     mock_login,
     mock_rg_deploy,
     mock_run_puff,
+    mock_verify_puff_target,
     mocker,
 ):
     this_context = copy.deepcopy(mock_deploystep_context)

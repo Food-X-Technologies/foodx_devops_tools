@@ -112,7 +112,7 @@ class DeploymentChecks:
 class TestValidation(DeploymentChecks):
     @pytest.mark.asyncio
     async def test_static_resource_group(
-        self, default_override_parameters, prep_data
+        self, default_override_parameters, mock_verify_puff_target, prep_data
     ):
         enable_validation = True
 
@@ -135,7 +135,7 @@ class TestValidation(DeploymentChecks):
 
     @pytest.mark.asyncio
     async def test_auto_resource_group(
-        self, default_override_parameters, prep_data
+        self, default_override_parameters, mock_verify_puff_target, prep_data
     ):
         enable_validation = True
 
@@ -160,7 +160,7 @@ class TestValidation(DeploymentChecks):
 class TestDeployment(DeploymentChecks):
     @pytest.mark.asyncio
     async def test_static_resource_group(
-        self, default_override_parameters, prep_data
+        self, default_override_parameters, mock_verify_puff_target, prep_data
     ):
         enable_validation = False
 
@@ -183,7 +183,7 @@ class TestDeployment(DeploymentChecks):
 
     @pytest.mark.asyncio
     async def test_auto_resource_group(
-        self, default_override_parameters, prep_data
+        self, default_override_parameters, mock_verify_puff_target, prep_data
     ):
         enable_validation = False
 

@@ -20,6 +20,8 @@ from foodx_devops_tools.utilities.jinja2 import (
     TemplateParameters,
 )
 
+from ._exceptions import TemplateError
+
 log = logging.getLogger(__name__)
 
 JINJA_FILE_PREFIX = "jinja2."
@@ -156,6 +158,16 @@ async def _apply_template(
     return target_file
 
 
+def _verify_puff_target(file_path: pathlib.Path) -> None:
+    if not file_path.is_file():
+        message = (
+            f"Expected puff generated ARM template parameter file is "
+            f"missing, {file_path}"
+        )
+        log.error(message)
+        raise TemplateError(message)
+
+
 async def _apply_jinja2_file(
     template_environment: FrameTemplates,
     source_file: pathlib.Path,
@@ -177,7 +189,18 @@ async def prepare_deployment_files(
     template_files: TemplateFiles,
     parameters: TemplateParameters,
 ) -> ArmTemplateDeploymentFiles:
-    """Prepare final ARM template and parameter files for deployment."""
+    """
+    Prepare final ARM template and parameter files for deployment.
+
+    Args:
+        template_files: Paths to source files for processing.
+        parameters: Parameters to be applied to templates.
+
+    Returns:
+        Paths to ARM template and ARM template parameter files.
+    Raises:
+        TemplateError:  If an error occurs during puff or template processing.
+    """
     source_arm_template_path = template_files.arm_template.source
     source_puff_file_path = template_files.arm_template_parameters.source_puff
     template_environment = FrameTemplates(
@@ -190,8 +213,10 @@ async def prepare_deployment_files(
     log.debug(f"arm templating output target directory, {arm_target_directory}")
     puff_target_directory = template_files.arm_template_parameters.target.parent
     log.debug(
-        f"puff templating output target directory," f" {puff_target_directory}"
+        f"puff templating output target directory, {puff_target_directory}"
     )
+    puff_target_file = template_files.arm_template_parameters.target
+    log.debug(f"puff target json, {puff_target_file}")
 
     log.info(f"applying jinja2 to puff file, {source_puff_file_path}")
     log.info(
@@ -213,8 +238,7 @@ async def prepare_deployment_files(
     )
     templated_puff = futures[0]
     templated_arm = futures[1]
-    # now transform the jinja2 processed puff file to arm template parameter
-    # json files.
+    # transform the puff file to arm template parameter json files.
     await run_puff(
         templated_puff,
         False,
@@ -222,6 +246,7 @@ async def prepare_deployment_files(
         disable_ascii_art=True,
         output_dir=puff_target_directory,
     )
+    _verify_puff_target(puff_target_file)
     result = ArmTemplateDeploymentFiles(
         arm_template=templated_arm,
         parameters=template_files.arm_template_parameters.target,
