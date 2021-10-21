@@ -153,6 +153,8 @@ async def delete(
                 "--resource-group",
                 resource_group_name,
                 "--yes",
+                "--subscription",
+                subscription.subscription_id,
             ]
         )
         log.debug("resource group deletion stdout, {0}".format(result.out))
@@ -216,6 +218,8 @@ async def deploy(
             mode,
             "--resource-group",
             resource_group_name,
+            "--subscription",
+            subscription.subscription_id,
             "--template-file",
             str(arm_template_path),
             "--parameters",
