@@ -172,6 +172,8 @@ class TestCreateResourceGroup:
                         "some-name",
                         "--location",
                         "canadacentral",
+                        "--subscription",
+                        "123-abc",
                     ]
                 )
             ]
