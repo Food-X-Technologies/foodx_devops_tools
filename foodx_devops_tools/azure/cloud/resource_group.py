@@ -119,6 +119,8 @@ async def create(
                 resource_group_name,
                 "--location",
                 location,
+                "--subscription",
+                subscription.subscription_id,
             ]
         )
         log.debug("resource group creation stdout, {0}".format(result.out))
