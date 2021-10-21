@@ -47,11 +47,11 @@ class TestConstructResourceGroupName:
     def test_clean_none_user(self):
         result = _construct_resource_group_name("app", "frame", "client", None)
 
-        assert result == "app-frame-client"
+        assert result == "client-frame-app"
 
     def test_clean_user_precedence(self):
         result = _construct_resource_group_name(
             "app", "frame", "client", "some_name"
         )
 
-        assert result == "some_name"
+        assert result == "client-some_name"

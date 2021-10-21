@@ -122,7 +122,7 @@ class TestValidation(DeploymentChecks):
 
         expected_parameters = default_override_parameters(prep_data[2])
         mock_deploy.assert_called_once_with(
-            "a1_group-123456",
+            "c1-a1_group-123456",
             pathlib.Path("some/path/a1.json"),
             pathlib.Path("some/path/some/puff_map/path"),
             "l1",
@@ -145,7 +145,7 @@ class TestValidation(DeploymentChecks):
 
         expected_parameters = default_override_parameters(prep_data[2])
         mock_deploy.assert_called_once_with(
-            "a1-f1-c1-123456",
+            "c1-f1-a1-123456",
             pathlib.Path("some/path/a1.json"),
             pathlib.Path("some/path/some/puff_map/path"),
             "l1",
@@ -170,7 +170,7 @@ class TestDeployment(DeploymentChecks):
 
         expected_parameters = default_override_parameters(prep_data[2])
         mock_deploy.assert_called_once_with(
-            "a1_group",
+            "c1-a1_group",
             pathlib.Path("some/path/a1.json"),
             pathlib.Path("some/path/some/puff_map/path"),
             "l1",
@@ -193,7 +193,7 @@ class TestDeployment(DeploymentChecks):
 
         expected_parameters = default_override_parameters(prep_data[2])
         mock_deploy.assert_called_once_with(
-            "a1-f1-c1",
+            "c1-f1-a1",
             pathlib.Path("some/path/a1.json"),
             pathlib.Path("some/path/some/puff_map/path"),
             "l1",

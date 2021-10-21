@@ -104,11 +104,11 @@ def _construct_resource_group_name(
     user_resource_group_name: typing.Optional[str],
 ) -> str:
     """Construct a resource group name from deployment context."""
-    result = (
-        "-".join([application_name, frame_name, client])
-        if not user_resource_group_name
-        else user_resource_group_name
-    )
+    # want the client id as a prefix for easier sorting & grouping in portal.
+    if not user_resource_group_name:
+        result = "-".join([client, frame_name, application_name])
+    else:
+        result = "-".join([client, user_resource_group_name])
 
     return result
 
