@@ -259,14 +259,13 @@ jobs:
         run: |
           git --version
 
-          echo ${PYPI_TOKEN} |
           ${{ env.VENV_BIN }}/twine upload \
             --disable-progress-bar \
             --non-interactive \
             --password ${PYPI_TOKEN} \
             --username ${{ env.PYPI_API_USER }} \
             --verbose \
-            dist/*.whl dist/*.tar.gz
+            dist/*
       - if: ${{ github.ref != 'refs/heads/main' && !startsWith(github.ref, 'refs/tags/') }}
         name: Publish package dryrun
         run: |
