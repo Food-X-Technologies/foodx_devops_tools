@@ -102,6 +102,10 @@ class TestFlattenedDeployment:
 
         assert result == {
             "context": {
+                "locations": {
+                    "primary": "l1",
+                    "secondary": None,
+                },
                 "network": {
                     "fqdns": {
                         "a": "a.r1a.c1.some.where",

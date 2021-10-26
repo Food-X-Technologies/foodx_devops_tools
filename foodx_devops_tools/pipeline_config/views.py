@@ -371,6 +371,10 @@ class FlattenedDeployment:
         """Construct set of parameters for jinja2 templates."""
         result: TemplateParameters = {
             "context": {
+                "locations": {
+                    "primary": self.data.location_primary,
+                    "secondary": self.data.location_secondary,
+                },
                 "network": {
                     "fqdns": self.construct_app_fqdns(),
                     "urls": self.construct_app_urls(),
