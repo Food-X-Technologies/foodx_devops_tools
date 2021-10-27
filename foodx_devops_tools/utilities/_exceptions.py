@@ -14,3 +14,7 @@ class AnsibleVaultError(Exception):
 
 class CommandError(Exception):
     """Problem completing an external command run."""
+
+
+class TemplateError(Exception):
+    """Problem processing puff, jinja templates."""

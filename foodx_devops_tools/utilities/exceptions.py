@@ -7,4 +7,8 @@
 
 """Export utility related exceptions."""
 
-from ._exceptions import CommandError  # noqa: F401
+from ._exceptions import (  # noqa: F401
+    AnsibleVaultError,
+    CommandError,
+    TemplateError,
+)

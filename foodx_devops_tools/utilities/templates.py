@@ -20,80 +20,26 @@ from foodx_devops_tools.utilities.jinja2 import (
     TemplateParameters,
 )
 
+from ._exceptions import TemplateError
+
 log = logging.getLogger(__name__)
 
 JINJA_FILE_PREFIX = "jinja2."
 
 
-class ArmTemplates(pydantic.BaseModel):
+class TemplatePaths(pydantic.BaseModel):
     """Collection of file paths for ARM templates."""
 
     source: pathlib.Path
     target: pathlib.Path
-
-    @pydantic.root_validator()
-    def check_jinja2_templating(
-        cls: pydantic.BaseModel, candidate: dict
-    ) -> dict:
-        """Check source target patterns when jinja2 templating is not needed."""
-        source = candidate.get("source")
-        target = candidate.get("target")
-        if (
-            source
-            and (not source.name.startswith(JINJA_FILE_PREFIX))
-            and (source != target)
-        ):
-            message = (
-                "source and target for non-jinja files must be "
-                "identical, {0}, {1}".format(
-                    source,
-                    target,
-                )
-            )
-            log.error(message)
-            raise ValueError(message)
-
-        return candidate
-
-
-class ArmTemplateParameters(pydantic.BaseModel):
-    """Collection of file paths for puff file and ARM template parameters."""
-
-    source_puff: pathlib.Path
-    templated_puff: pathlib.Path
-    target: pathlib.Path
-
-    @pydantic.root_validator()
-    def check_jinja2_templating(
-        cls: pydantic.BaseModel, candidate: dict
-    ) -> dict:
-        """Check source target patterns when jinja2 templating is not needed."""
-        source = candidate.get("source_puff")
-        target = candidate.get("templated_puff")
-        if (
-            source
-            and (not source.name.startswith(JINJA_FILE_PREFIX))
-            and (source != target)
-        ):
-            message = (
-                "source and target for non-jinja files must be "
-                "identical, {0}, {1}".format(
-                    source,
-                    target,
-                )
-            )
-            log.error(message)
-            raise ValueError(message)
-
-        return candidate
 
 
 @dataclasses.dataclass
 class TemplateFiles:
     """Collection of file paths for template processing."""
 
-    arm_template: ArmTemplates
-    arm_template_parameters: ArmTemplateParameters
+    arm_template: TemplatePaths
+    arm_template_parameters: TemplatePaths
 
 
 @dataclasses.dataclass
@@ -126,9 +72,9 @@ def json_inlining(content: str) -> str:
 async def _apply_template(
     template_environment: FrameTemplates,
     source_file: pathlib.Path,
-    target_directory: pathlib.Path,
+    target_file: pathlib.Path,
     parameters: TemplateParameters,
-) -> pathlib.Path:
+) -> None:
     """
     Apply frame-specific template and parameters ready for deployment.
 
@@ -142,9 +88,6 @@ async def _apply_template(
     Returns:
         Target file path of the fulfilled template.
     """
-    target_name = source_file.name.replace(JINJA_FILE_PREFIX, "")
-    target_file = target_directory / target_name
-
     log.debug(
         "Applying jinja2 templating, {0} (source), "
         "{1} (destination)".format(source_file, target_file)
@@ -153,77 +96,146 @@ async def _apply_template(
         source_file.name, target_file, parameters
     )
 
-    return target_file
 
-
-async def _apply_jinja2_file(
-    template_environment: FrameTemplates,
-    source_file: pathlib.Path,
-    target_directory: pathlib.Path,
-    parameters: TemplateParameters,
-) -> pathlib.Path:
-    """Apply Jinja2 to an ARM template related file."""
-    if source_file.name.startswith(JINJA_FILE_PREFIX):
-        templated_file = await _apply_template(
-            template_environment, source_file, target_directory, parameters
+def _verify_puff_target(file_path: pathlib.Path) -> None:
+    if not file_path.is_file():
+        message = (
+            f"Expected puff generated ARM template parameter file is "
+            f"missing, {file_path}"
         )
-    else:
-        templated_file = source_file
+        log.error(message)
+        raise TemplateError(message)
 
-    return templated_file
+
+async def _prepare_working_directory(working_dir: pathlib.Path) -> None:
+    """
+    Ensure that the working directory exists.
+
+    Args:
+        working_dir: Expected path of working directory.
+
+    Raises:
+        TemplateError:  If the working directory path exists, but is not
+                        actually a directory.
+    """
+    if not working_dir.exists():
+        working_dir.mkdir(parents=True, exist_ok=True)
+    elif not working_dir.is_dir():
+        raise TemplateError(
+            f"working directory name exists but is not a directory, "
+            f"{working_dir}"
+        )
+
+
+def _log_arm_template_paths(arm_template: TemplatePaths) -> None:
+    log.debug(f"source_arm_template_path, {arm_template.source}")
+    log.debug(f"arm_target_file, {arm_template.target}")
+
+    log.info(f"applying jinja2 to ARM template file, {arm_template.source}")
+
+
+def _construct_arm_template_parameter_paths(
+    arm_template_parameters: TemplatePaths,
+) -> pathlib.Path:
+    source_puff_file_path = arm_template_parameters.source
+
+    # puffd_parameters_target_file: the expected arm template parameter file
+    # generated by puff.
+    puffd_parameters_target_file = arm_template_parameters.target
+    log.debug(
+        f"puffd_parameters_target_file json, {puffd_parameters_target_file}"
+    )
+    parameters_target_dir = puffd_parameters_target_file.parent
+    log.debug(f"parameters_target_dir, {parameters_target_dir}")
+
+    # jinjad_parameters_target_file: the expected arm template parameter file
+    # generated by jinja2 template processing.
+    jinjad_parameters_target_file = (
+        parameters_target_dir / f"jinjad.{puffd_parameters_target_file.name}"
+    )
+    log.debug(
+        f"jinjad_parameters_target_file json, {jinjad_parameters_target_file}"
+    )
+
+    log.info(
+        f"applying jinja2 to ARM template parameter file,"
+        f" {source_puff_file_path}"
+    )
+
+    return jinjad_parameters_target_file
 
 
 async def prepare_deployment_files(
     template_files: TemplateFiles,
     parameters: TemplateParameters,
 ) -> ArmTemplateDeploymentFiles:
-    """Prepare final ARM template and parameter files for deployment."""
-    source_arm_template_path = template_files.arm_template.source
-    source_puff_file_path = template_files.arm_template_parameters.source_puff
-    template_environment = FrameTemplates(
-        # folders containing _source_ files
-        list({source_arm_template_path.parent, source_puff_file_path.parent})
+    """
+    Prepare final ARM template and parameter files for deployment.
+
+    Args:
+        template_files: Paths to source files for processing.
+        parameters: Parameters to be applied to templates.
+
+    Returns:
+        Paths to ARM template and ARM template parameter files.
+    Raises:
+        TemplateError:  If an error occurs during puff or template processing.
+    """
+    arm_source = template_files.arm_template.source
+    arm_target = template_files.arm_template.target
+    _log_arm_template_paths(template_files.arm_template)
+
+    # the puff YAML file.
+    parameters_source = template_files.arm_template_parameters.source
+    # the arm template parameters file generated from the puff run.
+    puffd_parameters_target = template_files.arm_template_parameters.target
+    # the arm template parameter file generated by jinja2 processing.
+    parameters_target = _construct_arm_template_parameter_paths(
+        template_files.arm_template_parameters
     )
+
+    # folders containing _jinja template_ source files
+    template_paths = (
+        [arm_source.parent, parameters_target.parent]
+        if arm_source.parent != parameters_target.parent
+        else [arm_source.parent]
+    )
+    log.debug(f"frame template paths, {template_paths}")
+    template_environment = FrameTemplates(template_paths)
     template_environment.environment.filters["json_inlining"] = json_inlining
 
-    arm_target_directory = template_files.arm_template.target.parent
-    log.debug(f"arm templating output target directory, {arm_target_directory}")
-    puff_target_directory = template_files.arm_template_parameters.target.parent
-    log.debug(
-        f"puff templating output target directory," f" {puff_target_directory}"
-    )
+    await _prepare_working_directory(parameters_target.parent)
+    if parameters_target.parent != arm_target.parent:
+        # also prepare the distinct arm target directory
+        await _prepare_working_directory(arm_target.parent)
 
-    log.info(f"applying jinja2 to puff file, {source_puff_file_path}")
-    log.info(
-        f"applying jinja2 to ARM template file, {source_arm_template_path}"
-    )
-    futures = await asyncio.gather(
-        _apply_jinja2_file(
-            template_environment,
-            source_puff_file_path,
-            puff_target_directory,
-            parameters,
-        ),
-        _apply_jinja2_file(
-            template_environment,
-            source_arm_template_path,
-            arm_target_directory,
-            parameters,
-        ),
-    )
-    templated_puff = futures[0]
-    templated_arm = futures[1]
-    # now transform the jinja2 processed puff file to arm template parameter
-    # json files.
+    # transform the puff file to arm template parameter json files.
     await run_puff(
-        templated_puff,
+        parameters_source,
         False,
         False,
         disable_ascii_art=True,
-        output_dir=puff_target_directory,
+        output_dir=puffd_parameters_target.parent,
+    )
+    _verify_puff_target(puffd_parameters_target)
+
+    # now process jinja2 templates against JSON files.
+    await asyncio.gather(
+        _apply_template(
+            template_environment,
+            puffd_parameters_target,
+            parameters_target,
+            parameters,
+        ),
+        _apply_template(
+            template_environment,
+            arm_source,
+            arm_target,
+            parameters,
+        ),
     )
     result = ArmTemplateDeploymentFiles(
-        arm_template=templated_arm,
-        parameters=template_files.arm_template_parameters.target,
+        arm_template=arm_target,
+        parameters=parameters_target,
     )
     return result

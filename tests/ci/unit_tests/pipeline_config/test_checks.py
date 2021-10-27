@@ -21,7 +21,35 @@ from tests.ci.support.pipeline_config import MOCK_PATHS, MOCK_SECRET
 log = logging.getLogger(__name__)
 
 
-MOCK_SYSTEM_PATH = pathlib.Path("some/path")
+@pytest.fixture()
+def mock_file_exists(mock_async_method, mock_verify_puff_target):
+    def _apply(return_value=None, side_effect=None):
+        mock_async_method(
+            "foodx_devops_tools.pipeline_config._checks._file_exists",
+            return_value=return_value,
+            side_effect=side_effect,
+        )
+
+    return _apply
+
+
+@pytest.fixture()
+def path_check_mocks(
+    mock_apply_template,
+    mock_loads,
+    mock_results,
+    mock_run_puff_check,
+    mock_file_exists,
+):
+    def _apply(return_value=None, side_effect=None):
+        mock_file_exists(return_value=return_value, side_effect=side_effect)
+        mock_loads(mock_results)
+
+        mock_config = PipelineConfiguration.from_files(MOCK_PATHS, MOCK_SECRET)
+
+        return mock_config
+
+    return _apply
 
 
 class TestFileExists:
@@ -48,28 +76,16 @@ class TestFileExists:
 
 class TestDoPathCheck:
     @pytest.mark.asyncio
-    async def test_clean(
-        self, mock_loads, mock_results, mock_async_method, mock_run_puff_check
-    ):
-        mock_async_method(
-            "foodx_devops_tools.pipeline_config._checks._file_exists",
-            return_value=True,
-        )
-        mock_loads(mock_results)
-        mock_config = PipelineConfiguration.from_files(MOCK_PATHS, MOCK_SECRET)
+    async def test_clean(self, path_check_mocks):
+        mock_config = path_check_mocks(return_value=True)
 
         await do_path_check(mock_config)
 
     @pytest.mark.asyncio
-    async def test_missing_file(
-        self, mock_loads, mock_results, mock_async_method, mock_run_puff_check
-    ):
-        mock_async_method(
-            "foodx_devops_tools.pipeline_config._checks._file_exists",
-            side_effect=[True, False, True, True, True],
+    async def test_missing_file(self, path_check_mocks):
+        mock_config = path_check_mocks(
+            side_effect=[True, False, True, True, True]
         )
-        mock_loads(mock_results)
-        mock_config = PipelineConfiguration.from_files(MOCK_PATHS, MOCK_SECRET)
 
         with pytest.raises(
             FileNotFoundError, match=r"files missing from deployment"
@@ -77,15 +93,10 @@ class TestDoPathCheck:
             await do_path_check(mock_config)
 
     @pytest.mark.asyncio
-    async def test_multiple_missing_files(
-        self, mock_loads, mock_results, mock_async_method, mock_run_puff_check
-    ):
-        mock_async_method(
-            "foodx_devops_tools.pipeline_config._checks._file_exists",
-            side_effect=[False, False, False, False, False],
+    async def test_multiple_missing_files(self, path_check_mocks):
+        mock_config = path_check_mocks(
+            side_effect=[False, False, False, False, False]
         )
-        mock_loads(mock_results)
-        mock_config = PipelineConfiguration.from_files(MOCK_PATHS, MOCK_SECRET)
 
         with pytest.raises(
             FileNotFoundError, match=r"files missing from deployment"
@@ -95,22 +106,14 @@ class TestDoPathCheck:
     @pytest.mark.asyncio
     async def test_failed_check(
         self,
-        mock_loads,
-        mock_results,
-        mock_async_method,
+        path_check_mocks,
         mocker,
-        mock_run_puff_check,
     ):
         mocker.patch(
             "foodx_devops_tools.pipeline_config._checks._check_arm_files",
             side_effect=RuntimeError(),
         )
-        mock_async_method(
-            "foodx_devops_tools.pipeline_config._checks._file_exists",
-            return_value=True,
-        )
-        mock_loads(mock_results)
-        mock_config = PipelineConfiguration.from_files(MOCK_PATHS, MOCK_SECRET)
+        mock_config = path_check_mocks(return_value=True)
 
         with pytest.raises(RuntimeError):
             await do_path_check(mock_config)
