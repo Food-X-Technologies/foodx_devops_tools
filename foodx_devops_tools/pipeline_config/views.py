@@ -9,6 +9,7 @@
 
 import copy
 import dataclasses
+import hashlib
 import logging
 import pathlib
 import re
@@ -18,12 +19,7 @@ from foodx_devops_tools._to import StructuredTo
 from foodx_devops_tools.azure.cloud import AzureCredentials
 from foodx_devops_tools.patterns import SubscriptionData
 from foodx_devops_tools.utilities.jinja2 import TemplateParameters
-from foodx_devops_tools.utilities.templates import (
-    JINJA_FILE_PREFIX,
-    ArmTemplateParameters,
-    ArmTemplates,
-    TemplateFiles,
-)
+from foodx_devops_tools.utilities.templates import TemplateFiles, TemplatePaths
 
 from ..deployment import DeploymentTuple
 from ._exceptions import PipelineViewError
@@ -419,6 +415,23 @@ class FlattenedDeployment:
 
         return result[0:64]
 
+    @staticmethod
+    def __construct_working_directory(
+        parent_dir: pathlib.Path, working_name: str
+    ) -> pathlib.Path:
+        working_dir = parent_dir / "working" / working_name
+
+        return working_dir
+
+    @staticmethod
+    def __encode_working_name(parameters: TemplateParameters) -> str:
+        """Construct a working directory name from template parameters."""
+        # use the first 16 characters of the sha-512 sum of the parameter data
+        # as the working directory name.
+        sha = hashlib.sha512(str(parameters).encode())
+        digest = sha.hexdigest()
+        return digest[0:16]
+
     def construct_deployment_paths(
         self: W,
         specified_arm_file: typing.Optional[pathlib.Path],
@@ -432,6 +445,7 @@ class FlattenedDeployment:
             specified_arm_file:
             specified_puff_file:
             target_arm_parameter_path:
+            working_name:
 
         Returns:
             Tuple of necessary paths.
@@ -439,6 +453,8 @@ class FlattenedDeployment:
             PipelineViewError:  If any errors occur due to undefined deployment
                                 data.
         """
+        template_parameters = self.construct_template_parameters()
+        working_name = self.__encode_working_name(template_parameters)
         application_name = self.context.application_name
         frame_folder = self.data.frame_folder
         if not frame_folder:
@@ -476,28 +492,27 @@ class FlattenedDeployment:
             )
         log.debug(f"{puff_prompt}, {source_puff_path}")
 
-        working_dir = source_puff_path.parent
-        log.debug(f"working directory, {working_dir}")
+        working_dir = self.__construct_working_directory(
+            frame_folder, working_name
+        )
         # Assume arm template parameters file has been specified with any sub
         # directories in it's path in puff_map.yml, so only frame_folder is
         # used here.
-        parameters_path = frame_folder / target_arm_parameter_path
+        parameters_path = working_dir / target_arm_parameter_path
         log.debug(f"arm parameters path, {parameters_path}")
 
+        log.debug(f"working directory, {working_dir}")
         target_arm_template_path = self.__screen_jinja_template(
-            source_arm_template_path, working_dir, "arm"
-        )
-        target_puff_path = self.__screen_jinja_template(
-            source_puff_path, working_dir, "puff"
+            source_arm_template_path, working_dir
         )
 
         template_files = TemplateFiles(
-            arm_template=ArmTemplates(
-                source=source_arm_template_path, target=target_arm_template_path
+            arm_template=TemplatePaths(
+                source=source_arm_template_path,
+                target=target_arm_template_path,
             ),
-            arm_template_parameters=ArmTemplateParameters(
-                source_puff=source_puff_path,
-                templated_puff=target_puff_path,
+            arm_template_parameters=TemplatePaths(
+                source=source_puff_path,
                 target=parameters_path,
             ),
         )
@@ -506,18 +521,10 @@ class FlattenedDeployment:
 
     @staticmethod
     def __screen_jinja_template(
-        source_path: pathlib.Path, working_dir: pathlib.Path, keyword: str
+        source_path: pathlib.Path, working_dir: pathlib.Path
     ) -> pathlib.Path:
-        if source_path.name.startswith(JINJA_FILE_PREFIX):
-            # A jinja template file needs to have a target in the working dir.
-            target_prompt = f"jinja output {keyword} target"
-            target_path = working_dir / "{0}".format(
-                source_path.name.replace(JINJA_FILE_PREFIX, "")
-            )
-        else:
-            target_prompt = f"{keyword} target unchanged from {keyword} source"
-            target_path = source_path
-        log.debug(f"{target_prompt}, {target_path}")
+        # A jinja template file needs to have a target in the working dir.
+        target_path = working_dir / "{0}".format(source_path.name)
 
         return target_path
 

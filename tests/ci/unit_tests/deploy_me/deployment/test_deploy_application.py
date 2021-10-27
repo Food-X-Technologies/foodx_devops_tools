@@ -59,6 +59,10 @@ def prep_data(mock_async_method, mock_flattened_deployment):
     mock_async_method(
         "foodx_devops_tools.deploy_me._deployment.login_service_principal"
     )
+    mock_async_method(
+        "foodx_devops_tools.utilities.templates._prepare_working_directory"
+    )
+    mock_async_method("foodx_devops_tools.utilities.templates._apply_template")
 
     return mock_deploy, mock_puff, deployment_data, app_data
 
@@ -123,8 +127,10 @@ class TestValidation(DeploymentChecks):
         expected_parameters = default_override_parameters(prep_data[2])
         mock_deploy.assert_called_once_with(
             "c1-a1_group-123456",
-            pathlib.Path("some/path/a1.json"),
-            pathlib.Path("some/path/some/puff_map/path"),
+            pathlib.Path("some/path/working/fb8520bf86c5b74e/a1.json"),
+            pathlib.Path(
+                "some/path/working/fb8520bf86c5b74e/some/puff_map/jinjad.path"
+            ),
             "l1",
             "Incremental",
             AzureSubscriptionConfiguration(subscription_id="sys1_c1_r1a"),
@@ -146,8 +152,10 @@ class TestValidation(DeploymentChecks):
         expected_parameters = default_override_parameters(prep_data[2])
         mock_deploy.assert_called_once_with(
             "c1-f1-a1-123456",
-            pathlib.Path("some/path/a1.json"),
-            pathlib.Path("some/path/some/puff_map/path"),
+            pathlib.Path("some/path/working/fb8520bf86c5b74e/a1.json"),
+            pathlib.Path(
+                "some/path/working/fb8520bf86c5b74e/some/puff_map/jinjad.path"
+            ),
             "l1",
             "Incremental",
             AzureSubscriptionConfiguration(subscription_id="sys1_c1_r1a"),
@@ -171,8 +179,10 @@ class TestDeployment(DeploymentChecks):
         expected_parameters = default_override_parameters(prep_data[2])
         mock_deploy.assert_called_once_with(
             "c1-a1_group",
-            pathlib.Path("some/path/a1.json"),
-            pathlib.Path("some/path/some/puff_map/path"),
+            pathlib.Path("some/path/working/fb8520bf86c5b74e/a1.json"),
+            pathlib.Path(
+                "some/path/working/fb8520bf86c5b74e/some/puff_map/jinjad.path"
+            ),
             "l1",
             "Incremental",
             AzureSubscriptionConfiguration(subscription_id="sys1_c1_r1a"),
@@ -194,8 +204,11 @@ class TestDeployment(DeploymentChecks):
         expected_parameters = default_override_parameters(prep_data[2])
         mock_deploy.assert_called_once_with(
             "c1-f1-a1",
-            pathlib.Path("some/path/a1.json"),
-            pathlib.Path("some/path/some/puff_map/path"),
+            pathlib.Path("some/path/working/fb8520bf86c5b74e/a1.json"),
+            pathlib.Path(
+                "some/path/working/fb8520bf86c5b74e/some/puff_map"
+                "/jinjad.path"
+            ),
             "l1",
             "Incremental",
             AzureSubscriptionConfiguration(subscription_id="sys1_c1_r1a"),

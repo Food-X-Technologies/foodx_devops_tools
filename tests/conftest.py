@@ -32,6 +32,11 @@ def mock_run_puff_check(mock_async_method):
     mock_async_method("foodx_devops_tools.utilities.templates.run_puff")
 
 
+@pytest.fixture()
+def mock_apply_template(mock_async_method):
+    mock_async_method("foodx_devops_tools.utilities.templates._apply_template")
+
+
 @pytest.fixture
 def apply_pipeline_config_test(mocker):
     def _apply(

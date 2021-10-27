@@ -175,7 +175,8 @@ async def _do_step_deployment(
     step_context = f"{this_context}.{this_step.name}"
 
     log.debug(
-        f"deployment_data.context, {step_context}, {str(deployment_data.context)}"  # noqa: E501
+        f"deployment_data.context, "
+        f"{step_context}, {str(deployment_data.context)}"
     )
     log.debug(
         f"deployment_data.data, {step_context}, {str(deployment_data.data)}"
@@ -187,12 +188,6 @@ async def _do_step_deployment(
             deployment_data.context.client,
             this_step.resource_group,
         )
-        template_files = deployment_data.construct_deployment_paths(
-            this_step.arm_file,
-            this_step.puff_file,
-            puff_parameter_paths[this_step.name],
-        )
-        log.debug(f"template files, {template_files}")
 
         await login_service_principal(deployment_data.data.azure_credentials)
         if enable_validation:
@@ -206,6 +201,13 @@ async def _do_step_deployment(
 
         template_parameters = deployment_data.construct_template_parameters()
         log.debug(f"template parameters, {step_context}, {template_parameters}")
+
+        template_files = deployment_data.construct_deployment_paths(
+            this_step.arm_file,
+            this_step.puff_file,
+            puff_parameter_paths[this_step.name],
+        )
+        log.debug(f"template files, {template_files}")
 
         deployment_files = await prepare_deployment_files(
             template_files,

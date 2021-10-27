@@ -39,6 +39,7 @@ def mock_login(mock_async_method):
 
 @pytest.mark.asyncio
 async def test_clean(
+    mock_apply_template,
     mock_deploystep_context,
     mock_login,
     mock_rg_deploy,
@@ -53,6 +54,7 @@ async def test_clean(
 @pytest.mark.asyncio
 async def test_default_override_parameters(
     default_override_parameters,
+    mock_apply_template,
     mock_deploystep_context,
     mock_login,
     mock_rg_deploy,
@@ -84,6 +86,7 @@ async def test_default_override_parameters(
 @pytest.mark.asyncio
 async def test_secrets_enabled(
     default_override_parameters,
+    mock_apply_template,
     mock_deploystep_context,
     mock_login,
     mock_rg_deploy,
