@@ -194,10 +194,14 @@ async def prepare_deployment_files(
         template_files.arm_template_parameters
     )
 
-    template_environment = FrameTemplates(
-        # folders containing _source_ files
-        [arm_source.parent, parameters_source.parent]
+    # folders containing _jinja template_ source files
+    template_paths = (
+        [arm_source.parent, parameters_target.parent]
+        if arm_source.parent != parameters_target.parent
+        else [arm_source.parent]
     )
+    log.debug(f"frame template paths, {template_paths}")
+    template_environment = FrameTemplates(template_paths)
     template_environment.environment.filters["json_inlining"] = json_inlining
 
     await _prepare_working_directory(parameters_target.parent)

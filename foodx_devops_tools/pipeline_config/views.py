@@ -9,7 +9,6 @@
 
 import copy
 import dataclasses
-import hashlib
 import logging
 import pathlib
 import re
@@ -426,11 +425,9 @@ class FlattenedDeployment:
     @staticmethod
     def __encode_working_name(parameters: TemplateParameters) -> str:
         """Construct a working directory name from template parameters."""
-        # use the first 16 characters of the sha-512 sum of the parameter data
-        # as the working directory name.
-        sha = hashlib.sha512(str(parameters).encode())
-        digest = sha.hexdigest()
-        return digest[0:16]
+        # for now, use a simple predictable, non-empty value
+        value = "w"
+        return value
 
     def construct_deployment_paths(
         self: W,

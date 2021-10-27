@@ -45,14 +45,12 @@ class TestConstructDeploymentPaths:
             "expected": TemplateFiles(
                 arm_template=TemplatePaths(
                     source=pathlib.Path("frame/folder/this_app.json"),
-                    target=pathlib.Path(
-                        "frame/folder/working/2e277a87dbbe57c3/this_app.json"
-                    ),
+                    target=pathlib.Path("frame/folder/working/w/this_app.json"),
                 ),
                 arm_template_parameters=TemplatePaths(
                     source=pathlib.Path("frame/folder/this_app.yml"),
                     target=pathlib.Path(
-                        "frame/folder/working/2e277a87dbbe57c3/some/arm_parameters.json"
+                        "frame/folder/working/w/some/arm_parameters.json"
                     ),
                 ),
             ),
@@ -73,14 +71,12 @@ class TestConstructDeploymentPaths:
             "expected": TemplateFiles(
                 arm_template=TemplatePaths(
                     source=pathlib.Path("frame/folder/arm_file.json"),
-                    target=pathlib.Path(
-                        "frame/folder/working/2e277a87dbbe57c3/arm_file.json"
-                    ),
+                    target=pathlib.Path("frame/folder/working/w/arm_file.json"),
                 ),
                 arm_template_parameters=TemplatePaths(
                     source=pathlib.Path("frame/folder/arm_file.yml"),
                     target=pathlib.Path(
-                        "frame/folder/working/2e277a87dbbe57c3/some.generated.puff.file"
+                        "frame/folder/working/w/some.generated.puff.file"
                         ".json"
                     ),
                 ),
@@ -102,14 +98,12 @@ class TestConstructDeploymentPaths:
             "expected": TemplateFiles(
                 arm_template=TemplatePaths(
                     source=pathlib.Path("frame/folder/sub/arm_file.json"),
-                    target=pathlib.Path(
-                        "frame/folder/working/2e277a87dbbe57c3/arm_file.json"
-                    ),
+                    target=pathlib.Path("frame/folder/working/w/arm_file.json"),
                 ),
                 arm_template_parameters=TemplatePaths(
                     source=pathlib.Path("frame/folder/sub/arm_file.yml"),
                     target=pathlib.Path(
-                        "frame/folder/working/2e277a87dbbe57c3/some.generated.puff.file.json"
+                        "frame/folder/working/w/some.generated.puff.file.json"
                     ),
                 ),
             ),
@@ -130,14 +124,12 @@ class TestConstructDeploymentPaths:
             "expected": TemplateFiles(
                 arm_template=TemplatePaths(
                     source=pathlib.Path("frame/folder/this_app.json"),
-                    target=pathlib.Path(
-                        "frame/folder/working/2e277a87dbbe57c3/this_app.json"
-                    ),
+                    target=pathlib.Path("frame/folder/working/w/this_app.json"),
                 ),
                 arm_template_parameters=TemplatePaths(
                     source=pathlib.Path("frame/folder/this_app.yml"),
                     target=pathlib.Path(
-                        "frame/folder/working/2e277a87dbbe57c3/sub/some.generated.puff.file.json"
+                        "frame/folder/working/w/sub/some.generated.puff.file.json"
                     ),
                 ),
             ),
@@ -158,14 +150,12 @@ class TestConstructDeploymentPaths:
             "expected": TemplateFiles(
                 arm_template=TemplatePaths(
                     source=pathlib.Path("frame/folder/arm_file.json"),
-                    target=pathlib.Path(
-                        "frame/folder/working/2e277a87dbbe57c3/arm_file.json"
-                    ),
+                    target=pathlib.Path("frame/folder/working/w/arm_file.json"),
                 ),
                 arm_template_parameters=TemplatePaths(
                     source=pathlib.Path("frame/folder/puff_file.yml"),
                     target=pathlib.Path(
-                        "frame/folder/working/2e277a87dbbe57c3/some.puff.file.json"
+                        "frame/folder/working/w/some.puff.file.json"
                     ),
                 ),
             ),
@@ -186,14 +176,12 @@ class TestConstructDeploymentPaths:
             "expected": TemplateFiles(
                 arm_template=TemplatePaths(
                     source=pathlib.Path("frame/folder/arm_file.json"),
-                    target=pathlib.Path(
-                        "frame/folder/working/2e277a87dbbe57c3/arm_file.json"
-                    ),
+                    target=pathlib.Path("frame/folder/working/w/arm_file.json"),
                 ),
                 arm_template_parameters=TemplatePaths(
                     source=pathlib.Path("frame/folder/puff/puff_file.yml"),
                     target=pathlib.Path(
-                        "frame/folder/working/2e277a87dbbe57c3/some.puff.file.json"
+                        "frame/folder/working/w/some.puff.file.json"
                     ),
                 ),
             ),
@@ -216,14 +204,12 @@ class TestConstructDeploymentPaths:
                     source=pathlib.Path(
                         "frame/folder/../common/files/arm_file.json"
                     ),
-                    target=pathlib.Path(
-                        "frame/folder/working/2e277a87dbbe57c3/arm_file.json"
-                    ),
+                    target=pathlib.Path("frame/folder/working/w/arm_file.json"),
                 ),
                 arm_template_parameters=TemplatePaths(
                     source=pathlib.Path("frame/folder/puff_file.yml"),
                     target=pathlib.Path(
-                        "frame/folder/working/2e277a87dbbe57c3/some.puff.file.json"
+                        "frame/folder/working/w/some.puff.file.json"
                     ),
                 ),
             ),
@@ -247,13 +233,13 @@ class TestConstructDeploymentPaths:
                         "frame/folder/../common/files/jinja2.arm_file.json"
                     ),
                     target=pathlib.Path(
-                        "frame/folder/working/2e277a87dbbe57c3/jinja2.arm_file.json"
+                        "frame/folder/working/w/jinja2.arm_file.json"
                     ),
                 ),
                 arm_template_parameters=TemplatePaths(
                     source=pathlib.Path("frame/folder/puff_file.yml"),
                     target=pathlib.Path(
-                        "frame/folder/working/2e277a87dbbe57c3/some.puff.file.json"
+                        "frame/folder/working/w/some.puff.file.json"
                     ),
                 ),
             ),
@@ -274,16 +260,14 @@ class TestConstructDeploymentPaths:
             "expected": TemplateFiles(
                 arm_template=TemplatePaths(
                     source=pathlib.Path("frame/folder/this_app.json"),
-                    target=pathlib.Path(
-                        "frame/folder/working/2e277a87dbbe57c3/this_app.json"
-                    ),
+                    target=pathlib.Path("frame/folder/working/w/this_app.json"),
                 ),
                 arm_template_parameters=TemplatePaths(
                     source=pathlib.Path(
                         "frame/folder/../common/files/puff_file.yml"
                     ),
                     target=pathlib.Path(
-                        "frame/folder/working/2e277a87dbbe57c3/some.puff.file.json"
+                        "frame/folder/working/w/some.puff.file.json"
                     ),
                 ),
             ),
@@ -304,16 +288,14 @@ class TestConstructDeploymentPaths:
             "expected": TemplateFiles(
                 arm_template=TemplatePaths(
                     source=pathlib.Path("frame/folder/this_app.json"),
-                    target=pathlib.Path(
-                        "frame/folder/working/2e277a87dbbe57c3/this_app.json"
-                    ),
+                    target=pathlib.Path("frame/folder/working/w/this_app.json"),
                 ),
                 arm_template_parameters=TemplatePaths(
                     source=pathlib.Path(
                         "frame/folder/../common/files/jinja2.puff_file.yml"
                     ),
                     target=pathlib.Path(
-                        "frame/folder/working/2e277a87dbbe57c3/some.puff.file.json"
+                        "frame/folder/working/w/some.puff.file.json"
                     ),
                 ),
             ),
@@ -334,16 +316,14 @@ class TestConstructDeploymentPaths:
             "expected": TemplateFiles(
                 arm_template=TemplatePaths(
                     source=pathlib.Path("frame/folder/this_app.json"),
-                    target=pathlib.Path(
-                        "frame/folder/working/2e277a87dbbe57c3/this_app.json"
-                    ),
+                    target=pathlib.Path("frame/folder/working/w/this_app.json"),
                 ),
                 arm_template_parameters=TemplatePaths(
                     source=pathlib.Path(
                         "frame/folder/sub/jinja2.puff_file.yml"
                     ),
                     target=pathlib.Path(
-                        "frame/folder/working/2e277a87dbbe57c3/some.puff.file.json"
+                        "frame/folder/working/w/some.puff.file.json"
                     ),
                 ),
             ),
