@@ -30,10 +30,12 @@ frames:
     f1:
       applications:
         a1: 
+          steps:
           - name: a1l1
             mode: Incremental
             resource_group: a1_group
         a2:
+          steps:
           - name: a2l1
             mode: Complete
             resource_group: a2_group
@@ -44,22 +46,31 @@ frames:
 
     result_frames = result.frames
     assert len(result_frames.frames) == 1
-    assert len(result_frames.frames["f1"].applications["a1"]) == 1
+    assert len(result_frames.frames["f1"].applications["a1"].steps) == 1
     assert (
-        result_frames.frames["f1"].applications["a1"][0].resource_group
+        result_frames.frames["f1"].applications["a1"].steps[0].resource_group
         == "a1_group"
     )
-    assert not result_frames.frames["f1"].applications["a1"][0].static_secrets
-    assert len(result_frames.frames["f1"].applications["a2"]) == 1
     assert (
-        result_frames.frames["f1"].applications["a2"][0].resource_group
+        not result_frames.frames["f1"]
+        .applications["a1"]
+        .steps[0]
+        .static_secrets
+    )
+    assert len(result_frames.frames["f1"].applications["a2"].steps) == 1
+    assert (
+        result_frames.frames["f1"].applications["a2"].steps[0].resource_group
         == "a2_group"
     )
     assert result_frames.frames["f1"].folder == pathlib.Path("some/path")
     assert result_frames.frames["f1"].triggers is None
-    assert result_frames.frames["f1"].applications["a2"][0].arm_file is None
-    assert result_frames.frames["f1"].applications["a2"][0].puff_file is None
-    assert result_frames.frames["f1"].applications["a2"][0].name == "a2l1"
+    assert (
+        result_frames.frames["f1"].applications["a2"].steps[0].arm_file is None
+    )
+    assert (
+        result_frames.frames["f1"].applications["a2"].steps[0].puff_file is None
+    )
+    assert result_frames.frames["f1"].applications["a2"].steps[0].name == "a2l1"
     assert result_frames.triggers is None
 
 
@@ -70,6 +81,7 @@ frames:
     f1:
       applications:
         a1: 
+          steps:
           - name: a1l1
             mode: Incremental
             resource_group: a1_group
@@ -81,18 +93,26 @@ frames:
 
     result_frames = result.frames
     assert len(result_frames.frames) == 1
-    assert len(result_frames.frames["f1"].applications["a1"]) == 2
+    assert len(result_frames.frames["f1"].applications["a1"].steps) == 2
     assert (
-        result_frames.frames["f1"].applications["a1"][0].resource_group
+        result_frames.frames["f1"].applications["a1"].steps[0].resource_group
         == "a1_group"
     )
-    assert not result_frames.frames["f1"].applications["a1"][0].static_secrets
-    assert not hasattr(
-        result_frames.frames["f1"].applications["a1"][0], "delay_seconds"
+    assert (
+        not result_frames.frames["f1"]
+        .applications["a1"]
+        .steps[0]
+        .static_secrets
     )
-    assert result_frames.frames["f1"].applications["a1"][1].delay_seconds == 23
     assert not hasattr(
-        result_frames.frames["f1"].applications["a1"][1], "resource_group"
+        result_frames.frames["f1"].applications["a1"].steps[0], "delay_seconds"
+    )
+    assert (
+        result_frames.frames["f1"].applications["a1"].steps[1].delay_seconds
+        == 23
+    )
+    assert not hasattr(
+        result_frames.frames["f1"].applications["a1"].steps[1], "resource_group"
     )
 
 
@@ -103,11 +123,13 @@ frames:
     f1:
       applications:
         a1: 
+          steps:
           - name: a1l1
             mode: Incremental
             resource_group: a1_group
             static_secrets: true
         a2:
+          steps:
           - name: a2l1
             mode: Complete
             resource_group: a2_group
@@ -118,23 +140,32 @@ frames:
 
     result_frames = result.frames
     assert len(result_frames.frames) == 1
-    assert len(result_frames.frames["f1"].applications["a1"]) == 1
+    assert len(result_frames.frames["f1"].applications["a1"].steps) == 1
     assert (
-        result_frames.frames["f1"].applications["a1"][0].resource_group
+        result_frames.frames["f1"].applications["a1"].steps[0].resource_group
         == "a1_group"
     )
-    assert result_frames.frames["f1"].applications["a1"][0].static_secrets
-    assert not result_frames.frames["f1"].applications["a2"][0].static_secrets
-    assert len(result_frames.frames["f1"].applications["a2"]) == 1
+    assert result_frames.frames["f1"].applications["a1"].steps[0].static_secrets
     assert (
-        result_frames.frames["f1"].applications["a2"][0].resource_group
+        not result_frames.frames["f1"]
+        .applications["a2"]
+        .steps[0]
+        .static_secrets
+    )
+    assert len(result_frames.frames["f1"].applications["a2"].steps) == 1
+    assert (
+        result_frames.frames["f1"].applications["a2"].steps[0].resource_group
         == "a2_group"
     )
     assert result_frames.frames["f1"].folder == pathlib.Path("some/path")
     assert result_frames.frames["f1"].triggers is None
-    assert result_frames.frames["f1"].applications["a2"][0].arm_file is None
-    assert result_frames.frames["f1"].applications["a2"][0].puff_file is None
-    assert result_frames.frames["f1"].applications["a2"][0].name == "a2l1"
+    assert (
+        result_frames.frames["f1"].applications["a2"].steps[0].arm_file is None
+    )
+    assert (
+        result_frames.frames["f1"].applications["a2"].steps[0].puff_file is None
+    )
+    assert result_frames.frames["f1"].applications["a2"].steps[0].name == "a2l1"
     assert result_frames.triggers is None
 
 
@@ -145,11 +176,13 @@ frames:
     f1:
       applications:
         a1: 
+          steps:
           - name: a1l1
             mode: Incremental
             resource_group: a1_group
             
         a2:
+          steps:
           - name: a2l1
             arm_file: something.json
             mode: Complete
@@ -160,7 +193,7 @@ frames:
     result = apply_applications_test(file_text)
 
     result_frames = result.frames
-    assert result_frames.frames["f1"].applications["a2"][
+    assert result_frames.frames["f1"].applications["a2"].steps[
         0
     ].arm_file == pathlib.Path("something.json")
 
@@ -176,10 +209,12 @@ frames:
     f1:
       applications:
         a1: 
+          steps:
           - name: a1l1
             resource_group: a1_group
             mode: Incremental
         a2:
+          steps:
           - name: a2l1
             resource_group: a2_group
             mode: Complete
@@ -202,10 +237,12 @@ frames:
     f1:
       applications:
         a1: 
+          steps:
           - name: a1l1
             resource_group: a1_group
             mode: Incremental
         a2:
+          steps:
           - name: a2l1
             resource_group: a2_group
             mode: Complete
@@ -232,10 +269,12 @@ frames:
     f1:
       applications:
         a1: 
+          steps:
           - name: a1l1
             resource_group: a1_group
             mode: Incremental
         a2:
+          steps:
           - name: a2l1
             resource_group: a2_group
             mode: Complete
@@ -246,22 +285,24 @@ frames:
     result = apply_applications_test(file_text)
 
     result_frames = result.frames
-    assert result_frames.frames["f1"].applications["a2"][
+    assert result_frames.frames["f1"].applications["a2"].steps[
         0
     ].puff_file == pathlib.Path("something.yml")
 
 
-def test_multiple_sequenced(apply_applications_test):
+def test_frames_sequenced(apply_applications_test):
     file_text = """---
 frames:
   frames:
     f1:
       applications:
         a1:
+          steps:
           - name: a1l1
             resource_group: f1a1
             mode: Complete
         a2:
+          steps:
           - name: a2l1
             resource_group: f1a2
             mode: Incremental
@@ -269,10 +310,12 @@ frames:
     f2:
       applications:
         a3:
+          steps:
           - name: a3l1
             resource_group: f2a3
             mode: Complete
         a4:
+          steps:
           - name: a4l1
             resource_group: f2a4
             mode: Incremental
@@ -290,6 +333,34 @@ frames:
     assert result_frames.frames["f2"].depends_on[0] == "f1"
 
 
+def test_applications_sequenced(apply_applications_test):
+    file_text = """---
+frames:
+  frames:
+    f1:
+      applications:
+        a1:
+          depends_on:
+            - a2
+          steps:
+            - name: a1l1
+              resource_group: f1a1
+              mode: Complete
+        a2:
+          steps:
+            - name: a2l1
+              resource_group: f1a2
+              mode: Incremental
+      folder: some/f1-path
+"""
+
+    result = apply_applications_test(file_text)
+
+    result_frames = result.frames
+    assert len(result_frames.frames["f1"].applications["a1"].depends_on) == 1
+    assert result_frames.frames["f1"].applications["a1"].depends_on[0] == "a2"
+
+
 def test_multiple_unsequenced(apply_applications_test):
     file_text = """---
 frames:
@@ -297,10 +368,12 @@ frames:
     f1:
       applications:
         a1:
+          steps:
           - name: a1l1
             resource_group: f1a1
             mode: Complete
         a2:
+          steps:
           - name: a2l1
             resource_group: f1a2
             mode: Complete
@@ -308,10 +381,12 @@ frames:
     f3:
       applications:
         a5:
+          steps:
           - name: a5l1
             resource_group: f3a5
             mode: Complete
         a6:
+          steps:
           - name: a6l1
             resource_group: f3a6
             mode: Complete
@@ -319,10 +394,12 @@ frames:
     f2:
       applications:
         a3:
+          steps:
           - name: a3l1
             resource_group: f2a3
             mode: Complete
         a4:
+          steps:
           - name: a4l1
             resource_group: f2a4
             mode: Complete
@@ -388,10 +465,12 @@ frames:
     f1:
       applications:
         a1: 
+          steps:
           - name: a1l1
             mode: Incremental
             resource_group: a1_group
         a2:
+          steps:
           - mode: Complete
             resource_group: a2_group
       folder: some/path
@@ -410,13 +489,76 @@ frames:
     f1:
       applications:
         a1: 
+          steps:
           - name: a1l1
             mode: Incremental
             resource_group: a1_group
         a2:
+          steps:
           - name: a2l1
             resource_group: a2_group
       folder: some/path
+"""
+
+    with pytest.raises(
+        FrameDefinitionsError, match=r"Error validating frames definition"
+    ):
+        apply_applications_test(file_text)
+
+
+def test_external_application_dependency_raises(apply_applications_test):
+    file_text = """---
+frames:
+  frames:
+    f1:
+      applications:
+        a1: 
+          steps:
+          - name: a1s1
+            mode: Incremental
+            resource_group: a1_group
+          depends_on:
+            - a2
+      folder: f1/path
+    f2:
+      applications:
+        a2:
+          steps:
+          - name: a2s1
+            mode: Incremental
+            resource_group: a2_group
+      folder: f2/path
+"""
+
+    with pytest.raises(
+        FrameDefinitionsError, match=r"Error validating frames definition"
+    ):
+        apply_applications_test(file_text)
+
+
+def test_frame_application_dependency_raises(apply_applications_test):
+    file_text = """---
+frames:
+  frames:
+    f1:
+      applications:
+        a1: 
+          steps:
+            - name: a1s1
+              mode: Incremental
+              resource_group: a1_group
+          depends_on:
+            # application dependency can only depend on other peer applications
+            - f2
+      folder: f1/path
+    f2:
+      applications:
+        a2:
+          steps:
+          - name: a2s1
+            mode: Incremental
+            resource_group: a2_group
+      folder: f2/path
 """
 
     with pytest.raises(
@@ -433,6 +575,7 @@ frames:
     f1:
       applications:
         a1: 
+          steps:
           - name: a1l1
             mode: Incremental
       folder: some/path
@@ -455,6 +598,7 @@ frames:
     f1:
       applications:
         a1: 
+          steps:
           - name: a1l1
             mode: Incremental
             arm_file: arm_file.json
@@ -478,9 +622,11 @@ frames:
     f1:
       applications:
         a1: 
+          steps:
           - name: a1l1
             mode: Incremental
         a2: 
+          steps:
           - name: a2l1
             mode: Incremental
             arm_file: arm_file.json
@@ -507,6 +653,7 @@ frames:
     f1:
       applications:
         a1: 
+          steps:
           - name: a1l1
             mode: Incremental
             arm_file: other/path/arm_file.json
@@ -532,6 +679,7 @@ frames:
     f1:
       applications:
         a1: 
+          steps:
           - name: a1l1
             mode: Incremental
       folder: some/path
@@ -554,6 +702,7 @@ frames:
     f1:
       applications:
         a1: 
+          steps:
           - name: a1l1
             mode: Incremental
             puff_file: puff_file.yml
@@ -577,9 +726,11 @@ frames:
     f1:
       applications:
         a1: 
+          steps:
           - name: a1l1
             mode: Incremental
         a2: 
+          steps:
           - name: a2l1
             mode: Incremental
             puff_file: puff/file.yml
@@ -607,6 +758,7 @@ frames:
     f1:
       applications:
         a1: 
+          steps:
           - name: a1l1
             mode: Incremental
             puff_file: other/path/puff_file.yml
@@ -632,6 +784,7 @@ frames:
     f1:
       applications:
         a1: 
+          steps:
           - name: a1l1
             mode: Incremental
       folder: some/path
@@ -653,12 +806,14 @@ frames:
     f1:
       applications:
         a1: 
+          steps:
           - name: a1l1
             mode: Incremental
       folder: some/path
     f2:
       applications:
         a1: 
+          steps:
           - name: a1l1
             mode: Incremental
       folder: f2/path

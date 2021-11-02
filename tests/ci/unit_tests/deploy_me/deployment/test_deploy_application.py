@@ -38,7 +38,7 @@ MOCK_APPLICATION_DATA = mock_pipeline_config.frames.frames["f1"].applications[
 
 @pytest.fixture()
 def prep_data(mock_async_method, mock_flattened_deployment):
-    app_data = copy.deepcopy(MOCK_APPLICATION_DATA)
+    app_data = copy.deepcopy(MOCK_APPLICATION_DATA.steps)
 
     deployment_data = mock_flattened_deployment[0]
     deployment_data.data.iteration_context.append("a1")

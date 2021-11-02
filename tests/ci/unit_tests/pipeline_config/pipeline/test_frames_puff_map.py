@@ -29,13 +29,15 @@ def test_mismatched_frames_raises1(mock_loads, mock_results):
                 "frames": {
                     "f1": {
                         "applications": {
-                            "a1": [
-                                {
-                                    "resource_group": "a1_group",
-                                    "name": "a1stp1",
-                                    "mode": "Incremental",
-                                },
-                            ],
+                            "a1": {
+                                "steps": [
+                                    {
+                                        "resource_group": "a1_group",
+                                        "name": "a1stp1",
+                                        "mode": "Incremental",
+                                    },
+                                ],
+                            },
                         },
                         "folder": "some/path",
                     },
@@ -93,25 +95,29 @@ def test_mismatched_frames_raises2(mock_loads, mock_results):
                 "frames": {
                     "f1": {
                         "applications": {
-                            "a1": [
-                                {
-                                    "resource_group": "a1_group",
-                                    "name": "a1stp1",
-                                    "mode": "Incremental",
-                                },
-                            ],
+                            "a1": {
+                                "steps": [
+                                    {
+                                        "resource_group": "a1_group",
+                                        "name": "a1stp1",
+                                        "mode": "Incremental",
+                                    },
+                                ],
+                            },
                         },
                         "folder": "some/path",
                     },
                     "f2": {
                         "applications": {
-                            "a2": [
-                                {
-                                    "resource_group": "a2_group",
-                                    "name": "a2stp1",
-                                    "mode": "Incremental",
-                                },
-                            ],
+                            "a2": {
+                                "steps": [
+                                    {
+                                        "resource_group": "a2_group",
+                                        "name": "a2stp1",
+                                        "mode": "Incremental",
+                                    },
+                                ],
+                            },
                         },
                         "folder": "some/path",
                     },
@@ -156,13 +162,15 @@ def test_mismatched_applications_raises1(mock_loads, mock_results):
                 "frames": {
                     "f1": {
                         "applications": {
-                            "a1": [
-                                {
-                                    "resource_group": "a1_group",
-                                    "name": "a1stp1",
-                                    "mode": "Incremental",
-                                },
-                            ],
+                            "a1": {
+                                "steps": [
+                                    {
+                                        "resource_group": "a1_group",
+                                        "name": "a1stp1",
+                                        "mode": "Incremental",
+                                    },
+                                ],
+                            },
                         },
                         "folder": "some/path",
                     },
@@ -217,20 +225,24 @@ def test_mismatched_applications_raises2(mock_loads, mock_results):
                 "frames": {
                     "f1": {
                         "applications": {
-                            "a1": [
-                                {
-                                    "resource_group": "a1_group",
-                                    "name": "a1stp1",
-                                    "mode": "Incremental",
-                                },
-                            ],
-                            "a2": [
-                                {
-                                    "resource_group": "a2_group",
-                                    "name": "a2stp1",
-                                    "mode": "Incremental",
-                                },
-                            ],
+                            "a1": {
+                                "steps": [
+                                    {
+                                        "resource_group": "a1_group",
+                                        "name": "a1stp1",
+                                        "mode": "Incremental",
+                                    },
+                                ],
+                            },
+                            "a2": {
+                                "steps": [
+                                    {
+                                        "resource_group": "a2_group",
+                                        "name": "a2stp1",
+                                        "mode": "Incremental",
+                                    },
+                                ],
+                            },
                         },
                         "folder": "some/path",
                     },
@@ -276,13 +288,15 @@ def test_bad_puff_map_release_state_raises(mock_loads, mock_results):
                 "frames": {
                     "f1": {
                         "applications": {
-                            "a1": [
-                                {
-                                    "resource_group": "a1_group",
-                                    "name": "a1stp1",
-                                    "mode": "Incremental",
-                                },
-                            ],
+                            "a1": {
+                                "steps": [
+                                    {
+                                        "resource_group": "a1_group",
+                                        "name": "a1stp1",
+                                        "mode": "Incremental",
+                                    },
+                                ],
+                            },
                         },
                         "folder": "some/path",
                     },
@@ -326,13 +340,15 @@ def test_bad_puff_map_subscription_raises(mock_loads, mock_results):
                 "frames": {
                     "f1": {
                         "applications": {
-                            "a1": [
-                                {
-                                    "resource_group": "a1_group",
-                                    "name": "a1stp1",
-                                    "mode": "Incremental",
-                                },
-                            ],
+                            "a1": {
+                                "steps": [
+                                    {
+                                        "resource_group": "a1_group",
+                                        "name": "a1stp1",
+                                        "mode": "Incremental",
+                                    },
+                                ],
+                            },
                         },
                         "folder": "some/path",
                     },
@@ -376,18 +392,20 @@ def test_missing_application_step_raises1(mock_loads, mock_results):
                 "frames": {
                     "f1": {
                         "applications": {
-                            "a1": [
-                                {
-                                    "resource_group": "a1_group",
-                                    "name": "a1stp1",
-                                    "mode": "Incremental",
-                                },
-                                {
-                                    "resource_group": "a1_group",
-                                    "name": "a1stp2",
-                                    "mode": "Incremental",
-                                },
-                            ],
+                            "a1": {
+                                "steps": [
+                                    {
+                                        "resource_group": "a1_group",
+                                        "name": "a1stp1",
+                                        "mode": "Incremental",
+                                    },
+                                    {
+                                        "resource_group": "a1_group",
+                                        "name": "a1stp2",
+                                        "mode": "Incremental",
+                                    },
+                                ],
+                            },
                         },
                         "folder": "some/path",
                     },
@@ -432,13 +450,15 @@ def test_missing_application_step_raises2(mock_loads, mock_results):
                 "frames": {
                     "f1": {
                         "applications": {
-                            "a1": [
-                                {
-                                    "resource_group": "a1_group",
-                                    "name": "a1stp2",
-                                    "mode": "Incremental",
-                                },
-                            ],
+                            "a1": {
+                                "steps": [
+                                    {
+                                        "resource_group": "a1_group",
+                                        "name": "a1stp2",
+                                        "mode": "Incremental",
+                                    },
+                                ],
+                            },
                         },
                         "folder": "some/path",
                     },

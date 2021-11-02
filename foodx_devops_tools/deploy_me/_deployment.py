@@ -31,7 +31,7 @@ from foodx_devops_tools.pipeline_config import (
     SingularFrameDefinition,
 )
 from foodx_devops_tools.pipeline_config.frames import (
-    ApplicationDeploymentDefinition,
+    ApplicationStepDeploymentDefinition,
 )
 from foodx_devops_tools.pipeline_config.puff_map import PuffMapPaths
 from foodx_devops_tools.puff import PuffError
@@ -166,7 +166,7 @@ def _construct_override_parameters(
 
 
 async def _do_step_deployment(
-    this_step: ApplicationDeploymentDefinition,
+    this_step: ApplicationStepDeploymentDefinition,
     deployment_data: FlattenedDeployment,
     puff_parameter_paths: PuffMapPaths,
     this_context: str,
@@ -242,7 +242,7 @@ async def _do_step_deployment(
 
 
 async def _deploy_step(
-    this_step: ApplicationDeploymentDefinition,
+    this_step: ApplicationStepDeploymentDefinition,
     deployment_data: FlattenedDeployment,
     puff_parameter_data: PuffMapPaths,
     this_context: str,
@@ -285,7 +285,7 @@ async def _do_application_deployment(
         ][deployment_data.context.azure_subscription_name]
 
         for this_step in application_data:
-            if isinstance(this_step, ApplicationDeploymentDefinition):
+            if isinstance(this_step, ApplicationStepDeploymentDefinition):
                 await _deploy_step(
                     this_step,
                     deployment_data,
@@ -418,7 +418,7 @@ async def _do_frame_deployment(
         await asyncio.gather(
             *[
                 deploy_application(
-                    application_data,
+                    application_data.steps,
                     frame_deployment.copy_add_application(application_name),
                     application_status,
                     pipeline_parameters.enable_validation,
