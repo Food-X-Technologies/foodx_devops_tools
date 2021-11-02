@@ -12,6 +12,7 @@ from ._paths import PipelineConfigurationPaths  # noqa: F401
 from .clients import ClientsDefinition, load_clients  # noqa: F401
 from .deployments import DeploymentsDefinition, load_deployments  # noqa: F401
 from .frames import (  # noqa: F401
+    ApplicationDefinition,
     ApplicationDeploymentSteps,
     ApplicationStepDelay,
     DependencyDeclarations,

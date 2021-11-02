@@ -38,7 +38,7 @@ MOCK_APPLICATION_DATA = mock_pipeline_config.frames.frames["f1"].applications[
 
 @pytest.fixture()
 def prep_data(mock_async_method, mock_flattened_deployment):
-    app_data = copy.deepcopy(MOCK_APPLICATION_DATA.steps)
+    app_data = copy.deepcopy(MOCK_APPLICATION_DATA)
 
     deployment_data = mock_flattened_deployment[0]
     deployment_data.data.iteration_context.append("a1")
@@ -95,7 +95,7 @@ class DeploymentChecks:
         mock_deploy, mock_puff, deployment_data, app_data = prep_data
 
         updated = copy.deepcopy(app_data)
-        updated[0].resource_group = None
+        updated.steps[0].resource_group = None
         this_status = DeploymentStatus(MOCK_CONTEXT, timeout_seconds=1)
         application_deployment_data = copy.deepcopy(deployment_data)
         application_deployment_data.data.frame_folder = pathlib.Path(
@@ -214,7 +214,7 @@ class TestDeployment(DeploymentChecks):
         mock_deploy, mock_puff, deployment_data, app_data = prep_data
 
         updated = copy.deepcopy(app_data)
-        updated[0].resource_group = None
+        updated.steps[0].resource_group = None
         this_status = DeploymentStatus(MOCK_CONTEXT, timeout_seconds=0.1)
         application_deployment_data = copy.deepcopy(deployment_data)
         application_deployment_data.data.frame_folder = pathlib.Path(

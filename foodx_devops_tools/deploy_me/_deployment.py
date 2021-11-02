@@ -24,6 +24,7 @@ from foodx_devops_tools.azure.cloud.resource_group import (
     deploy as deploy_resource_group,
 )
 from foodx_devops_tools.pipeline_config import (
+    ApplicationDefinition,
     ApplicationDeploymentSteps,
     ApplicationStepDelay,
     FlattenedDeployment,
@@ -333,7 +334,7 @@ async def _do_application_deployment(
 
 
 async def deploy_application(
-    application_data: ApplicationDeploymentSteps,
+    application_data: ApplicationDefinition,
     deployment_data: FlattenedDeployment,
     application_status: DeploymentStatus,
     enable_validation: bool,
@@ -349,6 +350,15 @@ async def deploy_application(
         log.info(message)
         click.echo(message)
         await application_status.initialize(this_context)
+
+        await wait_for_dependencies(
+            deployment_data.data.iteration_context,
+            application_data.depends_on
+            if application_data.depends_on
+            else list(),
+            application_status,
+        )
+
         await application_status.write(
             this_context, DeploymentState.ResultType.in_progress
         )
@@ -368,7 +378,7 @@ async def deploy_application(
         else:
             await _do_application_deployment(
                 this_context,
-                application_data,
+                application_data.steps,
                 deployment_data,
                 application_status,
                 enable_validation,
@@ -418,7 +428,7 @@ async def _do_frame_deployment(
         await asyncio.gather(
             *[
                 deploy_application(
-                    application_data.steps,
+                    application_data,
                     frame_deployment.copy_add_application(application_name),
                     application_status,
                     pipeline_parameters.enable_validation,
