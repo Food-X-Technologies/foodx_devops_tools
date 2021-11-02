@@ -37,7 +37,7 @@ from foodx_devops_tools.pipeline_config.puff_map import PuffMapPaths
 from foodx_devops_tools.puff import PuffError
 from foodx_devops_tools.utilities.templates import prepare_deployment_files
 
-from ._dependency_monitor import process_dependencies
+from ._dependency_monitor import wait_for_dependencies
 from ._exceptions import DeploymentError
 from ._state import PipelineCliOptions
 from ._status import DeploymentState, DeploymentStatus, all_success
@@ -406,9 +406,9 @@ async def _do_frame_deployment(
         )
         application_status.start_monitor()
 
-        await process_dependencies(
+        await wait_for_dependencies(
             deployment_data.data.iteration_context,
-            frame_data,
+            frame_data.depends_on if frame_data.depends_on else list(),
             frame_status,
         )
 
