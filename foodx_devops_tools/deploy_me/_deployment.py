@@ -24,6 +24,7 @@ from foodx_devops_tools.azure.cloud.resource_group import (
     deploy as deploy_resource_group,
 )
 from foodx_devops_tools.pipeline_config import (
+    ApplicationDefinition,
     ApplicationDeploymentSteps,
     ApplicationStepDelay,
     FlattenedDeployment,
@@ -31,13 +32,13 @@ from foodx_devops_tools.pipeline_config import (
     SingularFrameDefinition,
 )
 from foodx_devops_tools.pipeline_config.frames import (
-    ApplicationDeploymentDefinition,
+    ApplicationStepDeploymentDefinition,
 )
 from foodx_devops_tools.pipeline_config.puff_map import PuffMapPaths
 from foodx_devops_tools.puff import PuffError
 from foodx_devops_tools.utilities.templates import prepare_deployment_files
 
-from ._dependency_monitor import process_dependencies
+from ._dependency_monitor import wait_for_dependencies
 from ._exceptions import DeploymentError
 from ._state import PipelineCliOptions
 from ._status import DeploymentState, DeploymentStatus, all_success
@@ -166,7 +167,7 @@ def _construct_override_parameters(
 
 
 async def _do_step_deployment(
-    this_step: ApplicationDeploymentDefinition,
+    this_step: ApplicationStepDeploymentDefinition,
     deployment_data: FlattenedDeployment,
     puff_parameter_paths: PuffMapPaths,
     this_context: str,
@@ -242,7 +243,7 @@ async def _do_step_deployment(
 
 
 async def _deploy_step(
-    this_step: ApplicationDeploymentDefinition,
+    this_step: ApplicationStepDeploymentDefinition,
     deployment_data: FlattenedDeployment,
     puff_parameter_data: PuffMapPaths,
     this_context: str,
@@ -285,7 +286,7 @@ async def _do_application_deployment(
         ][deployment_data.context.azure_subscription_name]
 
         for this_step in application_data:
-            if isinstance(this_step, ApplicationDeploymentDefinition):
+            if isinstance(this_step, ApplicationStepDeploymentDefinition):
                 await _deploy_step(
                     this_step,
                     deployment_data,
@@ -333,7 +334,7 @@ async def _do_application_deployment(
 
 
 async def deploy_application(
-    application_data: ApplicationDeploymentSteps,
+    application_data: ApplicationDefinition,
     deployment_data: FlattenedDeployment,
     application_status: DeploymentStatus,
     enable_validation: bool,
@@ -349,6 +350,15 @@ async def deploy_application(
         log.info(message)
         click.echo(message)
         await application_status.initialize(this_context)
+
+        await wait_for_dependencies(
+            deployment_data.data.iteration_context,
+            application_data.depends_on
+            if application_data.depends_on
+            else list(),
+            application_status,
+        )
+
         await application_status.write(
             this_context, DeploymentState.ResultType.in_progress
         )
@@ -368,7 +378,7 @@ async def deploy_application(
         else:
             await _do_application_deployment(
                 this_context,
-                application_data,
+                application_data.steps,
                 deployment_data,
                 application_status,
                 enable_validation,
@@ -406,9 +416,9 @@ async def _do_frame_deployment(
         )
         application_status.start_monitor()
 
-        await process_dependencies(
+        await wait_for_dependencies(
             deployment_data.data.iteration_context,
-            frame_data,
+            frame_data.depends_on if frame_data.depends_on else list(),
             frame_status,
         )
 

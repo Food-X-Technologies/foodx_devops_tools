@@ -11,7 +11,7 @@ import pathlib
 import pytest
 
 from foodx_devops_tools.deploy_me._deployment import (
-    ApplicationDeploymentDefinition,
+    ApplicationStepDeploymentDefinition,
     FlattenedDeployment,
     PipelineCliOptions,
 )
@@ -109,7 +109,7 @@ def mock_deploystep_context():
     data_view.frame_folder = pathlib.Path("frame/folder")
 
     arguments = {
-        "this_step": ApplicationDeploymentDefinition(
+        "this_step": ApplicationStepDeploymentDefinition(
             mode=DeploymentMode.incremental,
             name="this_step",
             arm_file=pathlib.Path("arm.file"),

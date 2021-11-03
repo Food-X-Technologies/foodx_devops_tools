@@ -27,7 +27,6 @@ MOCK_CONTEXT = DeploymentContext(
     release_state="r1",
 )
 
-
 MOCK_TO = StructuredTo()
 
 CLEAN_SPLIT = {
@@ -97,16 +96,18 @@ MOCK_RESULTS = {
         "frames": {
             "f1": {
                 "applications": {
-                    "a1": [
-                        {
-                            "resource_group": "a1_group",
-                            "name": "a1l1",
-                            "mode": "Incremental",
-                        },
-                        {
-                            "delay_seconds": "23",
-                        },
-                    ],
+                    "a1": {
+                        "steps": [
+                            {
+                                "resource_group": "a1_group",
+                                "name": "a1l1",
+                                "mode": "Incremental",
+                            },
+                            {
+                                "delay_seconds": "23",
+                            },
+                        ],
+                    },
                 },
                 "folder": "some/path",
             },

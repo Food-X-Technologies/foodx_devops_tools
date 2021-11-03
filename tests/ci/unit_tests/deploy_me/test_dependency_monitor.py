@@ -15,9 +15,9 @@ import pytest
 from foodx_devops_tools.deploy_me._dependency_monitor import (
     DeploymentTerminatedError,
     IterationContext,
-    _confirm_dependency_frame_status,
+    _confirm_dependency_entity_status,
     _generate_dependency_contexts,
-    process_dependencies,
+    wait_for_dependencies,
 )
 from foodx_devops_tools.deploy_me._deployment import (
     DeploymentState,
@@ -69,7 +69,7 @@ class TestConfirmDependencyFrameStatus:
         await this_status.initialize("some.one")
         await this_status.initialize("some.two")
 
-        result = await _confirm_dependency_frame_status(
+        result = await _confirm_dependency_entity_status(
             dependency_names, this_status, MOCK_ITERATION_CONTEXT, 0.05
         )
 
@@ -92,7 +92,7 @@ class TestConfirmDependencyFrameStatus:
         await this_status.initialize("some.one")
 
         this_task = asyncio.create_task(
-            _confirm_dependency_frame_status(
+            _confirm_dependency_entity_status(
                 dependency_names, this_status, MOCK_ITERATION_CONTEXT, 0.1
             )
         )
@@ -123,9 +123,9 @@ class TestConfirmDependencyFrameStatus:
 
         with pytest.raises(
             DeploymentTerminatedError,
-            match=r"^dependency frames not in frame status",
+            match=r"^dependency not in entity status",
         ):
-            await _confirm_dependency_frame_status(
+            await _confirm_dependency_entity_status(
                 dependency_names, this_status, MOCK_ITERATION_CONTEXT, 0.05
             )
 
@@ -198,9 +198,9 @@ class TestProcessDependencies:
             )
 
             await asyncio.wait_for(
-                process_dependencies(
+                wait_for_dependencies(
                     this_context,
-                    frame_data,
+                    frame_data.depends_on,
                     this_status,
                 ),
                 timeout=1,
@@ -256,9 +256,9 @@ class TestProcessDependencies:
             )
 
             await asyncio.wait_for(
-                process_dependencies(
+                wait_for_dependencies(
                     this_context,
-                    frame_data,
+                    frame_data.depends_on,
                     this_status,
                 ),
                 timeout=1,
@@ -303,9 +303,9 @@ class TestProcessDependencies:
                 match=r"cancelled due to dependency failure",
             ):
                 await asyncio.wait_for(
-                    process_dependencies(
+                    wait_for_dependencies(
                         this_context,
-                        frame_data,
+                        frame_data.depends_on,
                         this_status,
                     ),
                     timeout=1,
@@ -351,9 +351,9 @@ class TestProcessDependencies:
             )
 
             await asyncio.wait_for(
-                process_dependencies(
+                wait_for_dependencies(
                     this_context,
-                    frame_data,
+                    frame_data.depends_on,
                     this_status,
                 ),
                 timeout=1,
@@ -361,7 +361,7 @@ class TestProcessDependencies:
 
         expected_messages = [
             {
-                "message": "dependency frames not in frame status",
+                "message": "dependency not in entity status",
                 "log_stdout_both": False,
             },
             {

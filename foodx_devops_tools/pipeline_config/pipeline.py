@@ -385,7 +385,7 @@ class PipelineConfiguration(pydantic.BaseModel):
                     for subscription_data in state_data.values():
                         frame_step_names = {
                             x.name
-                            for x in application_data
+                            for x in application_data.steps
                             if hasattr(x, "name")
                         }
                         if frame_step_names != set(subscription_data.keys()):

@@ -95,7 +95,7 @@ class DeploymentChecks:
         mock_deploy, mock_puff, deployment_data, app_data = prep_data
 
         updated = copy.deepcopy(app_data)
-        updated[0].resource_group = None
+        updated.steps[0].resource_group = None
         this_status = DeploymentStatus(MOCK_CONTEXT, timeout_seconds=1)
         application_deployment_data = copy.deepcopy(deployment_data)
         application_deployment_data.data.frame_folder = pathlib.Path(
@@ -214,7 +214,7 @@ class TestDeployment(DeploymentChecks):
         mock_deploy, mock_puff, deployment_data, app_data = prep_data
 
         updated = copy.deepcopy(app_data)
-        updated[0].resource_group = None
+        updated.steps[0].resource_group = None
         this_status = DeploymentStatus(MOCK_CONTEXT, timeout_seconds=0.1)
         application_deployment_data = copy.deepcopy(deployment_data)
         application_deployment_data.data.frame_folder = pathlib.Path(

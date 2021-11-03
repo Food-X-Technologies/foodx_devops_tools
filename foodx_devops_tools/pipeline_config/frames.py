@@ -48,7 +48,7 @@ class ApplicationStepDelay(pydantic.BaseModel):
     delay_seconds: int
 
 
-class ApplicationDeploymentDefinition(pydantic.BaseModel):
+class ApplicationStepDeploymentDefinition(pydantic.BaseModel):
     """Application resource group deployment definition."""
 
     mode: DeploymentMode
@@ -61,10 +61,18 @@ class ApplicationDeploymentDefinition(pydantic.BaseModel):
 
 
 ApplicationDeploymentSteps = typing.List[
-    typing.Union[ApplicationDeploymentDefinition, ApplicationStepDelay]
+    typing.Union[ApplicationStepDeploymentDefinition, ApplicationStepDelay]
 ]
 
-ApplicationDeclarations = typing.Dict[str, ApplicationDeploymentSteps]
+
+class ApplicationDefinition(pydantic.BaseModel):
+    """A single application definition."""
+
+    depends_on: typing.Optional[DependencyDeclarations]
+    steps: ApplicationDeploymentSteps
+
+
+ApplicationDeclarations = typing.Dict[str, ApplicationDefinition]
 
 
 class SingularFrameDefinition(pydantic.BaseModel):
@@ -75,6 +83,52 @@ class SingularFrameDefinition(pydantic.BaseModel):
 
     depends_on: typing.Optional[DependencyDeclarations]
     triggers: typing.Optional[TriggersDefinition]
+
+    @pydantic.validator("applications")
+    def check_applications(
+        cls: pydantic.BaseModel, applications_candidate: dict
+    ) -> dict:
+        """Validate ``applications`` field."""
+        application_names: list = list(applications_candidate.keys())
+        if any([not x for x in application_names]):
+            message = "Empty {0} names prohibited".format(ENTITY_SINGULAR)
+            # log the message here because pydantic exception handling
+            # masks the true exception that caused a validation failure.
+            log.error(message)
+            raise ValueError(message)
+        if len(set(application_names)) != len(application_names):
+            message = "Duplicate {0} names prohibited".format(ENTITY_SINGULAR)
+            # log the message here because pydantic exception handling
+            # masks the true exception that caused a validation failure.
+            log.error(message)
+            raise ValueError(message)
+
+        return applications_candidate
+
+    @pydantic.root_validator
+    def check_dependencies(
+        cls: pydantic.BaseModel, applications_candidate: dict
+    ) -> dict:
+        """
+        Validate frame dependencies.
+
+        Frames must only declare dependencies on other frames.
+        """
+        applications: dict = applications_candidate.get("applications", dict())
+        frame_names: set = set(applications.keys())
+        for name, item in applications.items():
+            if item.depends_on and (
+                any([x not in frame_names for x in item.depends_on])
+            ):
+                message = "Unknown application dependency, {0}".format(
+                    str(item.depends_on)
+                )
+                # log the message here because pydantic exception handling
+                # masks the true exception that caused a validation failure.
+                log.error(message)
+                raise ValueError(message)
+
+        return applications_candidate
 
 
 FrameDeclarations = typing.Dict[str, SingularFrameDefinition]
@@ -154,8 +208,10 @@ class FramesTriggersDefinition(pydantic.BaseModel):
             ) in frame_data.applications.items():
                 app_structure = copy.deepcopy(frame_structure)
                 app_structure.append(application_name)
-                for this_step in application_data:
-                    if isinstance(this_step, ApplicationDeploymentDefinition):
+                for this_step in application_data.steps:
+                    if isinstance(
+                        this_step, ApplicationStepDeploymentDefinition
+                    ):
                         step_structure = copy.deepcopy(app_structure)
                         step_structure.append(this_step.name)
 
@@ -193,8 +249,10 @@ class FramesTriggersDefinition(pydantic.BaseModel):
             ) in frame_data.applications.items():
                 app_structure = copy.deepcopy(frame_structure)
                 app_structure.append(application_name)
-                for this_step in application_data:
-                    if isinstance(this_step, ApplicationDeploymentDefinition):
+                for this_step in application_data.steps:
+                    if isinstance(
+                        this_step, ApplicationStepDeploymentDefinition
+                    ):
                         step_structure = copy.deepcopy(app_structure)
                         step_structure.append(this_step.name)
 
