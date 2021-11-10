@@ -20,6 +20,7 @@ from foodx_devops_tools.pipeline_config import (
     DeploymentsDefinition,
     PipelineConfiguration,
     PipelineConfigurationPaths,
+    PuffMapGeneratedFiles,
     ServicePrincipals,
     StaticSecrets,
     SubscriptionsDefinition,
@@ -174,35 +175,6 @@ class TestPipelineConfiguration:
         ):
             PipelineConfiguration.from_files(MOCK_PATHS, MOCK_SECRET)
 
-    def test_bad_deployment_subscription_raises(self, mock_loads, mock_results):
-        mock_results.deployments = DeploymentsDefinition.parse_obj(
-            {
-                "deployments": {
-                    "deployment_tuples": {
-                        "sys1-c1-r1": {
-                            "subscriptions": {
-                                "bad_name": {
-                                    "locations": [
-                                        {"primary": "l1"},
-                                        {"primary": "l2"},
-                                    ],
-                                    "root_fqdn": "some.where",
-                                }
-                            },
-                        },
-                    },
-                    "url_endpoints": ["a", "p"],
-                }
-            }
-        ).deployments
-        mock_loads(mock_results)
-
-        with pytest.raises(
-            PipelineConfigurationError,
-            match=r"Bad subscription in deployment",
-        ):
-            PipelineConfiguration.from_files(MOCK_PATHS, MOCK_SECRET)
-
     def test_bad_client_release_states_raises(self, mock_loads, mock_results):
         mock_results.clients = ClientsDefinition.parse_obj(
             {
@@ -252,47 +224,6 @@ class TestPipelineConfiguration:
         ):
             PipelineConfiguration.from_files(MOCK_PATHS, MOCK_SECRET)
 
-    def test_bad_service_principals_subscription_raises(
-        self, mock_loads, mock_results
-    ):
-        mock_results.service_principals = ServicePrincipals.parse_obj(
-            {
-                "service_principals": {
-                    "bad_name": {
-                        "id": "12345",
-                        "secret": "verysecret",
-                        "name": "some_name",
-                    },
-                },
-            }
-        ).service_principals
-        mock_loads(mock_results)
-
-        with pytest.raises(
-            PipelineConfigurationError,
-            match=r"Bad subscription\(s\) in service_principals",
-        ):
-            PipelineConfiguration.from_files(MOCK_PATHS, MOCK_SECRET)
-
-    def test_bad_secrets_subscription_raises(self, mock_loads, mock_results):
-        mock_results.static_secrets = StaticSecrets.parse_obj(
-            {
-                "static_secrets": {
-                    "bad_name": {
-                        "k1": "k1v",
-                        "k2": "k2v",
-                    },
-                },
-            }
-        ).static_secrets
-        mock_loads(mock_results)
-
-        with pytest.raises(
-            PipelineConfigurationError,
-            match=r"Bad subscription\(s\) in static_secrets",
-        ):
-            PipelineConfiguration.from_files(MOCK_PATHS, MOCK_SECRET)
-
     def test_load_files(self):
         with split_directories(CLEAN_SPLIT.copy()) as (
             client_path,
@@ -339,4 +270,130 @@ class TestPipelineConfiguration:
                 PipelineConfiguration.from_files(this_paths, None)
 
     def test_load_dict(self):
-        under_test = PipelineConfiguration.parse_obj(MOCK_RESULTS.copy())
+        PipelineConfiguration.parse_obj(MOCK_RESULTS.copy())
+
+
+class TestDeploymentSubscriptions:
+    def test_deployment_subscription_not_in_subscriptions_raises(
+        self, mock_loads, mock_results
+    ):
+        """Deployment declares a subscription not present in subscriptions."""
+        mock_results.deployments = DeploymentsDefinition.parse_obj(
+            {
+                "deployments": {
+                    "deployment_tuples": {
+                        "sys1-c1-r1": {
+                            "subscriptions": {
+                                "bad_name": {
+                                    "locations": [
+                                        {"primary": "l1"},
+                                        {"primary": "l2"},
+                                    ],
+                                    "root_fqdn": "some.where",
+                                }
+                            },
+                        },
+                    },
+                    "url_endpoints": ["a", "p"],
+                }
+            }
+        ).deployments
+        mock_loads(mock_results)
+
+        with pytest.raises(
+            PipelineConfigurationError,
+            match=r"Deployment subscription not defined in subscriptions",
+        ):
+            PipelineConfiguration.from_files(MOCK_PATHS, MOCK_SECRET)
+
+    def test_deployment_subscription_not_in_service_principals_raises(
+        self, mock_loads, mock_results
+    ):
+        """Deployment declares a subscription not present in service
+        principals."""
+        mock_results.service_principals = ServicePrincipals.parse_obj(
+            {
+                "service_principals": {
+                    "inactive_subscription": {
+                        "id": "12345",
+                        "secret": "verysecret",
+                        "name": "sp_name",
+                    },
+                },
+            }
+        ).service_principals
+        mock_loads(mock_results)
+
+        with pytest.raises(
+            PipelineConfigurationError,
+            match=r"Deployment subscription not defined in service principals",
+        ):
+            PipelineConfiguration.from_files(MOCK_PATHS, MOCK_SECRET)
+
+    def test_deployment_subscription_not_in_static_secrets_raises(
+        self, mock_loads, mock_results
+    ):
+        """Deployment declares a subscription not present in static secrets."""
+        mock_results.static_secrets = StaticSecrets.parse_obj(
+            {
+                "static_secrets": {
+                    "inactive_subscription": {"k1": "k1v"},
+                },
+            }
+        ).static_secrets
+        mock_loads(mock_results)
+
+        with pytest.raises(
+            PipelineConfigurationError,
+            match=r"Deployment subscription not defined in static secrets",
+        ):
+            PipelineConfiguration.from_files(MOCK_PATHS, MOCK_SECRET)
+
+    def test_deployment_subscription_not_in_puff_map_raises(
+        self, mock_loads, mock_results
+    ):
+        """Deployment declares a subscription not present in puff map."""
+        mock_results.subscriptions = SubscriptionsDefinition.parse_obj(
+            {
+                "subscriptions": {
+                    "sys1_c1_r1a": {
+                        "ado_service_connection": "some-name",
+                        "azure_id": "abc123",
+                        "tenant": "t1",
+                    },
+                    "inactive_subscription": {
+                        "ado_service_connection": "some-name",
+                        "azure_id": "abc123",
+                        "tenant": "t1",
+                    },
+                },
+            }
+        ).subscriptions
+        mock_results.puff_map = PuffMapGeneratedFiles.parse_obj(
+            {
+                "puff_map": {
+                    "frames": {
+                        "f1": {
+                            "applications": {
+                                "a1": {
+                                    "arm_parameters_files": {
+                                        "r1": {
+                                            "inactive_subscription": {
+                                                "a1l1": "some/puff_map/path",
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            }
+        ).puff_map
+        mock_loads(mock_results)
+
+        with pytest.raises(
+            PipelineConfigurationError,
+            match=r"Deployment subscription not defined in puff map",
+        ):
+            PipelineConfiguration.from_files(MOCK_PATHS, MOCK_SECRET)

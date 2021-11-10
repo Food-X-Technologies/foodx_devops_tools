@@ -13,6 +13,7 @@ from foodx_devops_tools.pipeline_config import (
     FramesDefinition,
     PipelineConfiguration,
     PuffMapGeneratedFiles,
+    SubscriptionsDefinition,
 )
 from foodx_devops_tools.pipeline_config.exceptions import (
     PipelineConfigurationError,
@@ -54,7 +55,7 @@ def test_mismatched_frames_raises1(mock_loads, mock_results):
                             "a1": {
                                 "arm_parameters_files": {
                                     "r1": {
-                                        "sub1": {
+                                        "sys1_c1_r1a": {
                                             "a1stp1": "some/path/puff1.json"
                                         }
                                     }
@@ -67,7 +68,7 @@ def test_mismatched_frames_raises1(mock_loads, mock_results):
                             "a2": {
                                 "arm_parameters_files": {
                                     "r1": {
-                                        "sub1": {
+                                        "sys1_c1_r1a": {
                                             "a2stp1": "some/path/puff1.json"
                                         }
                                     }
@@ -134,7 +135,7 @@ def test_mismatched_frames_raises2(mock_loads, mock_results):
                             "a1": {
                                 "arm_parameters_files": {
                                     "r1": {
-                                        "sub1": {
+                                        "sys1_c1_r1a": {
                                             "a1stp1": "some/path/puff1.json"
                                         }
                                     }
@@ -187,7 +188,7 @@ def test_mismatched_applications_raises1(mock_loads, mock_results):
                             "a1": {
                                 "arm_parameters_files": {
                                     "r1": {
-                                        "sub1": {
+                                        "sys1_c1_r1a": {
                                             "a1stp1": "some/path/puff1.json"
                                         }
                                     }
@@ -196,7 +197,7 @@ def test_mismatched_applications_raises1(mock_loads, mock_results):
                             "a2": {
                                 "arm_parameters_files": {
                                     "r1": {
-                                        "sub1": {
+                                        "sys1_c1_r1a": {
                                             "a2stp1": "some/path/puff1.json"
                                         }
                                     }
@@ -259,7 +260,7 @@ def test_mismatched_applications_raises2(mock_loads, mock_results):
                             "a1": {
                                 "arm_parameters_files": {
                                     "r1": {
-                                        "sub1": {
+                                        "sys1_c1_r1a": {
                                             "a1stp1": "some/path/puff1.json"
                                         }
                                     }
@@ -313,7 +314,7 @@ def test_bad_puff_map_release_state_raises(mock_loads, mock_results):
                             "a1": {
                                 "arm_parameters_files": {
                                     "bad_state": {
-                                        "sub1": {
+                                        "sys1_c1_r1a": {
                                             "a1stp1": "some/path/puff1.json"
                                         }
                                     }
@@ -367,11 +368,14 @@ def test_bad_puff_map_subscription_raises(mock_loads, mock_results):
                                     "r1": {
                                         "bad_sub": {
                                             "a1stp1": "some/path/puff1.json"
-                                        }
-                                    }
-                                }
+                                        },
+                                        "sys1_c1_r1a": {
+                                            "a1stp1": "some/path/puff1.json"
+                                        },
+                                    },
+                                },
                             },
-                        }
+                        },
                     },
                 },
             },

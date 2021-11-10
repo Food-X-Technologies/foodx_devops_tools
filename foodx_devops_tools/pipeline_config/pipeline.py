@@ -168,76 +168,171 @@ class PipelineConfiguration(pydantic.BaseModel):
                 raise PipelineConfigurationError(message)
         return loaded_data
 
+    @staticmethod
+    def __check_deployment_tuple(
+        deployment_tuple: str, loaded_data: dict
+    ) -> None:
+        """Check for a valid deployment tuple in deployments."""
+        this_re = re.compile(DEPLOYMENT_NAME_REGEX)
+        result = this_re.match(deployment_tuple)
+
+        if not result:
+            message = "Bad deployment tuple, {0}".format(deployment_tuple)
+            log.error("{0}, {1}".format(message, DEPLOYMENT_NAME_REGEX))
+            raise PipelineConfigurationError(message)
+
+        this_client = result.group("client")
+        if this_client not in loaded_data["clients"]:
+            message = "Bad client in deployment tuple, {0}".format(this_client)
+            log.error(
+                "{0}, {1}, {2}".format(
+                    message, deployment_tuple, str(loaded_data["clients"])
+                )
+            )
+            raise PipelineConfigurationError(message)
+
+        this_release_state = result.group("release_state")
+        if this_release_state not in loaded_data["release_states"]:
+            message = "Bad release state in deployment tuple, {0}".format(
+                this_release_state
+            )
+            log.error(
+                "{0}, {1}, {2}".format(
+                    message,
+                    deployment_tuple,
+                    str(loaded_data["release_states"]),
+                )
+            )
+            raise PipelineConfigurationError(message)
+
+        this_system = result.group("system")
+        if this_system not in loaded_data["systems"]:
+            message = "Bad system in deployment tuple, {0}".format(this_system)
+            log.error(
+                "{0}, {1}, {2}".format(
+                    message, deployment_tuple, str(loaded_data["systems"])
+                )
+            )
+            raise PipelineConfigurationError(message)
+
+    @staticmethod
+    def __check_subscription_in_puff_map(
+        deployment_tuple: str, subscription_name: str, puff_map_data: PuffMap
+    ) -> None:
+        puff_map_subscriptions: typing.Set[str] = set()
+        for _, frame_data in puff_map_data.frames.items():
+            for _, application_data in frame_data.applications.items():
+                for (
+                    _,
+                    subscription_data,
+                ) in application_data.arm_parameters_files.items():
+                    puff_map_subscriptions = puff_map_subscriptions.union(
+                        set(subscription_data.keys())
+                    )
+
+        if subscription_name not in puff_map_subscriptions:
+            # a deployment subscription must be defined in puff_map.yml
+            message = (
+                "Deployment subscription not defined in puff map, "
+                "{0}, {1}".format(deployment_tuple, subscription_name)
+            )
+            log.error("{0}".format(message))
+            raise PipelineConfigurationError(message)
+
+    @staticmethod
+    def __report_deployment_subscription_error(
+        deployment_tuple: str,
+        subscription_name: str,
+        subscriptions: set,
+        category: str,
+    ) -> None:
+        message = (
+            "Deployment subscription not defined in "
+            "{0}, {1}, {2}".format(
+                category, deployment_tuple, subscription_name
+            )
+        )
+        log.error(
+            "{0}, {1}".format(
+                message,
+                str(subscriptions),
+            )
+        )
+        raise PipelineConfigurationError(message)
+
+    @staticmethod
+    def __check_deployment_subscriptions(
+        deployment_tuple: str, loaded_data: dict
+    ) -> None:
+        """Check for valid subscriptions in deployments."""
+        deployment_subscriptions = set(
+            loaded_data["deployments"]
+            .deployment_tuples[deployment_tuple]
+            .subscriptions.keys()
+        )
+        for this_deployment_subscription in deployment_subscriptions:
+            if this_deployment_subscription not in loaded_data["subscriptions"]:
+                # a deployment subscription must be defined in subscriptions.yml
+                PipelineConfiguration.__report_deployment_subscription_error(
+                    deployment_tuple,
+                    this_deployment_subscription,
+                    set(loaded_data["subscriptions"].keys()),
+                    "subscriptions",
+                )
+
+            if (
+                ("service_principals" in loaded_data)
+                and (loaded_data["service_principals"])
+                and (
+                    this_deployment_subscription
+                    not in loaded_data["service_principals"]
+                )
+            ):
+                # a deployment subscription must be defined in
+                # service_principals.vault
+                PipelineConfiguration.__report_deployment_subscription_error(
+                    deployment_tuple,
+                    this_deployment_subscription,
+                    set(loaded_data["service_principals"].keys()),
+                    "service principals",
+                )
+
+            if (
+                ("static_secrets" in loaded_data)
+                and (loaded_data["static_secrets"])
+                and (
+                    this_deployment_subscription
+                    not in loaded_data["static_secrets"]
+                )
+            ):
+                # a deployment subscription must be defined in static_secrets
+                PipelineConfiguration.__report_deployment_subscription_error(
+                    deployment_tuple,
+                    this_deployment_subscription,
+                    set(loaded_data["static_secrets"].keys()),
+                    "static secrets",
+                )
+
+            PipelineConfiguration.__check_subscription_in_puff_map(
+                deployment_tuple,
+                this_deployment_subscription,
+                loaded_data["puff_map"],
+            )
+
     @pydantic.root_validator()
     def check_deployments(cls: pydantic.BaseModel, loaded_data: dict) -> dict:
         """Cross-check loaded deployment data."""
         deployment_names = set(
             loaded_data["deployments"].deployment_tuples.keys()
         )
-        this_re = re.compile(DEPLOYMENT_NAME_REGEX)
         for this_name in deployment_names:
-            result = this_re.match(this_name)
-
-            if not result:
-                message = "Bad deployment tuple, {0}".format(this_name)
-                log.error("{0}, {1}".format(message, DEPLOYMENT_NAME_REGEX))
-                raise PipelineConfigurationError(message)
-
-            this_client = result.group("client")
-            if this_client not in loaded_data["clients"]:
-                message = "Bad client in deployment tuple, {0}".format(
-                    this_client
-                )
-                log.error(
-                    "{0}, {1}, {2}".format(
-                        message, this_name, str(loaded_data["clients"])
-                    )
-                )
-                raise PipelineConfigurationError(message)
-
-            this_release_state = result.group("release_state")
-            if this_release_state not in loaded_data["release_states"]:
-                message = "Bad release state in deployment tuple, {0}".format(
-                    this_release_state
-                )
-                log.error(
-                    "{0}, {1}, {2}".format(
-                        message, this_name, str(loaded_data["release_states"])
-                    )
-                )
-                raise PipelineConfigurationError(message)
-
-            this_system = result.group("system")
-            if this_system not in loaded_data["systems"]:
-                message = "Bad system in deployment tuple, {0}".format(
-                    this_system
-                )
-                log.error(
-                    "{0}, {1}, {2}".format(
-                        message, this_name, str(loaded_data["systems"])
-                    )
-                )
-                raise PipelineConfigurationError(message)
-
-            this_subscriptions = (
-                loaded_data["deployments"]
-                .deployment_tuples[this_name]
-                .subscriptions
+            typing.cast("PipelineConfiguration", cls).__check_deployment_tuple(
+                this_name, loaded_data
             )
-            for subscription_name in this_subscriptions.keys():
-                if subscription_name not in loaded_data["subscriptions"]:
-                    message = "Bad subscription in deployment, {0}".format(
-                        this_name
-                    )
-                    log.error(
-                        "{0}, {1}, {2}, {3}".format(
-                            message,
-                            this_name,
-                            str(this_subscriptions.keys()),
-                            str(loaded_data["subscriptions"]),
-                        )
-                    )
-                    raise PipelineConfigurationError(message)
+            typing.cast(
+                "PipelineConfiguration", cls
+            ).__check_deployment_subscriptions(this_name, loaded_data)
+
         return loaded_data
 
     @pydantic.root_validator()
@@ -246,16 +341,25 @@ class PipelineConfiguration(pydantic.BaseModel):
     ) -> dict:
         """Validate service principal data."""
         if loaded_data["service_principals"]:
-            bad_subscriptions = [
-                "{0}".format(name)
-                for name in loaded_data["service_principals"].keys()
-                if name not in loaded_data["subscriptions"].keys()
-            ]
-            if any(bad_subscriptions):
-                message = "Bad subscription(s) in service_principals"
-                log.error("{0}, {1}".format(message, str(bad_subscriptions)))
-                raise PipelineConfigurationError(message)
+            PipelineConfiguration.__check_subscriptions_in_subscriptions(
+                loaded_data, "service_principals"
+            )
         return loaded_data
+
+    @staticmethod
+    def __check_subscriptions_in_subscriptions(
+        loaded_data: dict, data_name: str
+    ) -> None:
+        """Check that subscriptions names are defined in subscriptions."""
+        bad_subscriptions = [
+            "{0}".format(name)
+            for name in loaded_data[data_name].keys()
+            if name not in loaded_data["subscriptions"].keys()
+        ]
+        if any(bad_subscriptions):
+            message = f"{data_name} subscriptions not defined in subscriptions"
+            log.error("{0}, {1}".format(message, str(bad_subscriptions)))
+            raise PipelineConfigurationError(message)
 
     @pydantic.root_validator()
     def check_static_secrets(
@@ -263,15 +367,9 @@ class PipelineConfiguration(pydantic.BaseModel):
     ) -> dict:
         """Validate static secret data."""
         if loaded_data["static_secrets"]:
-            bad_subscriptions = [
-                "{0}".format(name)
-                for name in loaded_data["static_secrets"].keys()
-                if name not in loaded_data["subscriptions"].keys()
-            ]
-            if any(bad_subscriptions):
-                message = "Bad subscription(s) in static_secrets"
-                log.error("{0}, {1}".format(message, str(bad_subscriptions)))
-                raise PipelineConfigurationError(message)
+            PipelineConfiguration.__check_subscriptions_in_subscriptions(
+                loaded_data, "static_secrets"
+            )
         return loaded_data
 
     @pydantic.root_validator()
@@ -401,4 +499,5 @@ class PipelineConfiguration(pydantic.BaseModel):
                                 )
                             )
                             raise PipelineConfigurationError(message)
+
         return loaded_data
