@@ -13,6 +13,15 @@ import ruamel.yaml  # type: ignore # noqa: F401
 from ruamel.yaml import YAML  # type: ignore
 
 
+def load_yaml_data(file_path: pathlib.Path) -> dict:
+    """Acquire YAML data from a file."""
+    with file_path.open(mode="r") as f:
+        loader = YAML(typ="safe")
+        yaml_data = loader.load(f)
+
+    return yaml_data
+
+
 def load_configuration(
     file_path: pathlib.Path,
     data_model: typing.Type[pydantic.BaseModel],
@@ -33,9 +42,7 @@ def load_configuration(
     Raises:
         error_type: If an error occurs loading the file.
     """
-    with file_path.open(mode="r") as f:
-        loader = YAML(typ="safe")
-        yaml_data = loader.load(f)
+    yaml_data = load_yaml_data(file_path)
 
     try:
         result = data_model.parse_obj(yaml_data)
