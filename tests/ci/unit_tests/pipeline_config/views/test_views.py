@@ -97,11 +97,17 @@ class TestFlattenedDeployment:
     def test_construct_template_parameters(self, mock_flattened_deployment):
         under_test = mock_flattened_deployment[0]
         under_test.context.frame_name = "f1"
+        under_test.data.template_context = {
+            "v1": {"k1": 3.14},
+            "v2": "vv2",
+        }
 
         result = under_test.construct_template_parameters()
 
         assert result == {
             "context": {
+                "v1": {"k1": 3.14},
+                "v2": "vv2",
                 "locations": {
                     "primary": "l1",
                     "secondary": None,

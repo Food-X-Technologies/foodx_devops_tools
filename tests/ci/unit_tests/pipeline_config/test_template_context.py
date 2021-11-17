@@ -107,3 +107,47 @@ context:
         "s3": {"s3k1": "s3k1v"},
         "s4": {"s4k1": "s4k1v"},
     }
+
+
+def test_deep_merge():
+    """yaml object data should be merged across all levels in the data."""
+    file_text = {
+        "a": {
+            "f1": """---
+context:
+  s1:
+    s1k1: 
+      s1k1kk1: v1
+""",
+            "f2": """---
+context:
+  s1:
+    s1k1: 
+      s1k1kk2: 
+        s1k1kkk1: v2
+""",
+        },
+        "b": {
+            "f1": """---
+context:
+  s1:
+    s1k1: 
+      s1k1kk2: 
+        s1k1kkk2: v3
+""",
+        },
+    }
+    with context_files(file_text) as (dir_paths, file_paths):
+        result = load_template_context(file_paths)
+
+    assert result.context == {
+        "s1": {
+            "s1k1": {
+                "s1k1kk1": "v1",
+                "s1k1kk2": {
+                    "s1k1kkk1": "v2",
+                    "s1k1kkk2": "v3",
+                },
+            },
+        },
+    }

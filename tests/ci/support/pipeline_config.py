@@ -32,6 +32,7 @@ MOCK_TO = StructuredTo()
 CLEAN_SPLIT = {
     "client": {
         "clients",
+        "context",
         "deployments",
         "frames",
         "puff_map",
@@ -39,6 +40,7 @@ CLEAN_SPLIT = {
         "static_secrets",
     },
     "system": {
+        "context",
         "release_states",
         "subscriptions",
         "systems",
@@ -48,6 +50,7 @@ CLEAN_SPLIT = {
 NOT_SPLIT = {
     "client": {},
     "system": {
+        "context",
         "release_states",
         "subscriptions",
         "systems",
@@ -78,6 +81,9 @@ MOCK_RESULTS = {
             ],
             "system": "sys2",
         },
+    },
+    "context": {
+        "my_key": "my_value",
     },
     "deployments": {
         "deployment_tuples": {
@@ -156,6 +162,7 @@ MOCK_PATHS = PipelineConfigurationPaths.from_dict(
     {
         "clients": pathlib.Path("client/path"),
         "release_states": pathlib.Path("release_state/path"),
+        "context": {pathlib.Path("context/path")},
         "deployments": pathlib.Path("deployment/path"),
         "frames": pathlib.Path("frame/path"),
         "puff_map": pathlib.Path("puff_map/path"),
@@ -209,12 +216,24 @@ def split_directories(split: dict, decrypt_token: str = MOCK_SECRET):
 
                 for this_file in files:
                     if this_file not in [
+                        "context",
                         "service_principals",
                         "static_secrets",
                     ]:
                         file_path = config_dir / "{0}.yml".format(this_file)
                         with file_path.open(mode="w") as f:
                             yaml.dump({this_file: MOCK_RESULTS[this_file]}, f)
+                    elif this_file == "context":
+                        # template context requires special handling because
+                        # it's a directory of yaml files.
+                        this_dir = config_dir / this_file
+                        os.makedirs(this_dir, exist_ok=True)
+                        for name, data in MOCK_RESULTS[this_file].items():
+                            file_path = this_dir / "{0}.yml".format(name)
+                            with file_path.open(mode="w") as f:
+                                yaml.dump(
+                                    {this_file: MOCK_RESULTS[this_file]}, f
+                                )
                     elif this_file == "service_principals":
                         # service_principals requires special handling due to
                         # encryption

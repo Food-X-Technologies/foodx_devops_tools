@@ -34,15 +34,18 @@ class PipelineConfigurationPaths:
     """Paths to pipeline configuration files."""
 
     clients: pathlib.Path
-    release_states: pathlib.Path
+    context: typing.Set[pathlib.Path]
     deployments: pathlib.Path
     frames: pathlib.Path
     puff_map: pathlib.Path
+    release_states: pathlib.Path
     service_principals: pathlib.Path
     static_secrets: typing.Set[pathlib.Path]
     subscriptions: pathlib.Path
     systems: pathlib.Path
     tenants: pathlib.Path
+
+    CONFIG_SUBDIRS: typing.Set[str] = {"static_secrets", "context"}
 
     def __init__(self: T) -> None:
         """Construct ``PipelineConfigurationPaths`` object."""
@@ -89,7 +92,7 @@ class PipelineConfigurationPaths:
             if (
                 x.is_file()
                 and (x.name in PIPELINE_CONFIG_FILES)
-                and (x.stem != "static_secrets")
+                and (x.stem not in cls.CONFIG_SUBDIRS)
             ):
                 log.info("adding client configuration file, {0}".format(x))
                 setattr(this_object, x.stem, x)
@@ -111,19 +114,45 @@ class PipelineConfigurationPaths:
                 "directories, {0}, {1}".format(client_config, system_config)
             )
         secrets_path = client_config / "static_secrets"
-        this_object.static_secrets = set()
-        if secrets_path.is_dir():
-            log.debug(
-                "static secrets directory, {0}, {1}".format(
-                    secrets_path, str(list(secrets_path.iterdir()))
-                )
+        this_object.static_secrets = cls.__acquire_subdir_files(
+            secrets_path, "static secrets"
+        )
+        # template context could be located in either client or system config.
+        context_client_path = client_config / "context"
+        this_object.context = cls.__acquire_subdir_files(
+            context_client_path, "client template context"
+        )
+        context_system_path = system_config / "context"
+        this_object.context.union(
+            cls.__acquire_subdir_files(
+                context_system_path, "system template context"
             )
-            for x in secrets_path.iterdir():
-                if x.is_file():
-                    log.info(
-                        "adding static secret file to configuration, "
-                        "{0}".format(x)
-                    )
-                    this_object.static_secrets.add(x)
+        )
 
         return this_object
+
+    @staticmethod
+    def __acquire_subdir_files(
+        this_path: pathlib.Path, category: str
+    ) -> typing.Set[pathlib.Path]:
+        result = set()
+        if this_path.is_dir():
+            log.debug(
+                "{2} directory, {0}, {1}".format(
+                    this_path, str(list(this_path.iterdir())), category
+                )
+            )
+            for x in this_path.iterdir():
+                if x.is_file():
+                    log.info(
+                        "adding file to configuration, {1}, {0}".format(
+                            x, category
+                        )
+                    )
+                    result.add(x)
+        elif this_path.exists():
+            log.debug(f"{category} not a directory, {this_path}")
+        else:
+            log.debug(f"{category} not present, {this_path}")
+
+        return result
