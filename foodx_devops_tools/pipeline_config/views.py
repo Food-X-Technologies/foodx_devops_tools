@@ -14,6 +14,8 @@ import pathlib
 import re
 import typing
 
+import deepmerge  # type: ignore
+
 from foodx_devops_tools._to import StructuredTo
 from foodx_devops_tools.azure.cloud import AzureCredentials
 from foodx_devops_tools.patterns import SubscriptionData
@@ -367,20 +369,22 @@ class FlattenedDeployment:
 
     def construct_template_parameters(self: W) -> TemplateParameters:
         """Construct set of parameters for jinja2 templates."""
+        engine_data = {
+            "locations": {
+                "primary": self.data.location_primary,
+                "secondary": self.data.location_secondary,
+            },
+            "network": {
+                "fqdns": self.construct_app_fqdns(),
+                "urls": self.construct_app_urls(),
+            },
+            "tags": self.context.as_dict(),
+        }
         result: TemplateParameters = {
             "context": {
-                **self.data.template_context,
-                **{
-                    "locations": {
-                        "primary": self.data.location_primary,
-                        "secondary": self.data.location_secondary,
-                    },
-                    "network": {
-                        "fqdns": self.construct_app_fqdns(),
-                        "urls": self.construct_app_urls(),
-                    },
-                    "tags": self.context.as_dict(),
-                },
+                **deepmerge.always_merger.merge(
+                    copy.deepcopy(self.data.template_context), engine_data
+                ),
             },
         }
 
