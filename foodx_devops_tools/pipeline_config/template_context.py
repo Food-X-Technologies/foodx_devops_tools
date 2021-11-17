@@ -21,7 +21,7 @@ log = logging.getLogger(__name__)
 
 ENTITY_NAME = "context"
 
-ValueType = typing.Dict[str, typing.Dict[str, typing.Any]]
+ValueType = typing.Dict[str, typing.Any]
 
 
 class TemplateContext(pydantic.BaseModel):

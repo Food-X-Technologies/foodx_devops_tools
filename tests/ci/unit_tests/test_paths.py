@@ -31,12 +31,13 @@ class TestFromPaths:
             )
             all_names = CLEAN_SPLIT["client"].union(CLEAN_SPLIT["system"])
             for this_name in all_names:
-                if this_name != "static_secrets":
+                if this_name not in ["static_secrets", "context"]:
                     assert getattr(under_test, this_name) in all_paths
 
             assert {x.stem for x in under_test.static_secrets} == {
                 "sys1_c1_r1a"
             }
+            assert {x.stem for x in under_test.context} == {"my_key"}
 
     def test_no_secrets(self):
         split = {

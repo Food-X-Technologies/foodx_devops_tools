@@ -210,6 +210,7 @@ class DeployDataView:
     release_state: str
     root_fqdn: str
     static_secrets: dict
+    template_context: dict
     url_endpoints: typing.List[str]
 
     frame_folder: typing.Optional[pathlib.Path] = None
@@ -229,6 +230,7 @@ class DeployDataView:
         release_state: str,
         static_secrets: dict,
         url_endpoints: typing.List[str],
+        user_defined_template_context: dict,
         location_secondary: typing.Optional[str] = None,
     ) -> None:
         """Construct ``DeployDataView`` object."""
@@ -238,6 +240,7 @@ class DeployDataView:
         self.release_state = release_state
         self.root_fqdn = root_fqdn
         self.static_secrets = static_secrets
+        self.template_context = user_defined_template_context
         self.url_endpoints = url_endpoints
         self.__location_secondary = location_secondary
 
@@ -366,15 +369,18 @@ class FlattenedDeployment:
         """Construct set of parameters for jinja2 templates."""
         result: TemplateParameters = {
             "context": {
-                "locations": {
-                    "primary": self.data.location_primary,
-                    "secondary": self.data.location_secondary,
+                **self.data.template_context,
+                **{
+                    "locations": {
+                        "primary": self.data.location_primary,
+                        "secondary": self.data.location_secondary,
+                    },
+                    "network": {
+                        "fqdns": self.construct_app_fqdns(),
+                        "urls": self.construct_app_urls(),
+                    },
+                    "tags": self.context.as_dict(),
                 },
-                "network": {
-                    "fqdns": self.construct_app_fqdns(),
-                    "urls": self.construct_app_urls(),
-                },
-                "tags": self.context.as_dict(),
             },
         }
 
@@ -603,6 +609,7 @@ class SubscriptionView:
                 "release_state": self.deployment_view.release_view.deployment_context.release_state,  # noqa: E501
                 "static_secrets": static_secrets,
                 "url_endpoints": self.deployment_view.release_view.configuration.deployments.url_endpoints,  # noqa: E501
+                "user_defined_template_context": self.deployment_view.release_view.configuration.context,  # noqa: E501
             }
             if this_locations.secondary:
                 this_data["location_secondary"] = this_locations.secondary

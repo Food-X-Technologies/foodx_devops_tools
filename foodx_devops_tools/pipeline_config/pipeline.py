@@ -24,14 +24,18 @@ from .frames import load_frames
 from .puff_map import PuffMap, load_puff_map
 from .release_states import ValueType as ReleaseStatesData
 from .release_states import load_release_states
+from .service_principals import ServicePrincipals
 from .service_principals import ValueType as ServicePrincipalsData
 from .service_principals import load_service_principals
-from .static_secrets import ValueType as StaticSecrets
+from .static_secrets import StaticSecrets
+from .static_secrets import ValueType as StaticSecretsData
 from .static_secrets import load_static_secrets
 from .subscriptions import ValueType as SubscriptionsData
 from .subscriptions import load_subscriptions
 from .systems import ValueType as SystemsData
 from .systems import load_systems
+from .template_context import ValueType as TemplateContextData
+from .template_context import load_template_context
 from .tenants import ValueType as TenantsData
 from .tenants import load_tenants
 
@@ -53,42 +57,25 @@ class PipelineConfiguration(pydantic.BaseModel):
     """Pipeline configuration data."""
 
     clients: ClientsData
+    context: TemplateContextData
     release_states: ReleaseStatesData
     deployments: DeploymentsData
     frames: FramesData
     puff_map: PuffMap
     service_principals: typing.Optional[ServicePrincipalsData]
-    static_secrets: typing.Optional[StaticSecrets]
+    static_secrets: typing.Optional[StaticSecretsData]
     subscriptions: SubscriptionsData
     systems: SystemsData
     tenants: TenantsData
 
     decrypt_token: typing.Optional[str] = None
 
-    @classmethod
-    def from_files(
-        cls: typing.Type[T],
-        paths: PipelineConfigurationPaths,
-        decrypt_token: typing.Optional[str],
-    ) -> T:
-        """
-        Load pipeline configuration from collection of files.
-
-        Args:
-            paths: Paths to pipeline configuration files.
-
-        Returns:
-            Instantiated ``PipelineConfiguration`` object.
-        """
-        client_config = load_clients(paths.clients)
-        release_state_config = load_release_states(paths.release_states)
-        deployment_config = load_deployments(paths.deployments)
-        frames_config = load_frames(paths.frames)
-        puff_map_config = load_puff_map(paths.puff_map)
-        subscription_config = load_subscriptions(paths.subscriptions)
-        system_config = load_systems(paths.systems)
-        tenant_config = load_tenants(paths.tenants)
-
+    @staticmethod
+    def __load_encrypted_data(
+        paths: PipelineConfigurationPaths, decrypt_token: typing.Optional[str]
+    ) -> typing.Tuple[
+        typing.Optional[ServicePrincipals], typing.Optional[StaticSecrets]
+    ]:
         service_principals_config = None
         static_secrets_config = None
         if decrypt_token:
@@ -114,16 +101,49 @@ class PipelineConfiguration(pydantic.BaseModel):
                     )
                 )
 
+        return service_principals_config, static_secrets_config
+
+    @classmethod
+    def from_files(
+        cls: typing.Type[T],
+        paths: PipelineConfigurationPaths,
+        decrypt_token: typing.Optional[str],
+    ) -> T:
+        """
+        Load pipeline configuration from collection of files.
+
+        Args:
+            paths: Paths to pipeline configuration files.
+
+        Returns:
+            Instantiated ``PipelineConfiguration`` object.
+        """
+        client_config = load_clients(paths.clients)
+        deployment_config = load_deployments(paths.deployments)
+        frames_config = load_frames(paths.frames)
+        puff_map_config = load_puff_map(paths.puff_map)
+        release_state_config = load_release_states(paths.release_states)
+        subscription_config = load_subscriptions(paths.subscriptions)
+        system_config = load_systems(paths.systems)
+        tenant_config = load_tenants(paths.tenants)
+        template_context = load_template_context(paths.context)
+
+        (
+            service_principals_config,
+            static_secrets_config,
+        ) = cls.__load_encrypted_data(paths, decrypt_token)
+
         kwargs = {
             "clients": client_config.clients,
             "release_states": release_state_config.release_states,
+            "decrypt_token": decrypt_token,
             "deployments": deployment_config.deployments,
             "frames": frames_config.frames,
             "puff_map": puff_map_config.puff_map,
             "subscriptions": subscription_config.subscriptions,
             "systems": system_config.systems,
             "tenants": tenant_config.tenants,
-            "decrypt_token": decrypt_token,
+            "context": template_context.context,
         }
         if service_principals_config:
             kwargs[
