@@ -19,5 +19,6 @@ from ._exceptions import (  # noqa: F401
     ReleaseStatesDefinitionError,
     SubscriptionsDefinitionError,
     SystemsDefinitionError,
+    TemplateContextError,
     TenantsDefinitionError,
 )

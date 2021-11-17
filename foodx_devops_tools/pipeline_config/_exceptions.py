@@ -62,3 +62,7 @@ class PipelineViewError(Exception):
 
 class ClientsDefinitionError(Exception):
     """Problem loading client definitions."""
+
+
+class TemplateContextError(Exception):
+    """Problem loading template context variable definitions."""
