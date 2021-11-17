@@ -6,12 +6,12 @@
 #  foodx_devops_tools. If not, see <https://opensource.org/licenses/MIT>.
 
 """Template context variable deployment configuration I/O."""
-
-
+import copy
 import logging
 import pathlib
 import typing
 
+import deepmerge  # type: ignore
 import pydantic
 
 from ._exceptions import TemplateContextError
@@ -30,48 +30,6 @@ class TemplateContext(pydantic.BaseModel):
     context: ValueType
 
 
-def _apply_existing_keys(
-    context_data: dict, yaml_data: dict, this_path: pathlib.Path
-) -> None:
-    """Merge existing template context keys instead of over-write."""
-    existing_keys = [
-        x
-        for x in yaml_data[ENTITY_NAME].keys()
-        if x in context_data[ENTITY_NAME].keys()
-    ]
-    if existing_keys:
-        log.debug(
-            f"merging existing template context keys, {existing_keys}, "
-            f"{this_path}"
-        )
-        for key in existing_keys:
-            context_data[ENTITY_NAME][key].update(yaml_data[ENTITY_NAME][key])
-    else:
-        log.debug(
-            f"no existing template context keys to be merged, {this_path}"
-        )
-
-
-def _apply_nonexisting_keys(
-    context_data: dict, yaml_data: dict, this_path: pathlib.Path
-) -> None:
-    """Add non-existing template context keys to the context."""
-    nonexisting_keys = [
-        x
-        for x in yaml_data[ENTITY_NAME].keys()
-        if x not in context_data[ENTITY_NAME].keys()
-    ]
-    if nonexisting_keys:
-        log.debug(
-            f"adding new template context keys, {nonexisting_keys}, "
-            f"{this_path}"
-        )
-        for key in nonexisting_keys:
-            context_data[ENTITY_NAME][key] = yaml_data[ENTITY_NAME][key]
-    else:
-        log.debug(f"no new template context keys, {this_path}")
-
-
 def load_template_context(
     context_paths: typing.Set[pathlib.Path],
 ) -> TemplateContext:
@@ -85,8 +43,9 @@ def load_template_context(
                 log.info("loading template context, {0}".format(this_path))
                 yaml_data = load_yaml_data(this_path)
                 if ENTITY_NAME in yaml_data:
-                    _apply_existing_keys(context_data, yaml_data, this_path)
-                    _apply_nonexisting_keys(context_data, yaml_data, this_path)
+                    context_data = deepmerge.always_merger.merge(
+                        copy.deepcopy(context_data), yaml_data
+                    )
                 else:
                     message = (
                         f"template context object not present in "
