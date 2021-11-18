@@ -89,29 +89,6 @@ class DeploymentChecks:
 
         return mock_deploy
 
-    async def check_auto_resource_group(
-        self, enable_validation: bool, prep_data
-    ):
-        mock_deploy, mock_puff, deployment_data, app_data = prep_data
-
-        updated = copy.deepcopy(app_data)
-        updated.steps[0].resource_group = None
-        this_status = DeploymentStatus(MOCK_CONTEXT, timeout_seconds=1)
-        application_deployment_data = copy.deepcopy(deployment_data)
-        application_deployment_data.data.frame_folder = pathlib.Path(
-            "some/path"
-        )
-        await deploy_application(
-            updated,
-            application_deployment_data,
-            this_status,
-            enable_validation,
-        )
-
-        mock_puff.assert_called_once()
-
-        return mock_deploy
-
 
 class TestValidation(DeploymentChecks):
     @pytest.mark.asyncio
@@ -126,30 +103,7 @@ class TestValidation(DeploymentChecks):
 
         expected_parameters = default_override_parameters(prep_data[2])
         mock_deploy.assert_called_once_with(
-            "c1-a1_group-123456",
-            pathlib.Path("some/path/working/w/a1.json"),
-            pathlib.Path("some/path/working/w/some/puff_map/jinjad.path"),
-            "l1",
-            "Incremental",
-            AzureSubscriptionConfiguration(subscription_id="sys1_c1_r1a"),
-            deployment_name="a1_a1l1_123456",
-            override_parameters=expected_parameters,
-            validate=True,
-        )
-
-    @pytest.mark.asyncio
-    async def test_auto_resource_group(
-        self, default_override_parameters, mock_verify_puff_target, prep_data
-    ):
-        enable_validation = True
-
-        mock_deploy = await self.check_auto_resource_group(
-            enable_validation, prep_data
-        )
-
-        expected_parameters = default_override_parameters(prep_data[2])
-        mock_deploy.assert_called_once_with(
-            "c1-f1-a1-123456",
+            "a1_group-123456",
             pathlib.Path("some/path/working/w/a1.json"),
             pathlib.Path("some/path/working/w/some/puff_map/jinjad.path"),
             "l1",
@@ -174,32 +128,9 @@ class TestDeployment(DeploymentChecks):
 
         expected_parameters = default_override_parameters(prep_data[2])
         mock_deploy.assert_called_once_with(
-            "c1-a1_group",
+            "a1_group",
             pathlib.Path("some/path/working/w/a1.json"),
             pathlib.Path("some/path/working/w/some/puff_map/jinjad.path"),
-            "l1",
-            "Incremental",
-            AzureSubscriptionConfiguration(subscription_id="sys1_c1_r1a"),
-            deployment_name="a1_a1l1_123456",
-            override_parameters=expected_parameters,
-            validate=False,
-        )
-
-    @pytest.mark.asyncio
-    async def test_auto_resource_group(
-        self, default_override_parameters, mock_verify_puff_target, prep_data
-    ):
-        enable_validation = False
-
-        mock_deploy = await self.check_auto_resource_group(
-            enable_validation, prep_data
-        )
-
-        expected_parameters = default_override_parameters(prep_data[2])
-        mock_deploy.assert_called_once_with(
-            "c1-f1-a1",
-            pathlib.Path("some/path/working/w/a1.json"),
-            pathlib.Path("some/path/working/w/some/puff_map" "/jinjad.path"),
             "l1",
             "Incremental",
             AzureSubscriptionConfiguration(subscription_id="sys1_c1_r1a"),

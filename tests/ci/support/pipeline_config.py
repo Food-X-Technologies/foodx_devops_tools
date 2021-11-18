@@ -105,9 +105,9 @@ MOCK_RESULTS = {
                     "a1": {
                         "steps": [
                             {
-                                "resource_group": "a1_group",
-                                "name": "a1l1",
                                 "mode": "Incremental",
+                                "name": "a1l1",
+                                "resource_group": "a1_group",
                             },
                             {
                                 "delay_seconds": "23",
