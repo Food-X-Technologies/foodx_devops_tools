@@ -578,6 +578,7 @@ frames:
           steps:
           - name: a1l1
             mode: Incremental
+            resource_group: rgn
       folder: some/path
 """
 
@@ -602,6 +603,7 @@ frames:
           - name: a1l1
             mode: Incremental
             arm_file: arm_file.json
+            resource_group: rgn
       folder: some/path
 """
 
@@ -625,11 +627,13 @@ frames:
           steps:
           - name: a1l1
             mode: Incremental
+            resource_group: rgn
         a2: 
           steps:
           - name: a2l1
             mode: Incremental
             arm_file: arm_file.json
+            resource_group: rgn
       folder: some/path
 """
 
@@ -657,6 +661,7 @@ frames:
           - name: a1l1
             mode: Incremental
             arm_file: other/path/arm_file.json
+            resource_group: rgn
       folder: some/path
 """
 
@@ -682,6 +687,7 @@ frames:
           steps:
           - name: a1l1
             mode: Incremental
+            resource_group: rgn
       folder: some/path
 """
 
@@ -706,6 +712,7 @@ frames:
           - name: a1l1
             mode: Incremental
             puff_file: puff_file.yml
+            resource_group: rgn
       folder: some/path
 """
 
@@ -729,11 +736,13 @@ frames:
           steps:
           - name: a1l1
             mode: Incremental
+            resource_group: rgn
         a2: 
           steps:
           - name: a2l1
             mode: Incremental
             puff_file: puff/file.yml
+            resource_group: rgn
       folder: some/path
 """
 
@@ -762,6 +771,7 @@ frames:
           - name: a1l1
             mode: Incremental
             puff_file: other/path/puff_file.yml
+            resource_group: rgn
       folder: some/path
 """
 
@@ -787,6 +797,7 @@ frames:
           steps:
           - name: a1l1
             mode: Incremental
+            resource_group: rgn
       folder: some/path
 """
 
@@ -809,6 +820,7 @@ frames:
           steps:
           - name: a1l1
             mode: Incremental
+            resource_group: rgn
       folder: some/path
     f2:
       applications:
@@ -816,6 +828,7 @@ frames:
           steps:
           - name: a1l1
             mode: Incremental
+            resource_group: rgn
       folder: f2/path
 """
 

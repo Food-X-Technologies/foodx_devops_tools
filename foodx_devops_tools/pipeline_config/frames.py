@@ -53,10 +53,10 @@ class ApplicationStepDeploymentDefinition(pydantic.BaseModel):
 
     mode: DeploymentMode
     name: str
+    resource_group: str
 
     arm_file: typing.Optional[pathlib.Path]
     puff_file: typing.Optional[pathlib.Path]
-    resource_group: typing.Optional[str]
     static_secrets: typing.Optional[bool] = False
 
 

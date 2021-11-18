@@ -115,7 +115,7 @@ def mock_deploystep_context():
             name="this_step",
             arm_file=pathlib.Path("arm.file"),
             puff_file=pathlib.Path("puff.file"),
-            resource_group=None,
+            resource_group="rgn",
         ),
         "deployment_data": FlattenedDeployment(
             context=mock_context, data=data_view
