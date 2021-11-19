@@ -232,7 +232,7 @@ deployments:
     assert (
         result.deployments.deployment_tuples["name"]
         .subscriptions["some-name"]
-        .branch
+        .gitref_patterns
         is None
     )
 
@@ -245,7 +245,7 @@ deployments:
     name:
       subscriptions: 
         some-name:
-          branch:
+          gitref_patterns:
             - main
           locations:
             - primary: ploc1
@@ -261,13 +261,13 @@ deployments:
         len(
             result.deployments.deployment_tuples["name"]
             .subscriptions["some-name"]
-            .branch
+            .gitref_patterns
         )
         == 1
     )
     assert (
         result.deployments.deployment_tuples["name"]
         .subscriptions["some-name"]
-        .branch[0]
+        .gitref_patterns[0]
         == "main"
     )

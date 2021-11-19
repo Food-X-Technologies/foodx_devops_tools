@@ -22,6 +22,7 @@ from foodx_devops_tools.utilities.ansible import _encrypt_vault
 
 MOCK_CONTEXT = DeploymentContext(
     commit_sha="abc123",
+    git_ref="refs/heads/some/branch",
     pipeline_id="12345",
     release_id="0.0.0-dev.3",
     release_state="r1",

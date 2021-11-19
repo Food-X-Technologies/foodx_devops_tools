@@ -46,6 +46,7 @@ class DeploymentContext:
     """Deployment context data expected to be applied to resource tags."""
 
     commit_sha: str
+    git_ref: typing.Optional[str]
     pipeline_id: str
     release_id: str
     release_state: str
@@ -62,12 +63,14 @@ class DeploymentContext:
     def __init__(
         self: Y,
         commit_sha: str,
+        git_ref: typing.Optional[str],
         pipeline_id: str,
         release_id: str,
         release_state: str,
     ) -> None:
         """Construct ``DeploymentContext`` object."""
         self.commit_sha = commit_sha
+        self.git_ref = git_ref
         self.pipeline_id = pipeline_id
         self.release_id = release_id
         self.release_state = release_state
@@ -647,20 +650,57 @@ class DeploymentView:
 
         self._validate_deployment_tuple()
 
+    def __matched_subscription_patterns(
+        self: U,
+        subscription_name: str,
+        gitref_patterns: typing.Optional[typing.List[str]],
+    ) -> bool:
+        """
+        Check that the subscription matches any specified patterns.
+
+        If a git reference has not been specified then no conditioning is
+        applied and any specified subscriptions will be considered a "match".
+        """
+        result = True
+        this_ref = self.release_view.deployment_context.git_ref
+        if this_ref and gitref_patterns:
+            not_match = [
+                (re.match(x, this_ref) is None) for x in gitref_patterns
+            ]
+            if all(not_match):
+                result = False
+
+        return result
+
     @property
     def subscriptions(self: U) -> typing.List[SubscriptionView]:
-        """Provide the subscriptions in this deployment."""
+        """
+        Provide the subscriptions in this deployment.
+
+        Qualifies subscriptions both by their presence in the deployment
+        definitions for the project, and the optional branch patterns
+        specified for the subscription.
+
+        Returns:
+            List of subscription views in this deployment.
+        """
         result: typing.List[SubscriptionView] = list()
-        if (
-            str(self.deployment_tuple)
-            in self.release_view.configuration.deployments.deployment_tuples
-        ):
-            for (
-                this_subscription
-            ) in self.release_view.configuration.deployments.deployment_tuples[
-                str(self.deployment_tuple)
+        this_id = str(self.deployment_tuple)
+        deployment_ids = (
+            self.release_view.configuration.deployments.deployment_tuples
+        )
+        if this_id in deployment_ids:
+            for subscription_name in deployment_ids[
+                this_id
             ].subscriptions.keys():
-                result.append(SubscriptionView(self, this_subscription))
+                this_subscription = deployment_ids[this_id].subscriptions[
+                    subscription_name
+                ]
+                gitref_patterns = this_subscription.gitref_patterns
+                if self.__matched_subscription_patterns(
+                    subscription_name, gitref_patterns
+                ):
+                    result.append(SubscriptionView(self, subscription_name))
 
         return result
 

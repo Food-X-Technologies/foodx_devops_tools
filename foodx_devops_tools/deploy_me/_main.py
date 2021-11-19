@@ -253,6 +253,7 @@ def deploy_me(
         commit_sha = get_sha()
         base_context = DeploymentContext(
             commit_sha=commit_sha,
+            git_ref=git_ref,
             pipeline_id=pipeline_id,
             release_id=release_id,
             release_state=release_state.name,
