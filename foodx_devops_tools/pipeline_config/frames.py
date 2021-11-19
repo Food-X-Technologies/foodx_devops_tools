@@ -71,6 +71,27 @@ class ApplicationDefinition(pydantic.BaseModel):
     depends_on: typing.Optional[DependencyDeclarations]
     steps: ApplicationDeploymentSteps
 
+    @pydantic.validator("steps")
+    def check_applications(
+        cls: pydantic.BaseModel, steps_candidate: ApplicationDeploymentSteps
+    ) -> ApplicationDeploymentSteps:
+        """Validate ``steps`` field."""
+        step_names: typing.List[str] = [
+            x.name
+            for x in steps_candidate
+            if not isinstance(x, ApplicationStepDelay)
+        ]
+        if len(step_names) != len(set(step_names)):
+            message = "Application step names must be unique, {0}".format(
+                str(step_names)
+            )
+            # log the message here because pydantic exception handling
+            # masks the true exception that caused a validation failure.
+            log.error(message)
+            raise ValueError(message)
+
+        return steps_candidate
+
 
 ApplicationDeclarations = typing.Dict[str, ApplicationDefinition]
 
