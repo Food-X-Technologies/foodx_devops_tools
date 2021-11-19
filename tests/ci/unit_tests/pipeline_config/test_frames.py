@@ -458,6 +458,31 @@ frames:
         apply_applications_test(file_text)
 
 
+def test_duplicate_step_names_raises(apply_applications_test):
+    file_text = """---
+frames:
+  frames:
+    f1:
+      applications:
+        a1:
+          steps:
+            - arm_file: something.json
+              mode: Incremental
+              name: same_name
+              resource_group: a1_group
+            - arm_file: something_else.json
+              mode: Incremental
+              name: same_name
+              resource_group: other_group
+      folder: some/f2-path
+"""
+
+    with pytest.raises(
+        FrameDefinitionsError, match=r"Application step names must be unique"
+    ):
+        apply_applications_test(file_text)
+
+
 def test_missing_name_raises(apply_applications_test):
     file_text = """---
 frames:
