@@ -209,3 +209,65 @@ deployments:
         match=r"Error validating deployments definition",
     ):
         apply_deployments_test(file_text)
+
+
+def test_branch_option_absent(apply_deployments_test):
+    file_text = """
+---
+deployments:
+  deployment_tuples:
+    name:
+      subscriptions: 
+        some-name:
+          locations:
+            - primary: ploc1
+              secondary: sloc1
+            - primary: ploc2
+          root_fqdn: some.where
+  url_endpoints: ["a","b"]
+"""
+
+    result = apply_deployments_test(file_text)
+
+    assert (
+        result.deployments.deployment_tuples["name"]
+        .subscriptions["some-name"]
+        .gitref_patterns
+        is None
+    )
+
+
+def test_branch_option_present(apply_deployments_test):
+    file_text = """
+---
+deployments:
+  deployment_tuples:
+    name:
+      subscriptions: 
+        some-name:
+          gitref_patterns:
+            - main
+          locations:
+            - primary: ploc1
+              secondary: sloc1
+            - primary: ploc2
+          root_fqdn: some.where
+  url_endpoints: ["a","b"]
+"""
+
+    result = apply_deployments_test(file_text)
+
+    assert (
+        len(
+            result.deployments.deployment_tuples["name"]
+            .subscriptions["some-name"]
+            .gitref_patterns
+        )
+        == 1
+    )
+    assert (
+        result.deployments.deployment_tuples["name"]
+        .subscriptions["some-name"]
+        .gitref_patterns[0]
+        == "main"
+    )

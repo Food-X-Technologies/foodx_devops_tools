@@ -65,6 +65,7 @@ def mock_pipeline_config():
 def mock_flattened_deployment(mock_pipeline_config):
     base_context = DeploymentContext(
         commit_sha="abc123",
+        git_ref="refs/heads/this/branch",
         pipeline_id="123456",
         release_id="3.1.4+local",
         release_state="r1",

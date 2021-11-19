@@ -28,6 +28,7 @@ class DeploymentLocations(pydantic.BaseModel):
 class DeploymentSubscriptionReference(pydantic.BaseModel):
     """A subscription reference in a deployment definition."""
 
+    gitref_patterns: typing.Optional[typing.List[str]]
     locations: typing.List[DeploymentLocations]
     root_fqdn: str
 

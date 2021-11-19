@@ -93,6 +93,7 @@ async def _prepare_deployment_files(
     for release_state in pipeline_configuration.release_states:
         base_context = DeploymentContext(
             commit_sha="abc123",
+            git_ref=None,
             pipeline_id="000",
             release_id="0.0.0+local",
             release_state=release_state,
