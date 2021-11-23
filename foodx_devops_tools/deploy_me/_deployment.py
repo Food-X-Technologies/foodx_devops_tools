@@ -98,6 +98,17 @@ async def assess_results(
     return this_result
 
 
+def _construct_resource_group_name(
+    client: str,
+    user_resource_group_name: str,
+) -> str:
+    """Construct a resource group name from deployment context."""
+    # want the client id as a prefix for easier sorting & grouping in portal.
+    result = "-".join([client, user_resource_group_name])
+
+    return result
+
+
 def _mangle_validation_resource_group(current_name: str, suffix: str) -> str:
     this_suffix = re.sub(r"[_.+]", "-", suffix)
     mangled_name = f"{current_name}-{this_suffix}"
@@ -167,7 +178,10 @@ async def _do_step_deployment(
         f"deployment_data.data, {step_context}, {str(deployment_data.data)}"
     )
     try:
-        resource_group = this_step.resource_group
+        resource_group = _construct_resource_group_name(
+            deployment_data.context.client,
+            this_step.resource_group,
+        )
 
         await login_service_principal(deployment_data.data.azure_credentials)
         if enable_validation:

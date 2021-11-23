@@ -103,7 +103,7 @@ class TestValidation(DeploymentChecks):
 
         expected_parameters = default_override_parameters(prep_data[2])
         mock_deploy.assert_called_once_with(
-            "a1_group-123456",
+            "c1-a1_group-123456",
             pathlib.Path("some/path/working/w/a1.json"),
             pathlib.Path("some/path/working/w/some/puff_map/jinjad.path"),
             "l1",
@@ -128,7 +128,7 @@ class TestDeployment(DeploymentChecks):
 
         expected_parameters = default_override_parameters(prep_data[2])
         mock_deploy.assert_called_once_with(
-            "a1_group",
+            "c1-a1_group",
             pathlib.Path("some/path/working/w/a1.json"),
             pathlib.Path("some/path/working/w/some/puff_map/jinjad.path"),
             "l1",

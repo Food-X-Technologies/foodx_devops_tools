@@ -14,6 +14,7 @@ import pytest
 
 from foodx_devops_tools.deploy_me._deployment import (
     DeploymentState,
+    _construct_resource_group_name,
     assess_results,
 )
 
@@ -40,3 +41,10 @@ class TestAssessResults:
         result = await assess_results(mock_results)
 
         assert result.code == DeploymentState.ResultType.failed
+
+
+class TestConstructResourceGroupName:
+    def test_clean_user_precedence(self):
+        result = _construct_resource_group_name("client", "some_name")
+
+        assert result == "client-some_name"
