@@ -127,11 +127,23 @@ async def _prepare_deployment_files(
                     puff_paths[structure_name].file,
                     puff_parameter_paths[puff_map_structure_name].file,
                 )
-                log.debug(f"template files, {template_files}")
+                log.debug(
+                    f"template files for configuration validation,"
+                    f" {puff_map_structure_name},  {template_files}"
+                )
+
+                template_parameters = (
+                    this_iteration.construct_template_parameters()
+                )
+                log.debug(
+                    f"template parameters applied to configuration "
+                    f"validation,"
+                    f" {puff_map_structure_name}, {template_parameters}"
+                )
 
                 deployment_files = await prepare_deployment_files(
                     template_files,
-                    this_iteration.construct_template_parameters(),
+                    template_parameters,
                 )
 
                 templated_arm_files.append(deployment_files.arm_template)
