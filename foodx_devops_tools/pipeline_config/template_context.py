@@ -38,6 +38,7 @@ def load_template_context(
         context_data: dict = {
             ENTITY_NAME: dict(),
         }
+        log.info(f"template context paths, {context_paths}")
         for this_path in context_paths:
             if this_path.is_file():
                 log.info("loading template context, {0}".format(this_path))

@@ -87,23 +87,8 @@ class PipelineConfigurationPaths:
                 client and system.
         """
         this_object = cls()
-        client_files = list()
-        for x in client_config.iterdir():
-            if (
-                x.is_file()
-                and (x.name in PIPELINE_CONFIG_FILES)
-                and (x.stem not in cls.CONFIG_SUBDIRS)
-            ):
-                log.info("adding client configuration file, {0}".format(x))
-                setattr(this_object, x.stem, x)
-                client_files.append(x)
-
-        system_files = list()
-        for x in system_config.iterdir():
-            if x.is_file() and (x.name in PIPELINE_CONFIG_FILES):
-                log.info("adding system configuration file, {0}".format(x))
-                setattr(this_object, x.stem, x)
-                system_files.append(x)
+        client_files = this_object.__acquire_client_files(client_config)
+        system_files = this_object.__acquire_system_files(system_config)
 
         if len(client_files + system_files) > len(PIPELINE_CONFIG_FILES):
             # must be duplicate files between the directories
@@ -113,23 +98,71 @@ class PipelineConfigurationPaths:
                 "Duplicate files between "
                 "directories, {0}, {1}".format(client_config, system_config)
             )
-        secrets_path = client_config / "static_secrets"
-        this_object.static_secrets = cls.__acquire_subdir_files(
-            secrets_path, "static secrets"
-        )
-        # template context could be located in either client or system config.
-        context_client_path = client_config / "context"
-        this_object.context = cls.__acquire_subdir_files(
-            context_client_path, "client template context"
-        )
-        context_system_path = system_config / "context"
-        this_object.context.union(
-            cls.__acquire_subdir_files(
-                context_system_path, "system template context"
-            )
+
+        this_object.static_secrets = cls.__acquire_static_secrets(client_config)
+        this_object.context = cls.__acquire_template_context(
+            client_config, system_config
         )
 
         return this_object
+
+    @staticmethod
+    def __acquire_static_secrets(
+        client_config: pathlib.Path,
+    ) -> typing.Set[pathlib.Path]:
+        secrets_path = client_config / "static_secrets"
+        result = PipelineConfigurationPaths.__acquire_subdir_files(
+            secrets_path, "static secrets"
+        )
+        return result
+
+    @staticmethod
+    def __acquire_template_context(
+        client_config: pathlib.Path, system_config: pathlib.Path
+    ) -> typing.Set[pathlib.Path]:
+        # template context could be located in either client or system config.
+        context_client_path = client_config / "context"
+        client_context_files = (
+            PipelineConfigurationPaths.__acquire_subdir_files(
+                context_client_path, "client template context"
+            )
+        )
+        context_system_path = system_config / "context"
+        system_context_files = (
+            PipelineConfigurationPaths.__acquire_subdir_files(
+                context_system_path, "system template context"
+            )
+        )
+        result = client_context_files.union(system_context_files)
+        return result
+
+    def __acquire_client_files(
+        self: T, client_config: pathlib.Path
+    ) -> typing.List[pathlib.Path]:
+        client_files = list()
+        for x in client_config.iterdir():
+            if (
+                x.is_file()
+                and (x.name in PIPELINE_CONFIG_FILES)
+                and (x.stem not in self.CONFIG_SUBDIRS)
+            ):
+                log.info("adding client configuration file, {0}".format(x))
+                setattr(self, x.stem, x)
+                client_files.append(x)
+
+        return client_files
+
+    def __acquire_system_files(
+        self: T, system_config: pathlib.Path
+    ) -> typing.List[pathlib.Path]:
+        system_files = list()
+        for x in system_config.iterdir():
+            if x.is_file() and (x.name in PIPELINE_CONFIG_FILES):
+                log.info("adding system configuration file, {0}".format(x))
+                setattr(self, x.stem, x)
+                system_files.append(x)
+
+        return system_files
 
     @staticmethod
     def __acquire_subdir_files(
