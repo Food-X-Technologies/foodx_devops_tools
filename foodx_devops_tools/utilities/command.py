@@ -88,6 +88,10 @@ async def run_async_command(
     """
     Run an external command asynchronously.
 
+    Command logging is disabled by default to help prevent accidental
+    credential leakage to logs when commands may necessarily contain
+    sensitive data.
+
     Args:
         command: Command to be executed.
         enable_logging: Enable command and argument logging (default disabled)
