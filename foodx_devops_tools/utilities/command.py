@@ -16,6 +16,7 @@
 
 import asyncio
 import dataclasses
+import locale
 import logging
 import pathlib
 import shutil
@@ -103,15 +104,33 @@ async def run_async_command(
         # WARNING: logging is _disabled_ by default to prevent "default"
         # leakage of secrets into logs via command arguments
         log.debug("command to run, {0}".format(str(command)))
+
+    this_encoding = sys.getfilesystemencoding()
+    log.debug("sys.getdefaultencoding(), {0}".format(sys.getdefaultencoding()))
+    log.debug(
+        "locale.getpreferredencoding(), {0}".format(
+            locale.getpreferredencoding()
+        )
+    )
+    log.debug(
+        "sys.getfilesystemencoding(), {0}".format(sys.getfilesystemencoding())
+    )
     this_process = await asyncio.create_subprocess_exec(
         *command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
     )
 
     stdout, stderr = await this_process.communicate()
+    log.debug(
+        "run_async_command stdout, {0}".format(stdout.decode(this_encoding))
+    )
+    log.debug(
+        "run_async_command stderr, {0}".format(stderr.decode(this_encoding))
+    )
     result = CapturedStreams(
-        out=stdout.decode("utf-8"), error=stderr.decode("utf-8")
+        out=stdout.decode(this_encoding), error=stderr.decode(this_encoding)
     )
     if this_process.returncode != 0:
+        log.debug(f"command std out, {result.out}")
         raise CommandError(
             "External command run did not exit cleanly, {0}".format(
                 result.error
