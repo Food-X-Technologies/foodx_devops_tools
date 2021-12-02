@@ -16,6 +16,7 @@ from foodx_devops_tools.utilities import (
     run_async_command,
     run_command,
 )
+from foodx_devops_tools.utilities.exceptions import CommandError
 
 
 class TestRunCommand:
@@ -56,3 +57,25 @@ class TestRunAsyncCommand:
             stderr=asyncio.subprocess.PIPE
         )
         assert result == expected_output
+
+    @pytest.mark.asyncio
+    async def test_error(self, mocker):
+        expected_output = CapturedStreams(out="", error="some error")
+        async_mock = AsyncMock()
+        async_mock.return_value.returncode = 1
+        async_mock.return_value.communicate.return_value = (
+            expected_output.out.encode(),
+            expected_output.error.encode(),
+        )
+        mocker.patch(
+            "foodx_devops_tools.utilities.command.asyncio"
+            ".create_subprocess_exec",
+            side_effect=async_mock,
+        )
+        command = ["something", "--option"]
+
+        with pytest.raises(
+            CommandError,
+            match=r"^External command run did " r"not exit cleanly",
+        ):
+            await run_async_command(command)
