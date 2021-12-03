@@ -175,7 +175,12 @@ async def _do_step_deployment(
         f"{step_context}, {str(deployment_data.context)}"
     )
     log.debug(
-        f"deployment_data.data, {step_context}, {str(deployment_data.data)}"
+        f"deployment_data.data, {step_context}, "
+        f"{str(deployment_data.data.deployment_tuple)}, "
+        f"{str(deployment_data.data.location_primary)}, "
+        f"{str(deployment_data.data.location_secondary)}, "
+        f"{str(deployment_data.data.release_state)}, "
+        f"{str(deployment_data.data.iteration_context)}"
     )
     try:
         resource_group = _construct_resource_group_name(
