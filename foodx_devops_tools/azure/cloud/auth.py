@@ -101,7 +101,11 @@ async def login_service_principal(credentials: AzureCredentials) -> dict:
             credentials.tenant,
         ]
 
-        log.debug(str(this_command))
+        log.debug(
+            f"az login, userid, {credentials.userid}, "
+            f"subscription, {credentials.subscription}"
+            f"tenant, {credentials.tenant}"
+        )
         result = await run_async_command(this_command)
 
         log.info(
