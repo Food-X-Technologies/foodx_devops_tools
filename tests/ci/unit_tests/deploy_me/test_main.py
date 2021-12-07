@@ -69,6 +69,13 @@ def mock_getsha(mocker):
     return _apply
 
 
+@pytest.fixture()
+def mock_leakage_check(mocker):
+    return mocker.patch(
+        "foodx_devops_tools.deploy_me._main.check_credential_leakage"
+    )
+
+
 class TestDeployMe:
     EXPECTED_DEFAULT_OPTIONS = PipelineCliOptions(
         enable_validation=False,
@@ -80,7 +87,13 @@ class TestDeployMe:
         r1 = enum.auto()
 
     def test_help(
-        self, caplog, click_runner, mocker, mock_async_method, mock_getsha
+        self,
+        caplog,
+        click_runner,
+        mocker,
+        mock_async_method,
+        mock_getsha,
+        mock_leakage_check,
     ):
         mock_input = [
             "--help",
@@ -114,6 +127,7 @@ class TestDeployMe:
         caplog,
         mock_async_method,
         mock_getsha,
+        mock_leakage_check,
         mocker,
     ):
         mock_input = list()
@@ -138,6 +152,7 @@ class TestDeployMe:
                 ),
             ]
         )
+        mock_leakage_check.assert_called_once()
 
     def test_pipeline_id(
         self,
@@ -145,6 +160,7 @@ class TestDeployMe:
         caplog,
         mock_async_method,
         mock_getsha,
+        mock_leakage_check,
         mocker,
     ):
         mock_input = [
@@ -218,6 +234,7 @@ class TestDeployMe:
         click_runner,
         mock_async_method,
         mock_getsha,
+        mock_leakage_check,
         mocker,
     ):
         mock_input = [
@@ -249,6 +266,7 @@ class TestDeployMe:
         caplog,
         mock_async_method,
         mock_getsha,
+        mock_leakage_check,
         mocker,
     ):
         mock_input = [
@@ -284,6 +302,7 @@ class TestDeployMe:
         caplog,
         mock_async_method,
         mock_getsha,
+        mock_leakage_check,
         mocker,
     ):
         mock_input = [
