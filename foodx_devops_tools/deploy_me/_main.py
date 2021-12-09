@@ -19,6 +19,7 @@ from foodx_devops_tools._declarations import (
     DEFAULT_LOG_LEVEL,
     VALID_LOG_LEVELS,
 )
+from foodx_devops_tools._log_check import check_credential_leakage
 from foodx_devops_tools._logging import LoggingState
 from foodx_devops_tools._to import StructuredTo, StructuredToParameter
 from foodx_devops_tools._version import acquire_version
@@ -275,6 +276,11 @@ def deploy_me(
                 this_configuration, deployment_iterations, pipeline_parameters
             )
         )
+
+        credentials = {
+            x.data.azure_credentials.secret for x in deployment_iterations
+        }
+        check_credential_leakage(credentials, DEFAULT_LOG_FILE)
     except (ConfigurationPathsError, DeploymentConfigurationError) as e:
         message = str(e)
         log.error(message)
