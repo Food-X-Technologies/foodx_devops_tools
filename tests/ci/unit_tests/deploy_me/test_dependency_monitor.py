@@ -118,6 +118,7 @@ class TestConfirmDependencyFrameStatus:
             "two",
         }
         this_status = DeploymentStatus(MOCK_CONTEXT, timeout_seconds=3)
+        this_status.start_monitor()
         await this_status.initialize(MOCK_CONTEXT)
         await this_status.initialize("some.one")
 
@@ -128,6 +129,9 @@ class TestConfirmDependencyFrameStatus:
             await _confirm_dependency_entity_status(
                 dependency_names, this_status, MOCK_ITERATION_CONTEXT, 0.05
             )
+
+        # await this task to allow previous write to propagate
+        await asyncio.sleep(0.01)
 
         assert (
             await this_status.read("some.context")
@@ -164,6 +168,7 @@ def mock_frame_dependency(prep_frame_data):
         frame_data.depends_on = ["df1"]
 
         this_status = DeploymentStatus(MOCK_CONTEXT, timeout_seconds=2)
+        this_status.start_monitor()
         await this_status.initialize(str(this_context))
         for this_df in frame_data.depends_on:
             this_df_context = copy.deepcopy(MOCK_ITERATION_CONTEXT)
@@ -343,6 +348,7 @@ class TestProcessDependencies:
             df_context.append("df1")
 
             this_status = DeploymentStatus(MOCK_CONTEXT, timeout_seconds=2)
+            this_status.start_monitor()
             await this_status.initialize(str(this_context))
 
             # set the dependency status to "failed"

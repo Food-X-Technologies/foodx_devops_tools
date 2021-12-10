@@ -5,6 +5,7 @@
 #  You should have received a copy of the MIT License along with
 #  foodx_devops_tools. If not, see <https://opensource.org/licenses/MIT>.
 
+import asyncio
 import copy
 import pathlib
 
@@ -147,6 +148,7 @@ class TestDeployment(DeploymentChecks):
         updated = copy.deepcopy(app_data)
         updated.steps[0].resource_group = None
         this_status = DeploymentStatus(MOCK_CONTEXT, timeout_seconds=0.1)
+        this_status.start_monitor()
         application_deployment_data = copy.deepcopy(deployment_data)
         application_deployment_data.data.frame_folder = pathlib.Path(
             "some/path"
@@ -161,6 +163,10 @@ class TestDeployment(DeploymentChecks):
             this_status,
             enable_validation,
         )
+
+        # need an await here to allow other tasks to execute (especially
+        # processing the queue)
+        await asyncio.sleep(0.01)
 
         status = await this_status.read("a1")
         assert status.code == DeploymentState.ResultType.skipped
