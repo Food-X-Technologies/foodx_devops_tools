@@ -66,12 +66,17 @@ async def test_clean(
     )
 
     this_status = DeploymentStatus(MOCK_CONTEXT, timeout_seconds=1)
+    this_status.start_monitor()
+
     await deploy_frame(
         frame_data,
         deployment_data,
         this_status,
         cli_options,
     )
+
+    # await this task to allow previous write to propagate
+    await asyncio.sleep(0.01)
 
     result = await this_status.read("f1")
     assert result.code == DeploymentState.ResultType.success
@@ -91,12 +96,16 @@ async def test_app_failed(
     )
 
     this_status = DeploymentStatus(MOCK_CONTEXT, timeout_seconds=1)
+    this_status.start_monitor()
     await deploy_frame(
         frame_data,
         deployment_data,
         this_status,
         cli_options,
     )
+
+    # await this task to allow previous write to propagate
+    await asyncio.sleep(0.01)
 
     result = await this_status.read("f1")
     assert result.code == DeploymentState.ResultType.failed
@@ -116,12 +125,16 @@ async def test_app_cancelled(
     )
 
     this_status = DeploymentStatus(MOCK_CONTEXT, timeout_seconds=1)
+    this_status.start_monitor()
     await deploy_frame(
         frame_data,
         deployment_data,
         this_status,
         cli_options,
     )
+
+    # await this task to allow previous write to propagate
+    await asyncio.sleep(0.01)
 
     result = await this_status.read("f1")
     assert result.code == DeploymentState.ResultType.cancelled
@@ -143,11 +156,15 @@ async def test_correct_results(
     )
 
     this_status = DeploymentStatus(MOCK_CONTEXT, timeout_seconds=1)
+    this_status.start_monitor()
 
     # ensure that another frame has failed to avoid masking a false positive
     # in frame status reporting if it is accidentally reporting
     await this_status.initialize("other-f")
     await this_status.write("other-f", DeploymentState.ResultType.failed)
+
+    # await this task to allow previous write to propagate
+    await asyncio.sleep(0.01)
 
     await deploy_frame(
         frame_data,
@@ -155,6 +172,9 @@ async def test_correct_results(
         this_status,
         cli_options,
     )
+
+    # await this task to allow previous write to propagate
+    await asyncio.sleep(0.01)
 
     result = await this_status.read("f1")
     assert result.code == DeploymentState.ResultType.success
@@ -171,6 +191,7 @@ async def test_dependency_failed(
     frame_data.depends_on = [dependency_frame]
 
     this_status = DeploymentStatus(MOCK_CONTEXT, timeout_seconds=1)
+    this_status.start_monitor()
     await this_status.initialize(dependency_frame)
     await this_status.write(dependency_frame, DeploymentState.ResultType.failed)
 
@@ -205,6 +226,7 @@ async def test_dependency_cancelled(
     frame_data.depends_on = [dependency_frame]
 
     this_status = DeploymentStatus(MOCK_CONTEXT, timeout_seconds=1)
+    this_status.start_monitor()
     await this_status.initialize(dependency_frame)
     await this_status.write(
         dependency_frame, DeploymentState.ResultType.cancelled
@@ -229,6 +251,7 @@ async def test_multiple_dependencies_one_failed(
     frame_data.depends_on = list(dependencies.keys())
 
     this_status = DeploymentStatus(MOCK_CONTEXT, timeout_seconds=1)
+    this_status.start_monitor()
     for this_df in dependencies.keys():
         await this_status.initialize(this_df)
         await this_status.write(this_df, dependencies[this_df])
@@ -248,6 +271,7 @@ async def test_dependencies_success(
     frame_data.depends_on = [dependency_frame]
 
     this_status = DeploymentStatus(MOCK_CONTEXT, timeout_seconds=1)
+    this_status.start_monitor()
     await this_status.initialize(dependency_frame)
     await this_status.write(
         dependency_frame, DeploymentState.ResultType.success
@@ -283,6 +307,7 @@ async def test_pausing(
     frame_data.depends_on = [dependency_frame]
 
     this_status = DeploymentStatus(MOCK_CONTEXT, timeout_seconds=1)
+    this_status.start_monitor()
     await this_status.initialize(dependency_frame)
 
     await asyncio.create_task(
@@ -312,6 +337,7 @@ async def test_in_progress_timeout(
     frame_data.depends_on = [dependency_frame]
 
     this_status = DeploymentStatus(MOCK_CONTEXT, timeout_seconds=1)
+    this_status.start_monitor()
     await this_status.initialize(dependency_frame)
 
     await asyncio.create_task(
@@ -349,6 +375,7 @@ async def test_frame_skipped(
     frame_data.depends_on = [dependency_frame]
 
     this_status = DeploymentStatus(MOCK_CONTEXT, timeout_seconds=1)
+    this_status.start_monitor()
     await this_status.initialize(dependency_frame)
 
     await asyncio.create_task(
@@ -367,6 +394,9 @@ async def test_frame_skipped(
         this_status,
         cli_options,
     )
+
+    # await this task to allow previous write to propagate
+    await asyncio.sleep(0.01)
 
     f1_status = await this_status.read("f1")
     assert f1_status.code == DeploymentState.ResultType.skipped

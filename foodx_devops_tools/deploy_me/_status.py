@@ -93,6 +93,7 @@ class DeploymentStatus:
 
     __iteration_context: str
     __rw_lock: asyncio.Lock
+    __state_updates: asyncio.Queue
     __status: typing.Dict[str, DeploymentState]
     __timeout_seconds: float
 
@@ -119,6 +120,7 @@ class DeploymentStatus:
 
         self.__iteration_context = iteration_context
         self.__rw_lock = asyncio.Lock()
+        self.__state_updates = asyncio.Queue()
         self.__status = dict()
         self.__timeout_seconds = timeout_seconds
 
@@ -138,6 +140,7 @@ class DeploymentStatus:
             self.__status[name] = DeploymentState(
                 code=DeploymentState.ResultType.pending
             )
+        log.info(f"initialized deployment status, {name}")
 
     async def write(
         self: T,
@@ -153,33 +156,11 @@ class DeploymentStatus:
             code: Status code to record.
             message: Status message (optional).
         """
-        async with self.__rw_lock:
-            self.__status[name].code = code
-            self.__status[name].message = message
-
-            self.__evaluate_named_completed(name)
-            self.__evaluate_all_success()
-            self.__evaluate_all_completed()
-
-    def __evaluate_named_completed(self: T, name: str) -> None:
-        # WARNING: assumes self.__rw_lock has been applied
-        code = self.__status[name].code
-        if (name in self.__events) and (
-            code in DeploymentState.COMPLETED_RESULTS
-        ):
-            self.__events[name].set()
-
-    def __evaluate_all_success(self: T) -> None:
-        # WARNING: assumes self.__rw_lock has been applied
-        values = list(self.__status.values())
-        if all_success(values):
-            self.__events[self.EVENT_KEY_SUCCEEDED].set()
-
-    def __evaluate_all_completed(self: T) -> None:
-        # WARNING: assumes self.__rw_lock has been applied
-        values = list(self.__status.values())
-        if all_completed(values):
-            self.__events[self.EVENT_KEY_COMPLETED].set()
+        state_update = DeploymentState(
+            code=code,
+            message=message,
+        )
+        await self.__state_updates.put((name, state_update))
 
     async def read(self: T, name: str) -> DeploymentState:
         """
@@ -224,7 +205,7 @@ class DeploymentStatus:
                 # create an event since this must be the first wait.
                 self.__events[name] = asyncio.Event()
 
-            # check the current state to ensure that is is not already where it
+            # check the current state to ensure that it is not already where it
             # needs to be.
             self.__evaluate_named_completed(name)
 
@@ -292,45 +273,111 @@ class DeploymentStatus:
             )
         )
 
-    async def __monitor_status(self: T) -> None:
+    def __report_update(
+        self: T, name: str, status: typing.Dict[str, DeploymentState]
+    ) -> bool:
+        """Report changes in deployment status to console and logs."""
+        completed = False
+        state = status[name]
+        message = "{0}: {1} {2}".format(
+            self.__iteration_context, name, state.code.name
+        )
+        this_colour = self.STATE_COLOURS[state.code]
+        log.info(message)
+        click.echo(click.style(message, fg=this_colour))
+
+        if all_success(list(status.values())):
+            completed = True
+            log.info(
+                "all deployments succeeded for context, {0}".format(
+                    self.__iteration_context
+                )
+            )
+        elif all_completed(list(status.values())):
+            completed = True
+            log.info(
+                "all deployments completed with some failures for "
+                "context, {0}".format(self.__iteration_context)
+            )
+
+        return completed
+
+    async def __process_state_queue(self: T) -> None:
+        log.debug("starting state queue processing")
         completed = False
         while not completed:
-            status = {n: await self.read(n) for n in await self.names()}
-            if not status:
+            log.debug("waiting for items to be added to state queue")
+            name, state_update = await self.__state_updates.get()
+
+            current_status: typing.Dict[str, DeploymentState] = {
+                n: await self.read(n) for n in await self.names()
+            }
+            current_state = current_status[name]
+
+            log.debug(
+                f"state update, {name}, {state_update.code.name}, "
+                f"{state_update.message}"
+            )
+            log.debug(
+                f"current state, {name}, {current_state.code.name}, "
+                f"{current_state.message}"
+            )
+
+            if (state_update.code != current_state.code) or (
+                state_update.message != current_state.message
+            ):
+                log.debug(f"status change detected, {name}")
+                # state has changed, so evaluate for completion and report state
+                async with self.__rw_lock:
+                    self.__status[name] = copy.deepcopy(state_update)
+
+                    self.__evaluate_named_completed(name)
+                    self.__evaluate_all_success()
+                    self.__evaluate_all_completed()
+
+                completed = self.__report_update(name, current_status)
+            else:
                 message = "nothing to report, {0}".format(
                     self.__iteration_context
                 )
                 log.info(message)
                 click.echo(click.style(message, fg="yellow"))
-            else:
-                for n, s in status.items():
-                    message = "{0}: {1} {2}".format(
-                        self.__iteration_context, n, s.code.name
-                    )
-                    this_colour = self.STATE_COLOURS[s.code]
-                    log.info(message)
-                    click.echo(click.style(message, fg=this_colour))
-                if all_success(list(status.values())):
-                    completed = True
-                    log.info(
-                        "all deployments succeeded for context, {0}".format(
-                            self.__iteration_context
-                        )
-                    )
-                elif all_completed(list(status.values())):
-                    completed = True
-                    log.info(
-                        "all deployments completed with some failures for "
-                        "context, {0}".format(self.__iteration_context)
-                    )
 
-            if not completed:
-                log.debug(
-                    "status monitor sleeping for, {0} seconds".format(
-                        DEFAULT_MONITOR_SLEEP_SECONDS
-                    )
-                )
-                await asyncio.sleep(DEFAULT_MONITOR_SLEEP_SECONDS)
+            self.__state_updates.task_done()
+
+    def __evaluate_named_completed(self: T, name: str) -> None:
+        """Evaluate if the named status has completed."""
+        # WARNING: assumes self.__rw_lock has been applied
+        code = self.__status[name].code
+        if (name in self.__events) and (
+            code in DeploymentState.COMPLETED_RESULTS
+        ):
+            self.__events[name].set()
+
+    def __evaluate_all_success(self: T) -> bool:
+        """Evaluate if all statuses have *succeeded*."""
+        # WARNING: assumes self.__rw_lock has been applied
+        values = list(self.__status.values())
+        result = all_success(values)
+        if result:
+            self.__events[self.EVENT_KEY_SUCCEEDED].set()
+
+        return result
+
+    def __evaluate_all_completed(self: T) -> bool:
+        """
+        Evaluate if all statuses have *completed*.
+
+        Completed => finished but not necessarily due to success. The
+        deployment may have failed.
+        """
+        # WARNING: assumes self.__rw_lock has been applied
+        values = list(self.__status.values())
+        result = all_completed(values)
+        if result:
+            self.__events[self.EVENT_KEY_COMPLETED].set()
+
+        return result
 
     def start_monitor(self: T) -> None:
         """
@@ -339,4 +386,4 @@ class DeploymentStatus:
         Status is reported to console and log until all members have hit one
         of the three deployment termination states [success|failed|cancelled].
         """
-        asyncio.create_task(self.__monitor_status())
+        asyncio.create_task(self.__process_state_queue())

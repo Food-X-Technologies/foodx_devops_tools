@@ -6,8 +6,11 @@
 #  foodx_devops_tools. If not, see <https://opensource.org/licenses/MIT>.
 
 import asyncio
+import logging
 
 import pytest
+
+logging.basicConfig(level=logging.DEBUG)
 
 from foodx_devops_tools.deploy_me._status import (
     DeploymentState,
@@ -16,6 +19,8 @@ from foodx_devops_tools.deploy_me._status import (
     all_success,
     any_completed_dirty,
 )
+
+TIMEOUT_SECONDS = 10
 
 
 class TestAllSuccess:
@@ -189,6 +194,8 @@ def simple_status(status_instance):
         await under_test.initialize("n1")
         await under_test.initialize("n2")
 
+        under_test.start_monitor()
+
         return under_test
 
     return _apply
@@ -199,20 +206,35 @@ class TestDeploymentStatus:
     async def test_clean(self, status_instance):
         under_test = status_instance()
         this_name = "some_name"
-        assert not await under_test.names()
-        await under_test.initialize(this_name)
 
-        assert await under_test.names() == {this_name}
+        try:
+            assert not await under_test.names()
+            await asyncio.wait_for(
+                under_test.initialize(this_name), timeout=TIMEOUT_SECONDS
+            )
+            under_test.start_monitor()
 
-        await under_test.write(
-            this_name,
-            DeploymentState.ResultType.pending,
-            message="some message",
-        )
+            assert await asyncio.wait_for(
+                under_test.names(), timeout=TIMEOUT_SECONDS
+            ) == {this_name}
 
-        result = await under_test.read(this_name)
-        assert result.code == DeploymentState.ResultType.pending
-        assert result.message == "some message"
+            await under_test.write(
+                this_name,
+                DeploymentState.ResultType.pending,
+                message="some message",
+            )
+
+            # pause slightly to enable queue to be processed
+            await asyncio.sleep(0.1)
+
+            result = await asyncio.wait_for(
+                under_test.read(this_name), timeout=TIMEOUT_SECONDS
+            )
+
+            assert result.code == DeploymentState.ResultType.pending
+            assert result.message == "some message"
+        except asyncio.TimeoutError:
+            pytest.fail("status test timed out")
 
 
 class TestAllCompletedEvent:
@@ -233,6 +255,7 @@ class TestAllCompletedEvent:
             await under_test.write("n2", DeploymentState.ResultType.success)
 
         waiter_task = asyncio.create_task(under_test.wait_for_all_completed())
+        # schedule the status changes to be detected
         asyncio.create_task(mock_status_updated())
 
         assert (
@@ -241,6 +264,7 @@ class TestAllCompletedEvent:
         assert (
             await under_test.read("n2")
         ).code == DeploymentState.ResultType.pending
+
         await asyncio.sleep(0.2)
         assert (
             await under_test.read("n1")
@@ -248,6 +272,7 @@ class TestAllCompletedEvent:
         assert (
             await under_test.read("n2")
         ).code == DeploymentState.ResultType.pending
+
         await asyncio.sleep(0.2)
         assert (
             await under_test.read("n1")
@@ -255,6 +280,7 @@ class TestAllCompletedEvent:
         assert (
             await under_test.read("n2")
         ).code == DeploymentState.ResultType.in_progress
+
         await asyncio.sleep(0.2)
         assert (
             await under_test.read("n1")
@@ -453,18 +479,20 @@ class TestAllCompletedEvent:
 
     @pytest.mark.asyncio
     async def test_prior_success(self, simple_status):
-        """success already flagged on entry is clean."""
+        """completion already flagged on entry is clean."""
         under_test = await simple_status(timeout_seconds=5)
 
-        async def mock_status_updated():
-            nonlocal under_test
-
+        # both these deployments have completed (failed, cancelled)
         await under_test.write("n1", DeploymentState.ResultType.failed)
         await under_test.write("n2", DeploymentState.ResultType.cancelled)
 
-        waiter_task = asyncio.create_task(under_test.wait_for_all_completed())
-        asyncio.create_task(mock_status_updated())
+        # need an await here to allow other tasks to execute (especially
+        # processing the queue)
+        await asyncio.sleep(0.01)
 
+        waiter_task = asyncio.create_task(under_test.wait_for_all_completed())
+
+        # status should now consistently read as those states
         assert (
             await under_test.read("n1")
         ).code == DeploymentState.ResultType.failed
@@ -725,15 +753,16 @@ class TestAllSucceededEvent:
         """success already flagged on entry is clean."""
         under_test = await simple_status(timeout_seconds=5)
 
-        async def mock_status_updated():
-            pass
-
         await under_test.write("n1", DeploymentState.ResultType.success)
         await under_test.write("n2", DeploymentState.ResultType.success)
 
+        # need an await here to allow other tasks to execute (especially
+        # processing the queue)
+        await asyncio.sleep(0.01)
         waiter_task = asyncio.create_task(under_test.wait_for_all_succeeded())
-        asyncio.create_task(mock_status_updated())
 
+        # the status will show as the initial state until the queue of state
+        # updates is cleared.
         assert (
             await under_test.read("n1")
         ).code == DeploymentState.ResultType.success
@@ -891,6 +920,10 @@ class TestCompletedNamedEvent:
             await under_test.write("n1", DeploymentState.ResultType.failed)
 
         await under_test.write("n2", DeploymentState.ResultType.success)
+
+        # need an await here to allow other tasks to execute (especially
+        # processing the queue)
+        await asyncio.sleep(0.01)
 
         waiter_task = asyncio.create_task(under_test.wait_for_completion("n2"))
         asyncio.create_task(mock_status_updated())
