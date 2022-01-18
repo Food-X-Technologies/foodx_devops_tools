@@ -265,6 +265,15 @@ async def _deploy_step(
         log.info("application step succeeded, {0}".format(step_context))
 
 
+async def _delay_step(delay_seconds: float) -> None:
+    message = "application steps paused for, {0} (seconds)".format(
+        delay_seconds
+    )
+    log.info(message)
+    click.echo(message)
+    await asyncio.sleep(delay_seconds)
+
+
 async def _do_application_deployment(
     this_context: str,
     application_data: ApplicationDeploymentSteps,
@@ -293,12 +302,7 @@ async def _do_application_deployment(
                     enable_validation,
                 )
             elif isinstance(this_step, ApplicationStepDelay):
-                message = "application steps paused for, {0} (seconds)".format(
-                    this_step.delay_seconds
-                )
-                log.info(message)
-                click.echo(message)
-                await asyncio.sleep(this_step.delay_seconds)
+                await _delay_step(this_step.delay_seconds)
             else:
                 raise DeploymentError(
                     "Bad application step definition, "
