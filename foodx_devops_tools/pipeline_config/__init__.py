@@ -14,7 +14,6 @@ from .deployments import DeploymentsDefinition, load_deployments  # noqa: F401
 from .frames import (  # noqa: F401
     ApplicationDefinition,
     ApplicationDeploymentSteps,
-    ApplicationStepDelay,
     DependencyDeclarations,
     FramesDefinition,
     SingularFrameDefinition,

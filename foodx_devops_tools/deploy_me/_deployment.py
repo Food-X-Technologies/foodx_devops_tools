@@ -16,13 +16,14 @@ from foodx_devops_tools.azure.cloud.auth import AzureAuthenticationError
 from foodx_devops_tools.pipeline_config import (
     ApplicationDefinition,
     ApplicationDeploymentSteps,
-    ApplicationStepDelay,
     FlattenedDeployment,
     PipelineConfiguration,
     SingularFrameDefinition,
 )
 from foodx_devops_tools.pipeline_config.frames import (
+    ApplicationStepDelay,
     ApplicationStepDeploymentDefinition,
+    ApplicationStepScript,
 )
 from foodx_devops_tools.puff import PuffError
 
@@ -30,7 +31,7 @@ from ._dependency_monitor import wait_for_dependencies
 from ._exceptions import DeploymentError
 from ._state import PipelineCliOptions
 from ._status import DeploymentState, DeploymentStatus, all_success
-from .application_steps import delay_step, deploy_step
+from .application_steps import delay_step, deploy_step, script_step
 
 log = logging.getLogger(__name__)
 
@@ -113,6 +114,12 @@ async def _do_application_deployment(
                     puff_parameter_data,
                     this_context,
                     enable_validation,
+                )
+            elif isinstance(this_step, ApplicationStepScript):
+                await script_step(
+                    this_step,
+                    deployment_data,
+                    this_context,
                 )
             elif isinstance(this_step, ApplicationStepDelay):
                 await delay_step(this_step.delay_seconds)

@@ -9,3 +9,4 @@
 
 from ._delay import delay_step  # noqa: F401
 from ._deploy import deploy_step  # noqa: F401
+from ._script import script_step  # noqa: F401
