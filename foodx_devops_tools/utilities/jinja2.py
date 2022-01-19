@@ -55,3 +55,23 @@ class FrameTemplates:
         content = template.render(**parameters)
         async with aiofiles.open(target_path, mode="w") as f:
             await f.write(content)
+
+
+def apply_dynamic_template(
+    source_template: str,
+    parameters: TemplateParameters,
+) -> str:
+    """
+    Apply parameter data to jinja2 template string.
+
+    Args:
+        source_template: Template text to be processed.
+        parameters: Parameter context data to be made available to the template.
+
+    Returns:
+        Text result of template processing.
+    """
+    template = jinja2.Template(source_template)
+    content = template.render(**parameters)
+
+    return content
