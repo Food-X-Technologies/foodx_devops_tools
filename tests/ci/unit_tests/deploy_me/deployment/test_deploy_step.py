@@ -14,31 +14,6 @@ from foodx_devops_tools._to import StructuredTo
 from foodx_devops_tools.deploy_me.application_steps import deploy_step
 
 
-@pytest.fixture()
-def mock_run_puff(mock_async_method):
-    this_mock = mock_async_method(
-        "foodx_devops_tools.utilities.templates.run_puff"
-    )
-    return this_mock
-
-
-@pytest.fixture()
-def mock_rg_deploy(mock_async_method):
-    this_mock = mock_async_method(
-        "foodx_devops_tools.deploy_me.application_steps._deploy"
-        ".deploy_resource_group"
-    )
-    return this_mock
-
-
-@pytest.fixture()
-def mock_login(mock_async_method):
-    mock_async_method(
-        "foodx_devops_tools.deploy_me.application_steps"
-        "._deploy.login_service_principal"
-    )
-
-
 @pytest.mark.asyncio
 async def test_clean(
     mock_apply_template,

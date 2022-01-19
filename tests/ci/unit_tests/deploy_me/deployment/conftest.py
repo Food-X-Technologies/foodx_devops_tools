@@ -25,6 +25,31 @@ from tests.ci.support.pipeline_config import MOCK_CONTEXT
 
 
 @pytest.fixture()
+def mock_login(mock_async_method):
+    mock_async_method(
+        "foodx_devops_tools.deploy_me.application_steps"
+        "._deploy.login_service_principal"
+    )
+
+
+@pytest.fixture()
+def mock_rg_deploy(mock_async_method):
+    this_mock = mock_async_method(
+        "foodx_devops_tools.deploy_me.application_steps._deploy"
+        ".deploy_resource_group"
+    )
+    return this_mock
+
+
+@pytest.fixture()
+def mock_run_puff(mock_async_method):
+    this_mock = mock_async_method(
+        "foodx_devops_tools.utilities.templates.run_puff"
+    )
+    return this_mock
+
+
+@pytest.fixture()
 def mock_completion_event(mock_async_method):
     mock_async_method(
         "foodx_devops_tools.deploy_me._deployment"

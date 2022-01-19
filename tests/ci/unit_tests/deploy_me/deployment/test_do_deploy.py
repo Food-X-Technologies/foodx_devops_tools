@@ -13,7 +13,7 @@ from tests.ci.support.pipeline_config import MOCK_RESULTS
 
 
 @pytest.fixture()
-def prep_data(mock_async_method, mock_flattened_deployment):
+def prep_data(mock_async_method, mock_flattened_deployment, mock_run_puff):
     pipeline_config = PipelineConfiguration.parse_obj(MOCK_RESULTS)
 
     deployment_data = mock_flattened_deployment[0]
@@ -26,7 +26,6 @@ def prep_data(mock_async_method, mock_flattened_deployment):
     mock_frame = mock_async_method(
         "foodx_devops_tools.deploy_me._deployment.deploy_frame"
     )
-    mock_async_method("foodx_devops_tools.utilities.templates.run_puff")
 
     return mock_frame, deployment_data, pipeline_config
 
