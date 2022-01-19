@@ -60,17 +60,18 @@ class ApplicationStepDeploymentDefinition(pydantic.BaseModel):
     static_secrets: typing.Optional[bool] = False
 
 
-class ApplicationStepShell(pydantic.BaseModel):
+class ApplicationStepScript(pydantic.BaseModel):
     """Execute arbitrary shell commands during deployment."""
 
-    shell: str
+    name: str
+    script: str
 
 
 ApplicationDeploymentSteps = typing.List[
     typing.Union[
         ApplicationStepDelay,
         ApplicationStepDeploymentDefinition,
-        ApplicationStepShell,
+        ApplicationStepScript,
     ]
 ]
 

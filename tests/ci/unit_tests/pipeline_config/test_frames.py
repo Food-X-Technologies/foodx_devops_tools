@@ -116,7 +116,7 @@ frames:
     )
 
 
-def test_deploy_shell_script(apply_applications_test):
+def test_deploy_script(apply_applications_test):
     file_text = """---
 frames:
   frames:
@@ -127,7 +127,8 @@ frames:
           - name: a1l1
             mode: Incremental
             resource_group: a1_group
-          - shell: |
+          - name: a1s2
+            script: |
               some command \
                 --argument
               another command
@@ -150,10 +151,10 @@ frames:
         .static_secrets
     )
     assert not hasattr(
-        result_frames.frames["f1"].applications["a1"].steps[0], "shell"
+        result_frames.frames["f1"].applications["a1"].steps[0], "script"
     )
     assert (
-        result_frames.frames["f1"].applications["a1"].steps[1].shell
+        result_frames.frames["f1"].applications["a1"].steps[1].script
         == """some command \
                 --argument
 another command
