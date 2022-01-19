@@ -1,4 +1,4 @@
-FROM ubuntu:20.10 AS config
+FROM ubuntu:20.04 AS config
 
 RUN apt-get update \
  && apt-get install \
@@ -16,7 +16,7 @@ RUN apt-get update \
       tee /microsoft.gpg > /dev/null
 
 
-FROM ubuntu:20.10
+FROM ubuntu:20.04
 
 # install the necessary dependencies for the pipeline to be able to run
 
