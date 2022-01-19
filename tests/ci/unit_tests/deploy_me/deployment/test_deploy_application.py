@@ -13,10 +13,12 @@ import pytest
 
 from foodx_devops_tools._to import StructuredTo
 from foodx_devops_tools.deploy_me._deployment import (
-    AzureSubscriptionConfiguration,
     DeploymentState,
     DeploymentStatus,
     deploy_application,
+)
+from foodx_devops_tools.deploy_me.application_steps._deploy import (
+    AzureSubscriptionConfiguration,
 )
 from foodx_devops_tools.pipeline_config import (
     IterationContext,
@@ -52,13 +54,15 @@ def prep_data(mock_async_method, mock_flattened_deployment):
     ).puff_map
 
     mock_deploy = mock_async_method(
-        "foodx_devops_tools.deploy_me._deployment.deploy_resource_group"
+        "foodx_devops_tools.deploy_me.application_steps._deploy"
+        ".deploy_resource_group"
     )
     mock_puff = mock_async_method(
         "foodx_devops_tools.utilities.templates.run_puff"
     )
     mock_async_method(
-        "foodx_devops_tools.deploy_me._deployment.login_service_principal"
+        "foodx_devops_tools.deploy_me.application_steps"
+        "._deploy.login_service_principal"
     )
     mock_async_method(
         "foodx_devops_tools.utilities.templates._prepare_working_directory"
