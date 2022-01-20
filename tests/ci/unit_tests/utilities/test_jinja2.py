@@ -13,7 +13,10 @@ import typing
 import pytest
 import ruamel.yaml
 
-from foodx_devops_tools.utilities.jinja2 import FrameTemplates
+from foodx_devops_tools.utilities.jinja2 import (
+    FrameTemplates,
+    apply_dynamic_template,
+)
 
 MOCK_TEMPLATE = """---
 this_field: {{ this_parameter }}
@@ -43,19 +46,32 @@ def load_yaml(file: pathlib.Path) -> dict:
     return result
 
 
-@pytest.mark.asyncio
-async def test_clean():
-    parameters = {"this_parameter": "this_value"}
-    with mock_template_dir(MOCK_TEMPLATE) as template_file_path:
-        target_file = template_file_path.parent / "this_target"
+class TestFrameTemplates:
+    @pytest.mark.asyncio
+    async def test_clean(self):
+        parameters = {"this_parameter": "this_value"}
+        with mock_template_dir(MOCK_TEMPLATE) as template_file_path:
+            target_file = template_file_path.parent / "this_target"
 
-        assert not target_file.is_file()
+            assert not target_file.is_file()
 
-        under_test = FrameTemplates([template_file_path.parent])
-        await under_test.apply_template(
-            "mock_template", target_file, parameters
-        )
+            under_test = FrameTemplates([template_file_path.parent])
+            await under_test.apply_template(
+                "mock_template", target_file, parameters
+            )
 
-        assert target_file.is_file()
-        target_data = load_yaml(target_file)
-        assert target_data == {"this_field": "this_value"}
+            assert target_file.is_file()
+            target_data = load_yaml(target_file)
+            assert target_data == {"this_field": "this_value"}
+
+
+class TestApplyDynamicTemplate:
+    def test_clean(self):
+        parameters = {
+            "this_variable": "variable content",
+        }
+        source_template = "some text {{ this_variable }}"
+
+        result = apply_dynamic_template(source_template, parameters)
+
+        assert result == "some text variable content"

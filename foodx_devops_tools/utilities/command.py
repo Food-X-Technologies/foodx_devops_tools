@@ -99,6 +99,8 @@ async def run_async_command(
 
     Returns:
         Any output or error streams captured from the process.
+    Raises:
+        CommandError: if the executed command returns non-zero exit status.
     """
     if enable_logging:
         # WARNING: logging is _disabled_ by default to prevent "default"

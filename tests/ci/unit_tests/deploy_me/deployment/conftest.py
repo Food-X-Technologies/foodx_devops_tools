@@ -12,6 +12,7 @@ import pytest
 
 from foodx_devops_tools.deploy_me._deployment import (
     ApplicationStepDeploymentDefinition,
+    ApplicationStepScript,
     FlattenedDeployment,
     PipelineCliOptions,
 )
@@ -22,6 +23,31 @@ from foodx_devops_tools.pipeline_config.views import (
     DeployDataView,
 )
 from tests.ci.support.pipeline_config import MOCK_CONTEXT
+
+
+@pytest.fixture()
+def mock_login(mock_async_method):
+    mock_async_method(
+        "foodx_devops_tools.deploy_me.application_steps"
+        "._deploy.login_service_principal"
+    )
+
+
+@pytest.fixture()
+def mock_rg_deploy(mock_async_method):
+    this_mock = mock_async_method(
+        "foodx_devops_tools.deploy_me.application_steps._deploy"
+        ".deploy_resource_group"
+    )
+    return this_mock
+
+
+@pytest.fixture()
+def mock_run_puff(mock_async_method):
+    this_mock = mock_async_method(
+        "foodx_devops_tools.utilities.templates.run_puff"
+    )
+    return this_mock
 
 
 @pytest.fixture()
@@ -82,7 +108,7 @@ def default_override_parameters():
 
 
 @pytest.fixture()
-def mock_deploystep_context():
+def mock_base_context():
     mock_context = copy.deepcopy(MOCK_CONTEXT)
     mock_context.application_name = "app-name"
     mock_context.azure_tenant_name = "t1"
@@ -110,20 +136,47 @@ def mock_deploystep_context():
     data_view.frame_folder = pathlib.Path("frame/folder")
 
     arguments = {
-        "this_step": ApplicationStepDeploymentDefinition(
-            mode=DeploymentMode.incremental,
-            name="this_step",
-            arm_file=pathlib.Path("arm.file"),
-            puff_file=pathlib.Path("puff.file"),
-            resource_group="rgn",
-        ),
         "deployment_data": FlattenedDeployment(
             context=mock_context, data=data_view
         ),
-        "puff_parameter_data": {
-            "this_step": pathlib.Path("puff_generated.path"),
-        },
         "this_context": "some.context",
-        "enable_validation": False,
     }
+    return arguments
+
+
+@pytest.fixture()
+def mock_shellstep_context(mock_base_context):
+    arguments = {
+        **mock_base_context,
+        **{
+            "this_step": ApplicationStepScript(
+                name="this_step",
+                script="""do something
+make {{ context.tags.frame_name }}
+""",
+            ),
+        },
+    }
+    return arguments
+
+
+@pytest.fixture()
+def mock_deploystep_context(mock_base_context):
+    arguments = {
+        **mock_base_context,
+        **{
+            "this_step": ApplicationStepDeploymentDefinition(
+                mode=DeploymentMode.incremental,
+                name="this_step",
+                arm_file=pathlib.Path("arm.file"),
+                puff_file=pathlib.Path("puff.file"),
+                resource_group="rgn",
+            ),
+            "puff_parameter_data": {
+                "this_step": pathlib.Path("puff_generated.path"),
+            },
+            "enable_validation": False,
+        },
+    }
+
     return arguments

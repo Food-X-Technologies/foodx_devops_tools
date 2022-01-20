@@ -116,6 +116,52 @@ frames:
     )
 
 
+def test_deploy_script(apply_applications_test):
+    file_text = """---
+frames:
+  frames:
+    f1:
+      applications:
+        a1: 
+          steps:
+          - name: a1l1
+            mode: Incremental
+            resource_group: a1_group
+          - name: a1s2
+            script: |
+              some command \
+                --argument
+              another command
+      folder: some/path
+"""
+
+    result = apply_applications_test(file_text)
+
+    result_frames = result.frames
+    assert len(result_frames.frames) == 1
+    assert len(result_frames.frames["f1"].applications["a1"].steps) == 2
+    assert (
+        result_frames.frames["f1"].applications["a1"].steps[0].resource_group
+        == "a1_group"
+    )
+    assert (
+        not result_frames.frames["f1"]
+        .applications["a1"]
+        .steps[0]
+        .static_secrets
+    )
+    assert not hasattr(
+        result_frames.frames["f1"].applications["a1"].steps[0], "script"
+    )
+    assert (
+        result_frames.frames["f1"].applications["a1"].steps[1].script
+        == """some command \
+                --argument
+another command
+"""
+    )
+
+
 def test_enable_static_secrets(apply_applications_test):
     file_text = """---
 frames:

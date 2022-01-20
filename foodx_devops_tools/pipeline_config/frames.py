@@ -60,8 +60,19 @@ class ApplicationStepDeploymentDefinition(pydantic.BaseModel):
     static_secrets: typing.Optional[bool] = False
 
 
+class ApplicationStepScript(pydantic.BaseModel):
+    """Execute arbitrary shell commands during deployment."""
+
+    name: str
+    script: str
+
+
 ApplicationDeploymentSteps = typing.List[
-    typing.Union[ApplicationStepDeploymentDefinition, ApplicationStepDelay]
+    typing.Union[
+        ApplicationStepDelay,
+        ApplicationStepDeploymentDefinition,
+        ApplicationStepScript,
+    ]
 ]
 
 
@@ -79,7 +90,7 @@ class ApplicationDefinition(pydantic.BaseModel):
         step_names: typing.List[str] = [
             x.name
             for x in steps_candidate
-            if not isinstance(x, ApplicationStepDelay)
+            if isinstance(x, ApplicationStepDeploymentDefinition)
         ]
         if len(step_names) != len(set(step_names)):
             message = "Application step names must be unique, {0}".format(
