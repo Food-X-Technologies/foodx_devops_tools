@@ -504,7 +504,7 @@ class PipelineConfiguration(pydantic.BaseModel):
                         frame_step_names = {
                             x.name
                             for x in application_data.steps
-                            if hasattr(x, "name")
+                            if hasattr(x, "name") and hasattr(x, "arm_file")
                         }
                         if frame_step_names != set(subscription_data.keys()):
                             message = (
