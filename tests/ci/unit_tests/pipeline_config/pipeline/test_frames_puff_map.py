@@ -499,3 +499,49 @@ def test_missing_application_step_raises2(mock_loads, mock_results):
         match=r"Application step name mismatch between frames and puff map",
     ):
         PipelineConfiguration.from_files(MOCK_PATHS, MOCK_SECRET)
+
+
+def test_script_missing_puff_map_ok(mock_loads, mock_results):
+    mock_results.frames = FramesDefinition.parse_obj(
+        {
+            "frames": {
+                "frames": {
+                    "f1": {
+                        "applications": {
+                            "a1": {
+                                "steps": [
+                                    {
+                                        "name": "my-script",
+                                        "script": "do something",
+                                    },
+                                ],
+                            },
+                        },
+                        "folder": "some/path",
+                    },
+                },
+            },
+        }
+    ).frames
+    mock_results.puff_map = PuffMapGeneratedFiles.parse_obj(
+        {
+            "puff_map": {
+                "frames": {
+                    "f1": {
+                        "applications": {
+                            "a1": {
+                                "arm_parameters_files": {
+                                    "r1": {
+                                        "sys1_c1_r1a": dict(),
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        }
+    ).puff_map
+    mock_loads(mock_results)
+
+    PipelineConfiguration.from_files(MOCK_PATHS, MOCK_SECRET)
