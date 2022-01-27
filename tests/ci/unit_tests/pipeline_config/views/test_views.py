@@ -102,7 +102,7 @@ class TestFlattenedDeployment:
             "v2": "vv2",
         }
 
-        result = under_test.construct_template_parameters()
+        result = under_test.construct_template_parameters("this_name")
 
         assert result == {
             "context": {
@@ -111,6 +111,7 @@ class TestFlattenedDeployment:
                         "subscription_id": "abc123",
                         "tenant_id": "123abc",
                     },
+                    "resource_group": "this_name",
                 },
                 "v1": {"k1": 3.14},
                 "v2": "vv2",
@@ -146,6 +147,18 @@ class TestFlattenedDeployment:
                 },
             }
         }
+
+    def test_default_resource_group(self, mock_flattened_deployment):
+        under_test = mock_flattened_deployment[0]
+        under_test.context.frame_name = "f1"
+        under_test.data.template_context = {
+            "v1": {"k1": 3.14},
+            "v2": "vv2",
+        }
+
+        result = under_test.construct_template_parameters()
+
+        assert result["context"]["environment"]["resource_group"] is None
 
 
 class TestSubscriptionView:

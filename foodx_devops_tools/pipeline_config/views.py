@@ -376,15 +376,26 @@ class FlattenedDeployment:
 
         return result
 
-    def construct_template_parameters(self: W) -> TemplateParameters:
-        """Construct set of parameters for jinja2 templates."""
+    def construct_template_parameters(
+        self: W, resource_group_name: typing.Optional[str] = None
+    ) -> TemplateParameters:
+        """
+        Construct set of parameters for jinja2 templates.
+
+        Args:
+            resource_group_name:    Name of current resource group being
+                                    deployed to.
+
+        Returns:
+            Dict of parameters to be applied to jinja2 templating.
+        """
         engine_data = {
             "environment": {
                 "azure": {
                     "subscription_id": self.data.subscription_id,
                     "tenant_id": self.data.tenant_id,
                 },
-                # "resource_group": ,
+                "resource_group": resource_group_name,
             },
             "locations": {
                 "primary": self.data.location_primary,
