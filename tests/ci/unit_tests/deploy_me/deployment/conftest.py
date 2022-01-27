@@ -118,20 +118,22 @@ def mock_base_context():
     mock_context.frame_name = "f1"
 
     data_view = DeployDataView(
-        AzureCredentials(
+        azure_credentials=AzureCredentials(
             userid="abc",
             secret="verysecret",
             subscription="sys1_c1_r1a",
             name="n",
             tenant="123abc",
         ),
-        "a-b-c",
-        "uswest2",
-        "r1",
-        "some.where",
-        dict(),
-        ["a", "p"],
-        dict(),
+        deployment_tuple="a-b-c",
+        location_primary="uswest2",
+        release_state="r1",
+        root_fqdn="some.where",
+        static_secrets=dict(),
+        subscription_id="s-12345",
+        tenant_id="t-abc",
+        url_endpoints=["a", "p"],
+        user_defined_template_context=dict(),
     )
     data_view.frame_folder = pathlib.Path("frame/folder")
 

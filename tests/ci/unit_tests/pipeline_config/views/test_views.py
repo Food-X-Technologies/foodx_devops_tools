@@ -106,6 +106,12 @@ class TestFlattenedDeployment:
 
         assert result == {
             "context": {
+                "environment": {
+                    "azure": {
+                        "subscription_id": "abc123",
+                        "tenant_id": "123abc",
+                    },
+                },
                 "v1": {"k1": 3.14},
                 "v2": "vv2",
                 "locations": {
