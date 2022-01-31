@@ -215,7 +215,9 @@ class DeployDataView:
     release_state: str
     root_fqdn: str
     static_secrets: dict
+    subscription_id: str
     template_context: dict
+    tenant_id: str
     url_endpoints: typing.List[str]
 
     frame_folder: typing.Optional[pathlib.Path] = None
@@ -231,9 +233,11 @@ class DeployDataView:
         azure_credentials: AzureCredentials,
         deployment_tuple: str,
         location_primary: str,
-        root_fqdn: str,
         release_state: str,
+        root_fqdn: str,
         static_secrets: dict,
+        subscription_id: str,
+        tenant_id: str,
         url_endpoints: typing.List[str],
         user_defined_template_context: dict,
         location_secondary: typing.Optional[str] = None,
@@ -245,6 +249,8 @@ class DeployDataView:
         self.release_state = release_state
         self.root_fqdn = root_fqdn
         self.static_secrets = static_secrets
+        self.subscription_id = subscription_id
+        self.tenant_id = tenant_id
         self.template_context = user_defined_template_context
         self.url_endpoints = url_endpoints
         self.__location_secondary = location_secondary
@@ -370,9 +376,27 @@ class FlattenedDeployment:
 
         return result
 
-    def construct_template_parameters(self: W) -> TemplateParameters:
-        """Construct set of parameters for jinja2 templates."""
+    def construct_template_parameters(
+        self: W, resource_group_name: typing.Optional[str] = None
+    ) -> TemplateParameters:
+        """
+        Construct set of parameters for jinja2 templates.
+
+        Args:
+            resource_group_name:    Name of current resource group being
+                                    deployed to.
+
+        Returns:
+            Dict of parameters to be applied to jinja2 templating.
+        """
         engine_data = {
+            "environment": {
+                "azure": {
+                    "subscription_id": self.data.subscription_id,
+                    "tenant_id": self.data.tenant_id,
+                },
+                "resource_group": resource_group_name,
+            },
             "locations": {
                 "primary": self.data.location_primary,
                 "secondary": self.data.location_secondary,
@@ -605,6 +629,19 @@ class SubscriptionView:
                     "secrets, {0}".format(self.subscription_name)
                 )
 
+            subscription_id = (
+                self.deployment_view.release_view.configuration.subscriptions[
+                    self.subscription_name
+                ].azure_id
+            )
+            tenant_name = (
+                self.deployment_view.release_view.configuration.subscriptions[
+                    self.subscription_name
+                ].tenant
+            )
+            tenant_id = self.deployment_view.release_view.configuration.tenants[
+                tenant_name
+            ].azure_id
             this_data: typing.Dict[str, typing.Any] = {
                 "azure_credentials": this_credentials,
                 "deployment_tuple": str(self.deployment_view.deployment_tuple),
@@ -615,6 +652,8 @@ class SubscriptionView:
                 ].root_fqdn,
                 "release_state": self.deployment_view.release_view.deployment_context.release_state,  # noqa: E501
                 "static_secrets": static_secrets,
+                "subscription_id": subscription_id,
+                "tenant_id": tenant_id,
                 "url_endpoints": self.deployment_view.release_view.configuration.deployments.url_endpoints,  # noqa: E501
                 "user_defined_template_context": self.deployment_view.release_view.configuration.context,  # noqa: E501
             }

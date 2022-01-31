@@ -128,7 +128,9 @@ async def _do_step_deployment(
         else:
             log.info(f"deployment enabled, {step_context}")
 
-        template_parameters = deployment_data.construct_template_parameters()
+        template_parameters = deployment_data.construct_template_parameters(
+            resource_group
+        )
         log.debug(f"template parameters, {step_context}, {template_parameters}")
 
         template_files = deployment_data.construct_deployment_paths(
