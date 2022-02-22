@@ -19,6 +19,7 @@ from foodx_devops_tools._declarations import (
     DEFAULT_LOG_LEVEL,
     VALID_LOG_LEVELS,
 )
+from foodx_devops_tools.azure.cloud.auth import login_service_principal
 from foodx_devops_tools._log_check import check_credential_leakage
 from foodx_devops_tools._logging import LoggingState
 from foodx_devops_tools._to import StructuredTo, StructuredToParameter
@@ -62,13 +63,17 @@ async def _gather_main(
     pipeline_parameters: PipelineCliOptions,
 ) -> None:
     """Deploy each deployment iteration asynchronously."""
-    results = await asyncio.gather(
-        *[
-            do_deploy(configuration, x, pipeline_parameters)
-            for x in deployment_iterations
-        ],
-        return_exceptions=False,
-    )
+    results: typing.List[DeploymentState] = list()
+    for deployment_data in deployment_iterations:
+        # in theory, multiple deployments could reference the same
+        # subscription (unlikely at the moment), but in that case it's also
+        # plausible that the two different deployments would reference
+        # individual service principals for access, so the login is
+        # necessarily serialized to the deployment iterations.
+        await login_service_principal(                    deployment_data.data.azure_credentials)
+
+        results.append( await do_deploy(configuration, deployment_data,
+                                 pipeline_parameters))
 
     filtered_results = [x for x in results if isinstance(x, DeploymentState)]
     if len(filtered_results) != len(results):
@@ -262,25 +267,37 @@ def deploy_me(
         log.info("top-level deployment context, {0}".format(str(base_context)))
 
         pipeline_state = ReleaseView(this_configuration, base_context)
-        deployment_iterations = pipeline_state.flatten(to)
 
-        log.info(
-            "number deployment iteration, {0}".format(
-                len(deployment_iterations)
-            )
-        )
-        log.debug(str(deployment_iterations))
+        # due to `az login` storing credentials per subscription, we are
+        # presently unable to concurrently deploy to "deployments" and
+        # "subscriptions".
+        for this_deployment in pipeline_state.deployments:
+            log.debug(f"deployment iteration,"
+                     f" {this_deployment.deployment_tuple}")
+            for this_subscription in this_deployment.subscriptions:
+                log.debug(f"deployment subscription, "
+                          f"{this_subscription.subscription_name} [{this_deployment.deployment_tuple}]")
 
-        asyncio.run(
-            _gather_main(
-                this_configuration, deployment_iterations, pipeline_parameters
-            )
-        )
+                deployment_iterations = pipeline_state.flatten(to, this_deployment,
+                                                               this_subscription)
 
-        credentials = {
-            x.data.azure_credentials.secret for x in deployment_iterations
-        }
-        check_credential_leakage(credentials, DEFAULT_LOG_FILE)
+                log.info(
+                    "number deployment iteration, {0}".format(
+                        len(deployment_iterations)
+                    )
+                )
+                log.debug(str(deployment_iterations))
+
+                asyncio.run(
+                    _gather_main(
+                        this_configuration, deployment_iterations, pipeline_parameters
+                    )
+                )
+
+                credentials = {
+                    x.data.azure_credentials.secret for x in deployment_iterations
+                }
+                check_credential_leakage(credentials, DEFAULT_LOG_FILE)
     except (ConfigurationPathsError, DeploymentConfigurationError) as e:
         message = str(e)
         log.error(message)

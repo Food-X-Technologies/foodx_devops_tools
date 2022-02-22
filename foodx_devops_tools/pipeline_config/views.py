@@ -808,36 +808,37 @@ class ReleaseView:
     def flatten(
         self: T,
         to: StructuredTo,
+            this_deployment: DeploymentView,
+            this_subscription: SubscriptionView,
     ) -> typing.List[FlattenedDeployment]:
         """Flatten the nested hierarchy of views into a simple list."""
         result: typing.List[FlattenedDeployment] = list()
-        for this_deployment in self.deployments:
-            for this_subscription in this_deployment.subscriptions:
-                for this_deploy_data in this_subscription.deploy_data:
-                    updated_context = copy.deepcopy(self.deployment_context)
-                    updated_context.azure_subscription_name = (
-                        this_subscription.subscription_name
-                    )
-                    updated_context.azure_tenant_name = (
-                        self.configuration.subscriptions[
-                            this_subscription.subscription_name
-                        ].tenant
-                    )
-                    updated_context.client = (
-                        this_deployment.deployment_tuple.client
-                    )
-                    updated_context.system = (
-                        this_deployment.deployment_tuple.system
-                    )
+        for this_deploy_data in this_subscription.deploy_data:
+            updated_context = copy.deepcopy(self.deployment_context)
+            updated_context.azure_subscription_name = (
+                this_subscription.subscription_name
+            )
+            updated_context.azure_tenant_name = (
+                self.configuration.subscriptions[
+                    this_subscription.subscription_name
+                ].tenant
+            )
+            updated_context.client = (
+                this_deployment.deployment_tuple.client
+            )
+            updated_context.system = (
+                this_deployment.deployment_tuple.system
+            )
 
-                    updated_data = copy.deepcopy(this_deploy_data)
-                    updated_data.to = to
+            updated_data = copy.deepcopy(this_deploy_data)
+            updated_data.to = to
 
-                    this_value = FlattenedDeployment(
-                        context=updated_context,
-                        data=updated_data,
-                    )
-                    result.append(this_value)
+            this_value = FlattenedDeployment(
+                context=updated_context,
+                data=updated_data,
+            )
+            result.append(this_value)
+
         return result
 
     def _validate_release_state(self: T) -> None:
