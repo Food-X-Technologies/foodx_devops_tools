@@ -18,7 +18,6 @@ from foodx_devops_tools.deploy_me.application_steps import deploy_step
 async def test_clean(
     mock_apply_template,
     mock_deploystep_context,
-    mock_login,
     mock_rg_deploy,
     mock_run_puff,
     mock_verify_puff_target,
@@ -33,7 +32,6 @@ async def test_default_override_parameters(
     default_override_parameters,
     mock_apply_template,
     mock_deploystep_context,
-    mock_login,
     mock_rg_deploy,
     mock_run_puff,
     mock_verify_puff_target,
@@ -65,7 +63,6 @@ async def test_secrets_enabled(
     default_override_parameters,
     mock_apply_template,
     mock_deploystep_context,
-    mock_login,
     mock_rg_deploy,
     mock_run_puff,
     mock_verify_puff_target,
@@ -114,9 +111,7 @@ async def test_secrets_enabled(
 
 
 @pytest.mark.asyncio
-async def test_step_skip(
-    caplog, mock_deploystep_context, mock_login, mock_rg_deploy
-):
+async def test_step_skip(caplog, mock_deploystep_context, mock_rg_deploy):
     with caplog.at_level(logging.DEBUG):
         mock_deploystep_context["deployment_data"].data.to = StructuredTo(
             frame="f1", application="a1", step="other_step"

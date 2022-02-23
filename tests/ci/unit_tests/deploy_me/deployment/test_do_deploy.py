@@ -33,7 +33,12 @@ def prep_data(mock_async_method, mock_flattened_deployment, mock_run_puff):
 class TestDoDeploy:
     @pytest.mark.asyncio
     async def test_validation_clean(
-        self, mocker, prep_data, mock_completion_event, pipeline_parameters
+        self,
+        mocker,
+        prep_data,
+        mock_completion_event,
+        mock_login,
+        pipeline_parameters,
     ):
         cli_options = pipeline_parameters()
         mock_frame, deployment_data, pipeline_config = prep_data
