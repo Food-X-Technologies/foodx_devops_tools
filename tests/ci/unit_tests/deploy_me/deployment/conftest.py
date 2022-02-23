@@ -28,8 +28,7 @@ from tests.ci.support.pipeline_config import MOCK_CONTEXT
 @pytest.fixture()
 def mock_login(mock_async_method):
     mock_async_method(
-        "foodx_devops_tools.deploy_me.application_steps"
-        "._deploy.login_service_principal"
+        "foodx_devops_tools.deploy_me._deployment.login_service_principal"
     )
 
 

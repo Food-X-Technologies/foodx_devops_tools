@@ -12,7 +12,10 @@ import typing
 
 import click
 
-from foodx_devops_tools.azure.cloud.auth import AzureAuthenticationError
+from foodx_devops_tools.azure.cloud.auth import (
+    AzureAuthenticationError,
+    login_service_principal,
+)
 from foodx_devops_tools.pipeline_config import (
     ApplicationDefinition,
     ApplicationDeploymentSteps,
@@ -358,6 +361,12 @@ async def do_deploy(
         timeout_seconds=pipeline_parameters.wait_timeout_seconds,
     )
     try:
+        # this is a temporary work-around to the login concurrency problem -
+        # it works provided there is no more than a single subscription per
+        # deployment at a time.
+        # https://github.com/Food-X-Technologies/foodx_devops_tools/issues/129
+        await login_service_principal(deployment_data.data.azure_credentials)
+
         wait_task = asyncio.create_task(
             frame_deployment_status.wait_for_all_completed()
         )

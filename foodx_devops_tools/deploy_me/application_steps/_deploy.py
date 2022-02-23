@@ -11,7 +11,6 @@ import typing
 
 import click
 
-from foodx_devops_tools.azure.cloud.auth import login_service_principal
 from foodx_devops_tools.azure.cloud.resource_group import (
     AzureSubscriptionConfiguration,
 )
@@ -118,7 +117,6 @@ async def _do_step_deployment(
             this_step.resource_group,
         )
 
-        await login_service_principal(deployment_data.data.azure_credentials)
         if enable_validation:
             log.info(f"validation deployment enabled, {step_context}")
             resource_group = _mangle_validation_resource_group(
