@@ -19,3 +19,4 @@ def test_clean(mocker):
         time.sleep(0.2)
 
     assert t.elapsed_time_seconds == 2.3
+    assert t.elapsed_time_formatted == "0:00:02.300000"

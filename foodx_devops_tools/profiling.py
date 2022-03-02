@@ -8,6 +8,7 @@
 """Utilities for maintaining timing information."""
 
 import contextlib
+import datetime
 import logging
 import time
 import typing
@@ -37,6 +38,11 @@ class Timer:
     def elapsed_time_seconds(self: T) -> float:
         """Calculate the elapsed time interval in seconds."""
         return self.stop_time_seconds - self.start_time_seconds
+
+    @property
+    def elapsed_time_formatted(self: T) -> str:
+        """Calculate the elapsed time and format into a string."""
+        return str(datetime.timedelta(seconds=self.elapsed_time_seconds))
 
 
 @contextlib.contextmanager
