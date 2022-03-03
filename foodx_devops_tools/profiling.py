@@ -44,9 +44,21 @@ class Timer:
         """Calculate the elapsed time and format into a string."""
         return str(datetime.timedelta(seconds=self.elapsed_time_seconds))
 
+    def log_duration(
+        self: T, this_log: logging.Logger, iteration_context: str
+    ) -> None:
+        """Log the elapsed time of the iteration."""
+        this_log.info(
+            f"{iteration_context} "
+            f"elapsed time, {self.elapsed_time_formatted}"
+        )
+
 
 @contextlib.contextmanager
-def timing() -> typing.Generator[Timer, None, Timer]:
+def timing(
+    this_log: logging.Logger,
+    iteration_context: str,
+) -> typing.Generator[Timer, None, Timer]:
     """Manage the context of calculating a time interval."""
     this_timer = Timer()
     this_timer.start()
@@ -54,5 +66,6 @@ def timing() -> typing.Generator[Timer, None, Timer]:
     yield this_timer
 
     this_timer.stop()
+    this_timer.log_duration(this_log, iteration_context)
 
     return this_timer

@@ -28,6 +28,7 @@ from foodx_devops_tools.pipeline_config.frames import (
     ApplicationStepDeploymentDefinition,
     ApplicationStepScript,
 )
+from foodx_devops_tools.profiling import timing
 from foodx_devops_tools.puff import PuffError
 
 from ._dependency_monitor import wait_for_dependencies
@@ -110,27 +111,28 @@ async def _do_application_deployment(
         ][deployment_data.context.azure_subscription_name]
 
         for this_step in application_data:
-            if isinstance(this_step, ApplicationStepDeploymentDefinition):
-                await deploy_step(
-                    this_step,
-                    deployment_data,
-                    puff_parameter_data,
-                    this_context,
-                    enable_validation,
-                )
-            elif isinstance(this_step, ApplicationStepScript):
-                await script_step(
-                    this_step,
-                    deployment_data,
-                    this_context,
-                )
-            elif isinstance(this_step, ApplicationStepDelay):
-                await delay_step(this_step.delay_seconds)
-            else:
-                raise DeploymentError(
-                    "Bad application step definition, "
-                    "{0}".format(this_context)
-                )
+            with timing(log, this_context):
+                if isinstance(this_step, ApplicationStepDeploymentDefinition):
+                    await deploy_step(
+                        this_step,
+                        deployment_data,
+                        puff_parameter_data,
+                        this_context,
+                        enable_validation,
+                    )
+                elif isinstance(this_step, ApplicationStepScript):
+                    await script_step(
+                        this_step,
+                        deployment_data,
+                        this_context,
+                    )
+                elif isinstance(this_step, ApplicationStepDelay):
+                    await delay_step(this_step.delay_seconds)
+                else:
+                    raise DeploymentError(
+                        "Bad application step definition, "
+                        "{0}".format(this_context)
+                    )
 
         log.info("application deployment succeeded, {0}".format(this_context))
         await application_status.write(
@@ -201,13 +203,14 @@ async def deploy_application(
                 ),
             )
         else:
-            await _do_application_deployment(
-                this_context,
-                application_data.steps,
-                deployment_data,
-                application_status,
-                enable_validation,
-            )
+            with timing(log, this_context):
+                await _do_application_deployment(
+                    this_context,
+                    application_data.steps,
+                    deployment_data,
+                    application_status,
+                    enable_validation,
+                )
     except Exception as e:
         message = "application deployment failed, {0}, {1}, {2}".format(
             this_context, type(e), str(e)
@@ -329,13 +332,14 @@ async def deploy_frame(
             message="deployment targeted frame, {0}".format(str(deploy_to)),
         )
     else:
-        await _do_frame_deployment(
-            this_context,
-            pipeline_parameters,
-            deployment_data,
-            frame_data,
-            frame_status,
-        )
+        with timing(log, this_context):
+            await _do_frame_deployment(
+                this_context,
+                pipeline_parameters,
+                deployment_data,
+                frame_data,
+                frame_status,
+            )
 
 
 async def do_deploy(
@@ -351,6 +355,7 @@ async def do_deploy(
                               ``pipeline_parameters`` is exceeded.
     """
     this_frames = configuration.frames
+    this_context = deployment_data.data.iteration_context.copy()
     deployment_data.data.iteration_context.append(
         deployment_data.data.deployment_tuple
     )
@@ -361,30 +366,33 @@ async def do_deploy(
         timeout_seconds=pipeline_parameters.wait_timeout_seconds,
     )
     try:
-        # this is a temporary work-around to the login concurrency problem -
-        # it works provided there is no more than a single subscription per
-        # deployment at a time.
-        # https://github.com/Food-X-Technologies/foodx_devops_tools/issues/129
-        await login_service_principal(deployment_data.data.azure_credentials)
+        with timing(log, str(this_context)):
+            # this is a temporary work-around to the login concurrency problem -
+            # it works provided there is no more than a single subscription per
+            # deployment at a time.
+            # https://github.com/Food-X-Technologies/foodx_devops_tools/issues/129
+            await login_service_principal(
+                deployment_data.data.azure_credentials
+            )
 
-        wait_task = asyncio.create_task(
-            frame_deployment_status.wait_for_all_completed()
-        )
-        frame_deployment_status.start_monitor()
+            wait_task = asyncio.create_task(
+                frame_deployment_status.wait_for_all_completed()
+            )
+            frame_deployment_status.start_monitor()
 
-        await asyncio.gather(
-            *[
-                deploy_frame(
-                    frame_data,
-                    deployment_data.copy_add_frame(frame_name),
-                    frame_deployment_status,
-                    pipeline_parameters,
-                )
-                for frame_name, frame_data in this_frames.frames.items()
-            ],
-            return_exceptions=False,
-        )
-        await wait_task
+            await asyncio.gather(
+                *[
+                    deploy_frame(
+                        frame_data,
+                        deployment_data.copy_add_frame(frame_name),
+                        frame_deployment_status,
+                        pipeline_parameters,
+                    )
+                    for frame_name, frame_data in this_frames.frames.items()
+                ],
+                return_exceptions=False,
+            )
+            await wait_task
     except asyncio.TimeoutError:
         message = "timeout waiting for frame deployments, {0}".format(
             deployment_data.data.iteration_context
