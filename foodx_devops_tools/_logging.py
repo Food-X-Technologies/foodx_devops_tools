@@ -110,7 +110,7 @@ class LoggingState:
                     str(self.configuration.log_file_path),
                     backupCount=self.configuration.max_rotation_backup_files,
                     maxBytes=self.configuration.file_rotation_size_megabytes
-                    * (1024 ** 2),
+                    * (1024**2),
                 )
                 this_handler.setLevel(self.configuration.log_level)
                 self.rotation_handler = this_handler
