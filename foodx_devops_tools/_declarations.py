@@ -21,5 +21,5 @@ DEFAULT_FILE_ROTATION_BACKUPS = 100
 DEFAULT_FILE_ROTATION_ENABLED = True
 DEFAULT_FILE_ROTATION_SIZE_MB = 10
 
-DEFAULT_LOG_LEVEL = "warning"
-VALID_LOG_LEVELS = ["critical", "error", "warning", "info", "debug", "notset"]
+"""DEFAULT_LOG_LEVEL = "warning"
+VALID_LOG_LEVELS = ["critical", "error", "warning", "info", "debug", "notset"]"""
