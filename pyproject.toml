@@ -14,15 +14,15 @@ classifiers = ["License :: OSI Approved :: MIT License"]
 requires-python = ">=3.8"
 
 requires = [
-    "aiofiles ~=0.7.0",
+    "aiofiles >=0.7.0, <1.0",
     # required for ansible vault interactions
     "ansible >=4.4.0, <6.0",
-    "azure-devops >=6.0.0b4",
-    "click ~=8.1.2",
-    "deepmerge ~=1.0.1",
-    "jinja2 ~=3.1.1",
-    "pydantic ~=1.9.0",
-    "ruamel.yaml ~=0.17.20",
+    "azure-devops >=6.0.0b4, <7.0",
+    "click >=8.1.2, <9",
+    "deepmerge >=1.0.1, <2",
+    "jinja2 >=3.1.1, <4",
+    "pydantic >=1.9.0, <2",
+    "ruamel.yaml >=0.17.20, <1.0",
 ]
 
 
@@ -36,21 +36,21 @@ validate-configuration = "foodx_devops_tools.validate_configuration:flit_entry"
 
 [tool.flit.metadata.requires-extra]
 dev = [
-    "build_harness ~=1.0",
-    "pre_commit ~=2.17.0",
-    "pyjson5 ~=1.5.2",
-    "types-aiofiles ~=0.1.9",
+    "build_harness >=1.0, <2",
+    "pre_commit >=2.17.0, <3",
+    "pyjson5 >=1.5.2, <2",
+    "types-aiofiles >=0.1.9, <1.0",
 ]
 doc = [
-    "sphinx ~=4.5.0",
-    "sphinx_rtd_theme ~=1.0",
+    "sphinx >=4.5.0, <5",
+    "sphinx_rtd_theme >=1.0, <2",
 ]
 test = [
-    "asynctest ~=0.13.0",
-    "pytest ~=7.1.1",
-    "pytest-asyncio ~=0.18.3",
-    "pytest-cov ~=3.0",
-    "pytest-mock ~=3.7.0",
+    "asynctest >=0.13.0, <1.0",
+    "pytest >=7.1.1, <8",
+    "pytest-asyncio >=0.18.3, <1.0",
+    "pytest-cov >=3.0, <4",
+    "pytest-mock >=3.7.0, <4",
 ]
 
 

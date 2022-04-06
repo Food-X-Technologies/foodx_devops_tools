@@ -1,3 +1,7 @@
+# These dependencies are derived from a snapshot of development dependencies
+#   make bootstrap-venv
+#   pip list > docker/pipeline/requirements_new.txt
+#
 aiofiles==0.7.0
 alabaster==0.7.12
 ansible==5.2.0
