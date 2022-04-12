@@ -21,7 +21,6 @@ from foodx_devops_tools.pipeline_config import FlattenedDeployment
 from foodx_devops_tools.pipeline_config.frames import (
     ApplicationStepDeploymentDefinition,
 )
-from foodx_devops_tools.pipeline_config.puff_map import PuffMapPaths
 from foodx_devops_tools.utilities.templates import prepare_deployment_files
 
 log = logging.getLogger(__name__)
@@ -93,7 +92,6 @@ def _construct_override_parameters(
 async def _do_step_deployment(
     this_step: ApplicationStepDeploymentDefinition,
     deployment_data: FlattenedDeployment,
-    puff_parameter_paths: PuffMapPaths,
     enable_validation: bool,
 ) -> None:
     this_context = str(deployment_data.data.iteration_context)
@@ -134,7 +132,6 @@ async def _do_step_deployment(
         template_files = deployment_data.construct_deployment_paths(
             this_step.arm_file,
             this_step.puff_file,
-            puff_parameter_paths[this_step.name],
         )
         log.debug(f"template files, {template_files}")
 
@@ -173,7 +170,6 @@ async def _do_step_deployment(
 async def deploy_step(
     this_step: ApplicationStepDeploymentDefinition,
     deployment_data: FlattenedDeployment,
-    puff_parameter_data: PuffMapPaths,
     enable_validation: bool,
 ) -> None:
     """
@@ -197,7 +193,6 @@ async def deploy_step(
         await _do_step_deployment(
             this_step,
             deployment_data,
-            puff_parameter_data,
             enable_validation,
         )
         log.info("application step succeeded, {0}".format(step_context))

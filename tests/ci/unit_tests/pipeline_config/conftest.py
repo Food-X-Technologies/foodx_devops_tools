@@ -20,7 +20,6 @@ from foodx_devops_tools.pipeline_config import (
     DeploymentsDefinition,
     FramesDefinition,
     PipelineConfiguration,
-    PuffMapGeneratedFiles,
     ReleaseStatesDefinition,
     ServicePrincipals,
     StaticSecrets,
@@ -52,12 +51,6 @@ def mock_loads(mocker):
             "foodx_devops_tools.pipeline_config.pipeline.load_frames",
             return_value=FramesDefinition.parse_obj(
                 {"frames": mock_data.frames}
-            ),
-        )
-        mocker.patch(
-            "foodx_devops_tools.pipeline_config.pipeline.load_puff_map",
-            return_value=PuffMapGeneratedFiles.parse_obj(
-                {"puff_map": mock_data.puff_map}
             ),
         )
         mocker.patch(

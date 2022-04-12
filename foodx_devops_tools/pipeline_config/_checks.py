@@ -80,11 +80,6 @@ async def _prepare_deployment_files(
     arm_paths = pipeline_configuration.frames.arm_file_paths()
     frame_folders = pipeline_configuration.frames.frame_folders()
     puff_paths = pipeline_configuration.frames.puff_file_paths()
-    puff_parameter_paths = (
-        pipeline_configuration.puff_map.arm_template_parameter_file_paths(
-            pipeline_configuration.frames.frame_folders()
-        )
-    )
 
     assert set(puff_paths.keys()) == set(arm_paths.keys())
 
@@ -125,7 +120,6 @@ async def _prepare_deployment_files(
                 template_files = this_iteration.construct_deployment_paths(
                     arm_paths[structure_name].file,
                     puff_paths[structure_name].file,
-                    puff_parameter_paths[puff_map_structure_name].file,
                 )
                 log.debug(
                     f"template files for configuration validation,"
