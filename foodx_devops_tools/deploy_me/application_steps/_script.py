@@ -20,7 +20,6 @@ log = logging.getLogger(__name__)
 async def script_step(
     this_step: ApplicationStepScript,
     deployment_data: FlattenedDeployment,
-    this_context: str,
 ) -> None:
     """
     Run command line commands in Bash shell.
@@ -28,8 +27,8 @@ async def script_step(
     Args:
         this_step: Deployment definition for this step action.
         deployment_data: Deployment context related parameters.
-        this_context: Structured string context id.
     """
+    this_context = str(deployment_data.data.iteration_context)
     step_context = f"{this_context}.{this_step.name}"
 
     log.debug(

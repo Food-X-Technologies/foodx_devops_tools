@@ -93,13 +93,13 @@ async def assess_results(
 
 
 async def _do_application_deployment(
-    this_context: str,
     application_data: ApplicationDeploymentSteps,
     deployment_data: FlattenedDeployment,
     application_status: DeploymentStatus,
     enable_validation: bool,
 ) -> None:
     try:
+        this_context = str(deployment_data.data.iteration_context)
         puff_frame_data = deployment_data.data.puff_map.frames[
             deployment_data.context.frame_name
         ]
@@ -117,14 +117,12 @@ async def _do_application_deployment(
                         this_step,
                         deployment_data,
                         puff_parameter_data,
-                        this_context,
                         enable_validation,
                     )
                 elif isinstance(this_step, ApplicationStepScript):
                     await script_step(
                         this_step,
                         deployment_data,
-                        this_context,
                     )
                 elif isinstance(this_step, ApplicationStepDelay):
                     await delay_step(this_step.delay_seconds)
@@ -205,7 +203,6 @@ async def deploy_application(
         else:
             with timing(log, this_context):
                 await _do_application_deployment(
-                    this_context,
                     application_data.steps,
                     deployment_data,
                     application_status,

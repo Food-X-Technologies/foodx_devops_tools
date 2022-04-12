@@ -140,7 +140,6 @@ def mock_base_context():
         "deployment_data": FlattenedDeployment(
             context=mock_context, data=data_view
         ),
-        "this_context": "some.context",
     }
     return arguments
 

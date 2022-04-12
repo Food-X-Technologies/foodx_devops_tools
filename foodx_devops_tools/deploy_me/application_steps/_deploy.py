@@ -94,9 +94,9 @@ async def _do_step_deployment(
     this_step: ApplicationStepDeploymentDefinition,
     deployment_data: FlattenedDeployment,
     puff_parameter_paths: PuffMapPaths,
-    this_context: str,
     enable_validation: bool,
 ) -> None:
+    this_context = str(deployment_data.data.iteration_context)
     step_context = f"{this_context}.{this_step.name}"
 
     log.debug(
@@ -174,7 +174,6 @@ async def deploy_step(
     this_step: ApplicationStepDeploymentDefinition,
     deployment_data: FlattenedDeployment,
     puff_parameter_data: PuffMapPaths,
-    this_context: str,
     enable_validation: bool,
 ) -> None:
     """
@@ -184,9 +183,9 @@ async def deploy_step(
         this_step: Deployment definition for this step action.
         deployment_data: Deployment context related parameters.
         puff_parameter_data: Puff file parameter data.
-        this_context: Structured string context id.
         enable_validation: Enable or disable Azure validation deployment.
     """
+    this_context = str(deployment_data.data.iteration_context)
     step_context = "{0}.{1}".format(this_context, this_step.name)
     deploy_to = deployment_data.data.to
     if deploy_to.step and (this_step.name != deploy_to.step):
@@ -199,7 +198,6 @@ async def deploy_step(
             this_step,
             deployment_data,
             puff_parameter_data,
-            this_context,
             enable_validation,
         )
         log.info("application step succeeded, {0}".format(step_context))
