@@ -46,9 +46,11 @@ RUN apt-get update \
       azure-cli \
  && rm -rf /var/lib/apt/lists/*
 
+COPY pre-requirements.txt /
 COPY requirements.txt /
 
 # keep requirements.txt up-to-date with the project with `pip freeze > docker/pipeline/requirements.txt` on a *clean*
 # venv where the project is installed
 RUN python3 -m venv /venv \
+ && /venv/bin/pip install -r /pre-requirements.txt \
  && /venv/bin/pip install -r /requirements.txt
