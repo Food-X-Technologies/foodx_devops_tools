@@ -24,7 +24,7 @@ from foodx_devops_tools.utilities.templates import TemplateFiles, TemplatePaths
 
 from ..deployment import DeploymentTuple
 from ._exceptions import PipelineViewError
-from .pipeline import PipelineConfiguration, PuffMap
+from .pipeline import PipelineConfiguration
 
 log = logging.getLogger(__name__)
 
@@ -226,7 +226,6 @@ class DeployDataView:
 
     iteration_context: IterationContext
     to: StructuredTo
-    __puff_map: typing.Optional[PuffMap] = None
 
     def __init__(
         self: X,
@@ -267,19 +266,6 @@ class DeployDataView:
     def location_secondary(self: X, v: str) -> None:
         """Set location secondary property."""
         self.__location_secondary = v
-
-    @property
-    def puff_map(self: X) -> PuffMap:
-        """Get puff map property."""
-        if self.__puff_map:
-            return self.__puff_map
-        else:
-            raise PipelineViewError("puff map not specified in deployment data")
-
-    @puff_map.setter
-    def puff_map(self: X, value: PuffMap) -> None:
-        """Set puff map property."""
-        self.__puff_map = value
 
     def __str__(self: X) -> str:
         """Convert object to str for logging purposes."""
@@ -470,7 +456,6 @@ class FlattenedDeployment:
         self: W,
         specified_arm_file: typing.Optional[pathlib.Path],
         specified_puff_file: typing.Optional[pathlib.Path],
-        target_arm_parameter_path: typing.Optional[pathlib.Path],
     ) -> TemplateFiles:
         """
         Construct paths for ARM template files.
@@ -494,10 +479,6 @@ class FlattenedDeployment:
         if not frame_folder:
             raise PipelineViewError(
                 "frame_folder not defined for application step"
-            )
-        if not target_arm_parameter_path:
-            raise PipelineViewError(
-                "target_arm_parameter_path not defined for application step"
             )
 
         source_arm_template_path = (
@@ -529,10 +510,9 @@ class FlattenedDeployment:
         working_dir = self.__construct_working_directory(
             frame_folder, working_name
         )
-        # Assume arm template parameters file has been specified with any sub
-        # directories in it's path in puff_map.yml, so only frame_folder is
-        # used here.
-        parameters_path = working_dir / target_arm_parameter_path
+        parameters_path = self.construct_puff_parameter_path(
+            source_puff_path, working_dir
+        )
         log.debug(f"arm parameters path, {parameters_path}")
 
         log.debug(f"working directory, {working_dir}")
@@ -552,6 +532,31 @@ class FlattenedDeployment:
         )
 
         return template_files
+
+    def construct_puff_parameter_path(
+        self: W,
+        source_puff_path: pathlib.Path,
+        working_dir: pathlib.Path,
+    ) -> pathlib.Path:
+        """
+        Construct puff parameter file path.
+
+        Args:
+            source_puff_path: Puff file used to generate parameter files.
+            working_dir: Temporary working directory for puff parameter files.
+
+        Returns:
+            Path to puff parameter file.
+        """
+        base_name = source_puff_path.stem
+        client_name = self.context.client
+        subscription_name = self.context.azure_subscription_name
+
+        target_arm_parameter_path = (
+            f"{base_name}.{client_name}." f"{subscription_name}.json"
+        )
+        parameters_path = working_dir / target_arm_parameter_path
+        return parameters_path
 
     @staticmethod
     def __screen_jinja_template(

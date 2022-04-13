@@ -140,7 +140,6 @@ def mock_base_context():
         "deployment_data": FlattenedDeployment(
             context=mock_context, data=data_view
         ),
-        "this_context": "some.context",
     }
     return arguments
 
@@ -173,9 +172,6 @@ def mock_deploystep_context(mock_base_context):
                 puff_file=pathlib.Path("puff.file"),
                 resource_group="rgn",
             ),
-            "puff_parameter_data": {
-                "this_step": pathlib.Path("puff_generated.path"),
-            },
             "enable_validation": False,
         },
     }

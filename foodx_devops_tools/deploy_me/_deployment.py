@@ -93,22 +93,13 @@ async def assess_results(
 
 
 async def _do_application_deployment(
-    this_context: str,
     application_data: ApplicationDeploymentSteps,
     deployment_data: FlattenedDeployment,
     application_status: DeploymentStatus,
     enable_validation: bool,
 ) -> None:
+    this_context = str(deployment_data.data.iteration_context)
     try:
-        puff_frame_data = deployment_data.data.puff_map.frames[
-            deployment_data.context.frame_name
-        ]
-        puff_application_data = puff_frame_data.applications[
-            deployment_data.context.application_name
-        ]
-        puff_parameter_data = puff_application_data.arm_parameters_files[
-            deployment_data.context.release_state
-        ][deployment_data.context.azure_subscription_name]
 
         for this_step in application_data:
             with timing(log, this_context):
@@ -116,15 +107,12 @@ async def _do_application_deployment(
                     await deploy_step(
                         this_step,
                         deployment_data,
-                        puff_parameter_data,
-                        this_context,
                         enable_validation,
                     )
                 elif isinstance(this_step, ApplicationStepScript):
                     await script_step(
                         this_step,
                         deployment_data,
-                        this_context,
                     )
                 elif isinstance(this_step, ApplicationStepDelay):
                     await delay_step(this_step.delay_seconds)
@@ -205,7 +193,6 @@ async def deploy_application(
         else:
             with timing(log, this_context):
                 await _do_application_deployment(
-                    this_context,
                     application_data.steps,
                     deployment_data,
                     application_status,
@@ -359,7 +346,6 @@ async def do_deploy(
     deployment_data.data.iteration_context.append(
         deployment_data.data.deployment_tuple
     )
-    deployment_data.data.puff_map = configuration.puff_map
 
     frame_deployment_status = DeploymentStatus(
         str(deployment_data.data.iteration_context),

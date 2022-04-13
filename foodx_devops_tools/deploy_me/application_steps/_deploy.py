@@ -21,7 +21,6 @@ from foodx_devops_tools.pipeline_config import FlattenedDeployment
 from foodx_devops_tools.pipeline_config.frames import (
     ApplicationStepDeploymentDefinition,
 )
-from foodx_devops_tools.pipeline_config.puff_map import PuffMapPaths
 from foodx_devops_tools.utilities.templates import prepare_deployment_files
 
 log = logging.getLogger(__name__)
@@ -93,10 +92,9 @@ def _construct_override_parameters(
 async def _do_step_deployment(
     this_step: ApplicationStepDeploymentDefinition,
     deployment_data: FlattenedDeployment,
-    puff_parameter_paths: PuffMapPaths,
-    this_context: str,
     enable_validation: bool,
 ) -> None:
+    this_context = str(deployment_data.data.iteration_context)
     step_context = f"{this_context}.{this_step.name}"
 
     log.debug(
@@ -134,7 +132,6 @@ async def _do_step_deployment(
         template_files = deployment_data.construct_deployment_paths(
             this_step.arm_file,
             this_step.puff_file,
-            puff_parameter_paths[this_step.name],
         )
         log.debug(f"template files, {template_files}")
 
@@ -173,8 +170,6 @@ async def _do_step_deployment(
 async def deploy_step(
     this_step: ApplicationStepDeploymentDefinition,
     deployment_data: FlattenedDeployment,
-    puff_parameter_data: PuffMapPaths,
-    this_context: str,
     enable_validation: bool,
 ) -> None:
     """
@@ -184,9 +179,9 @@ async def deploy_step(
         this_step: Deployment definition for this step action.
         deployment_data: Deployment context related parameters.
         puff_parameter_data: Puff file parameter data.
-        this_context: Structured string context id.
         enable_validation: Enable or disable Azure validation deployment.
     """
+    this_context = str(deployment_data.data.iteration_context)
     step_context = "{0}.{1}".format(this_context, this_step.name)
     deploy_to = deployment_data.data.to
     if deploy_to.step and (this_step.name != deploy_to.step):
@@ -198,8 +193,6 @@ async def deploy_step(
         await _do_step_deployment(
             this_step,
             deployment_data,
-            puff_parameter_data,
-            this_context,
             enable_validation,
         )
         log.info("application step succeeded, {0}".format(step_context))

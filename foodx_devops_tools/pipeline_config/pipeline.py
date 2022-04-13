@@ -21,7 +21,6 @@ from .deployments import DeploymentsEndpointsDefinitions as DeploymentsData
 from .deployments import load_deployments
 from .frames import ValueType as FramesData
 from .frames import load_frames
-from .puff_map import PuffMap, load_puff_map
 from .release_states import ValueType as ReleaseStatesData
 from .release_states import load_release_states
 from .service_principals import ServicePrincipals
@@ -61,7 +60,6 @@ class PipelineConfiguration(pydantic.BaseModel):
     release_states: ReleaseStatesData
     deployments: DeploymentsData
     frames: FramesData
-    puff_map: PuffMap
     service_principals: typing.Optional[ServicePrincipalsData]
     static_secrets: typing.Optional[StaticSecretsData]
     subscriptions: SubscriptionsData
@@ -121,7 +119,6 @@ class PipelineConfiguration(pydantic.BaseModel):
         client_config = load_clients(paths.clients)
         deployment_config = load_deployments(paths.deployments)
         frames_config = load_frames(paths.frames)
-        puff_map_config = load_puff_map(paths.puff_map)
         release_state_config = load_release_states(paths.release_states)
         subscription_config = load_subscriptions(paths.subscriptions)
         system_config = load_systems(paths.systems)
@@ -139,7 +136,6 @@ class PipelineConfiguration(pydantic.BaseModel):
             "decrypt_token": decrypt_token,
             "deployments": deployment_config.deployments,
             "frames": frames_config.frames,
-            "puff_map": puff_map_config.puff_map,
             "subscriptions": subscription_config.subscriptions,
             "systems": system_config.systems,
             "tenants": tenant_config.tenants,
@@ -236,30 +232,6 @@ class PipelineConfiguration(pydantic.BaseModel):
             raise PipelineConfigurationError(message)
 
     @staticmethod
-    def __check_subscription_in_puff_map(
-        deployment_tuple: str, subscription_name: str, puff_map_data: PuffMap
-    ) -> None:
-        puff_map_subscriptions: typing.Set[str] = set()
-        for _, frame_data in puff_map_data.frames.items():
-            for _, application_data in frame_data.applications.items():
-                for (
-                    _,
-                    subscription_data,
-                ) in application_data.arm_parameters_files.items():
-                    puff_map_subscriptions = puff_map_subscriptions.union(
-                        set(subscription_data.keys())
-                    )
-
-        if subscription_name not in puff_map_subscriptions:
-            # a deployment subscription must be defined in puff_map.yml
-            message = (
-                "Deployment subscription not defined in puff map, "
-                "{0}, {1}".format(deployment_tuple, subscription_name)
-            )
-            log.error("{0}".format(message))
-            raise PipelineConfigurationError(message)
-
-    @staticmethod
     def __report_deployment_subscription_error(
         deployment_tuple: str,
         subscription_name: str,
@@ -333,12 +305,6 @@ class PipelineConfiguration(pydantic.BaseModel):
                     "static secrets",
                 )
 
-            PipelineConfiguration.__check_subscription_in_puff_map(
-                deployment_tuple,
-                this_deployment_subscription,
-                loaded_data["puff_map"],
-            )
-
     @pydantic.root_validator()
     def check_deployments(cls: pydantic.BaseModel, loaded_data: dict) -> dict:
         """Cross-check loaded deployment data."""
@@ -408,116 +374,4 @@ class PipelineConfiguration(pydantic.BaseModel):
                 )
             )
             raise PipelineConfigurationError(message)
-        return loaded_data
-
-    @pydantic.root_validator()
-    def check_frames_puff_map(
-        cls: pydantic.BaseModel, loaded_data: dict
-    ) -> dict:
-        """
-        Cross-check frames, puff map data.
-
-        * The identified frames must be the same.
-        * The identified applications must be the same.
-        * Any application deployment steps defined in a frame must be defined
-          in the puff map.
-        * Release states and subscriptions must be valid.
-        """
-        if set(loaded_data["frames"].frames.keys()) != set(
-            loaded_data["puff_map"].frames.keys()
-        ):
-            message = "Frame definitions mismatch between frames and puff map"
-            log.error(
-                "{0}, {1}, {2}".format(
-                    message,
-                    str(set(loaded_data["frames"].frames.keys())),
-                    str(set(loaded_data["puff_map"].frames.keys())),
-                )
-            )
-            raise PipelineConfigurationError(message)
-        for this_frame, frame_data in loaded_data["frames"].frames.items():
-            if set(frame_data.applications.keys()) != set(
-                loaded_data["puff_map"].frames[this_frame].applications.keys()
-            ):
-                message = (
-                    "Application definitions mismatch between frames "
-                    "and puff map"
-                )
-                log.error(
-                    "{0}, {1}, {2}".format(
-                        message,
-                        str(set(frame_data.applications.keys())),
-                        str(
-                            set(
-                                loaded_data["puff_map"]
-                                .frames[this_frame]
-                                .applications.keys()
-                            )
-                        ),
-                    )
-                )
-                raise PipelineConfigurationError(message)
-            for (
-                this_application,
-                application_data,
-            ) in frame_data.applications.items():
-                pm_app_data = (
-                    loaded_data["puff_map"]
-                    .frames[this_frame]
-                    .applications[this_application]
-                )
-                if any(
-                    [
-                        x not in loaded_data["release_states"]
-                        for x in pm_app_data.arm_parameters_files.keys()
-                    ]
-                ):
-                    message = "Bad release state in puff map"
-                    log.error(
-                        "{0}, {1}, {2}".format(
-                            message,
-                            str(loaded_data["release_states"]),
-                            str(pm_app_data.arm_parameters_files.keys()),
-                        )
-                    )
-                    raise PipelineConfigurationError(message)
-                for (
-                    this_state,
-                    state_data,
-                ) in pm_app_data.arm_parameters_files.items():
-                    if any(
-                        [
-                            x not in loaded_data["subscriptions"].keys()
-                            for x in state_data.keys()
-                        ]
-                    ):
-                        message = "Bad subscription in puff map"
-                        log.error(
-                            "{0}, {1}, {2}".format(
-                                message,
-                                str(loaded_data["subscriptions"].keys()),
-                                str(state_data.keys()),
-                            )
-                        )
-                        raise PipelineConfigurationError(message)
-                    for subscription_data in state_data.values():
-                        frame_step_names = {
-                            x.name
-                            for x in application_data.steps
-                            if hasattr(x, "name") and hasattr(x, "arm_file")
-                        }
-                        if frame_step_names != set(subscription_data.keys()):
-                            message = (
-                                "Application step name mismatch between "
-                                "frames and puff map"
-                            )
-                            log.error(
-                                "{0}, {1}, {2}".format(
-                                    message,
-                                    str(frame_step_names),
-                                    str(set(subscription_data.keys())),
-                                )
-                            )
-                            raise PipelineConfigurationError(message)
-
         return loaded_data

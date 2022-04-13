@@ -20,7 +20,6 @@ from foodx_devops_tools.pipeline_config import (
     DeploymentsDefinition,
     PipelineConfiguration,
     PipelineConfigurationPaths,
-    PuffMapGeneratedFiles,
     ServicePrincipals,
     StaticSecrets,
     SubscriptionsDefinition,
@@ -346,54 +345,5 @@ class TestDeploymentSubscriptions:
         with pytest.raises(
             PipelineConfigurationError,
             match=r"Deployment subscription not defined in static secrets",
-        ):
-            PipelineConfiguration.from_files(MOCK_PATHS, MOCK_SECRET)
-
-    def test_deployment_subscription_not_in_puff_map_raises(
-        self, mock_loads, mock_results
-    ):
-        """Deployment declares a subscription not present in puff map."""
-        mock_results.subscriptions = SubscriptionsDefinition.parse_obj(
-            {
-                "subscriptions": {
-                    "sys1_c1_r1a": {
-                        "ado_service_connection": "some-name",
-                        "azure_id": "abc123",
-                        "tenant": "t1",
-                    },
-                    "inactive_subscription": {
-                        "ado_service_connection": "some-name",
-                        "azure_id": "abc123",
-                        "tenant": "t1",
-                    },
-                },
-            }
-        ).subscriptions
-        mock_results.puff_map = PuffMapGeneratedFiles.parse_obj(
-            {
-                "puff_map": {
-                    "frames": {
-                        "f1": {
-                            "applications": {
-                                "a1": {
-                                    "arm_parameters_files": {
-                                        "r1": {
-                                            "inactive_subscription": {
-                                                "a1l1": "some/puff_map/path",
-                                            },
-                                        },
-                                    },
-                                },
-                            },
-                        },
-                    },
-                },
-            }
-        ).puff_map
-        mock_loads(mock_results)
-
-        with pytest.raises(
-            PipelineConfigurationError,
-            match=r"Deployment subscription not defined in puff map",
         ):
             PipelineConfiguration.from_files(MOCK_PATHS, MOCK_SECRET)

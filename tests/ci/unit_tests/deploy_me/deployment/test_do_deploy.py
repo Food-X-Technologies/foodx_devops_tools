@@ -21,7 +21,6 @@ def prep_data(mock_async_method, mock_flattened_deployment, mock_run_puff):
     deployment_data.context.frame_name = "f1"
     deployment_data.context.release_state = "r1"
     deployment_data.context.azure_subscription_name = "sub1"
-    deployment_data.data.puff_map = pipeline_config.puff_map
 
     mock_frame = mock_async_method(
         "foodx_devops_tools.deploy_me._deployment.deploy_frame"

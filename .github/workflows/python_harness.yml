@@ -33,6 +33,7 @@ jobs:
           docker push ${{ env.IMAGE_PATH }}
 
 
+
   formatting-check:
     env:
       TARGET: formatting --check
@@ -44,6 +45,10 @@ jobs:
     runs-on: ubuntu-20.04
 
     steps:
+      # work around github bug https://github.com/actions/checkout/issues/760
+      # this git config must occur BEFORE the checkout action
+      - run: |
+          git config --global --add safe.directory /__w/foodx_devops_tools/foodx_devops_tools
       - uses: actions/checkout@v2
       - run: |
           ${{ env.CALL_TARGET }} \
@@ -63,6 +68,10 @@ jobs:
     runs-on: ubuntu-20.04
 
     steps:
+      # work around github bug https://github.com/actions/checkout/issues/760
+      # this git config must occur BEFORE the checkout action
+      - run: |
+          git config --global --add safe.directory /__w/foodx_devops_tools/foodx_devops_tools
       - uses: actions/checkout@v2
       - run: |
           echo "system Python version: "$(python3 --version)
@@ -84,6 +93,10 @@ jobs:
     runs-on: ubuntu-20.04
 
     steps:
+      # work around github bug https://github.com/actions/checkout/issues/760
+      # this git config must occur BEFORE the checkout action
+      - run: |
+          git config --global --add safe.directory /__w/foodx_devops_tools/foodx_devops_tools
       - uses: actions/checkout@v2
       - run: |
           ${{ env.CALL_TARGET }} \
@@ -103,6 +116,10 @@ jobs:
     runs-on: ubuntu-20.04
 
     steps:
+      # work around github bug https://github.com/actions/checkout/issues/760
+      # this git config must occur BEFORE the checkout action
+      - run: |
+          git config --global --add safe.directory /__w/foodx_devops_tools/foodx_devops_tools
       - uses: actions/checkout@v2
       - run: |
           ${{ env.CALL_TARGET }} \
@@ -123,6 +140,10 @@ jobs:
     runs-on: ubuntu-20.04
 
     steps:
+      # work around github bug https://github.com/actions/checkout/issues/760
+      # this git config must occur BEFORE the checkout action
+      - run: |
+          git config --global --add safe.directory /__w/foodx_devops_tools/foodx_devops_tools
       - uses: actions/checkout@v2
       - run: |
           ${{ env.CALL_TARGET }} \
@@ -149,6 +170,10 @@ jobs:
     runs-on: ubuntu-20.04
 
     steps:
+      # work around github bug https://github.com/actions/checkout/issues/760
+      # this git config must occur BEFORE the checkout action
+      - run: |
+          git config --global --add safe.directory /__w/foodx_devops_tools/foodx_devops_tools
       - uses: actions/checkout@v2
       - run: ${{ env.CALL_TARGET }} ${TARGET}
       - uses: actions/upload-artifact@v2
@@ -173,6 +198,10 @@ jobs:
     runs-on: ubuntu-20.04
 
     steps:
+      # work around github bug https://github.com/actions/checkout/issues/760
+      # this git config must occur BEFORE the checkout action
+      - run: |
+          git config --global --add safe.directory /__w/foodx_devops_tools/foodx_devops_tools
       - uses: actions/checkout@v2
       - run: ${{ env.CALL_TARGET }} ${TARGET}
 
@@ -186,6 +215,10 @@ jobs:
     runs-on: ubuntu-20.04
 
     steps:
+      # work around github bug https://github.com/actions/checkout/issues/760
+      # this git config must occur BEFORE the checkout action
+      - run: |
+          git config --global --add safe.directory /__w/foodx_devops_tools/foodx_devops_tools
       - uses: actions/checkout@v2
         with:
           # need all tags and branch info for release-flow utility.
@@ -246,6 +279,10 @@ jobs:
     runs-on: ubuntu-20.04
 
     steps:
+      # work around github bug https://github.com/actions/checkout/issues/760
+      # this git config must occur BEFORE the checkout action
+      - run: |
+          git config --global --add safe.directory /__w/foodx_devops_tools/foodx_devops_tools
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0

@@ -24,7 +24,6 @@ from foodx_devops_tools.pipeline_config import (
     IterationContext,
     PipelineConfiguration,
 )
-from foodx_devops_tools.pipeline_config.puff_map import PuffMapGeneratedFiles
 from tests.ci.support.pipeline_config import MOCK_RESULTS
 
 MOCK_ITERATION_CONTEXT = IterationContext()
@@ -55,9 +54,6 @@ def prep_data(
     deployment_data.context.application_name = "a1"
     deployment_data.context.release_state = "r1"
     deployment_data.context.azure_subscription_name = "sys1_c1_r1a"
-    deployment_data.data.puff_map = PuffMapGeneratedFiles.parse_obj(
-        {"puff_map": MOCK_RESULTS["puff_map"]}
-    ).puff_map
 
     mock_async_method(
         "foodx_devops_tools.utilities.templates._prepare_working_directory"
@@ -105,7 +101,7 @@ class TestValidation(DeploymentChecks):
         mock_deploy.assert_called_once_with(
             "c1-a1_group-123456",
             pathlib.Path("some/path/working/w/a1.json"),
-            pathlib.Path("some/path/working/w/some/puff_map/jinjad.path"),
+            pathlib.Path("some/path/working/w/jinjad.a1.c1.sys1_c1_r1a.json"),
             "l1",
             "Incremental",
             AzureSubscriptionConfiguration(subscription_id="sys1_c1_r1a"),
@@ -130,7 +126,7 @@ class TestDeployment(DeploymentChecks):
         mock_deploy.assert_called_once_with(
             "c1-a1_group",
             pathlib.Path("some/path/working/w/a1.json"),
-            pathlib.Path("some/path/working/w/some/puff_map/jinjad.path"),
+            pathlib.Path("some/path/working/w/jinjad.a1.c1.sys1_c1_r1a.json"),
             "l1",
             "Incremental",
             AzureSubscriptionConfiguration(subscription_id="sys1_c1_r1a"),

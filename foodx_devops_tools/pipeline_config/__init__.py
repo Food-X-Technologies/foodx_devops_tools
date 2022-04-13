@@ -22,11 +22,6 @@ from .frames import (  # noqa: F401
     load_frames,
 )
 from .pipeline import PipelineConfiguration  # noqa: F401
-from .puff_map import (  # noqa: F401
-    PuffMap,
-    PuffMapGeneratedFiles,
-    load_puff_map,
-)
 from .release_states import (  # noqa: F401
     ReleaseStatesDefinition,
     load_release_states,
